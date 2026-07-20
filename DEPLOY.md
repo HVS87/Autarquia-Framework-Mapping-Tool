@@ -16,6 +16,8 @@ Os seguintes ficheiros devem estar na **raiz do repositório**:
 
 ```
 .
+├── index.html                (redireciona a raiz para a app — NÃO remover)
+├── .nojekyll                 (desativa o Jekyll — NÃO remover)
 ├── network-framework.html    (a app — 192KB)
 ├── manifest.json             (metadados PWA)
 ├── README.md                 (documentação)
@@ -23,6 +25,10 @@ Os seguintes ficheiros devem estar na **raiz do repositório**:
 ├── .gitignore               (exclusões Git)
 └── LICENSE                  (opcional: MIT, GPL, etc.)
 ```
+
+> **Importante:** sem `index.html`, o GitHub Pages mostra o `README.md` na raiz
+> em vez da app. O `index.html` reencaminha a raiz para `network-framework.html`,
+> e o `.nojekyll` impede o GitHub de processar o site com Jekyll.
 
 ### 3. Ative GitHub Pages
 
