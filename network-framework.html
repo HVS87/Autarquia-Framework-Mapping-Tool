@@ -785,12 +785,24 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&
 // Abbreviate long institutional words for the 3D scene labels only. Full names are kept
 // everywhere else (side panels, modals, hover tooltips) — see textSprite call sites.
 const abbrev = s => String(s==null?"":s)
+  // Multi-word phrases first, so the single-word rules below don't split them.
+  .replace(/\bEspaço Público\b/g,"E.P.")
+  .replace(/\bEspaços Verdes\b/g,"E.V.")
+  .replace(/\bRecursos Humanos\b/g,"R.H.")
+  .replace(/\bHigiene Urbana\b/g,"H.U.")
+  // Single words.
   .replace(/\bDivisão\b/g,"Div.")
   .replace(/\bGabinete\b/g,"Gab.")
   .replace(/\bDepartamento\b/g,"Dept.")
   .replace(/\bAdministrativos\b/g,"Admin.")
   .replace(/\bAdministrativo\b/g,"Admin.")
-  .replace(/\bAdministração\b/g,"Admin.");
+  .replace(/\bAdministração\b/g,"Admin.")
+  .replace(/\bContratação\b/g,"Contrat.")
+  .replace(/\bAtendimento\b/g,"Atd.")
+  .replace(/\bUniversidade\b/g,"Univ.")
+  .replace(/\bApoio\b/g,"Ap.")
+  .replace(/\bMunicipal\b/g,"Mun.")
+  .replace(/\bServiço\b/g,"Serv.");
 let GOLD = 0xE8B44C;
 let GOLD3D=0xE8B44C;
 let PRIMARY_GRADS=[
