@@ -712,6 +712,7 @@
         <button class="theme-btn" data-theme="verde" title="Verde institucional"><span class="tdot" style="background:linear-gradient(135deg,#0B241A,#2E8B62 60%,#D9C36A)"></span>Verde Institucional</button>
       </div>
       <div class="setup-btns">
+        <button class="btn" id="newDatasetBtn">New Dataset</button>
         <button class="btn" id="exportBtn">Export Dataset</button>
         <button class="btn" id="importBtn">Import Dataset</button>
         <button class="btn" id="pdfBtn">Export as .pdf</button>
@@ -719,7 +720,7 @@
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
       <div id="setupMsg" role="status"></div>
-      <div class="foot-note">Dataset exporta/importa tudo em JSON. "Export as .pdf" gera um documento com o Organograma e todos os Fluxogramas agrupados; "Export as Presentation" gera um .pptx 16:9 pronto a apresentar. Ambos requerem ligação à internet na primeira utilização.</div>
+      <div class="foot-note">"New Dataset" começa uma rede nova só com o Executivo (apaga tudo o resto — exporte antes se precisar). Dataset exporta/importa tudo em JSON. "Export as .pdf" gera um documento com o Organograma e todos os Fluxogramas agrupados; "Export as Presentation" gera um .pptx 16:9 pronto a apresentar. Ambos requerem ligação à internet na primeira utilização.</div>
     </div>
   </details>
 
@@ -802,6 +803,8 @@ const abbrev = s => String(s==null?"":s)
   .replace(/\bUniversidade\b/g,"Univ.")
   .replace(/\bApoio\b/g,"Ap.")
   .replace(/\bMunicipal\b/g,"Mun.")
+  .replace(/\bManutenção\b/g,"Manut.")
+  .replace(/\bServiços\b/g,"Serv.")
   .replace(/\bServiço\b/g,"Serv.");
 let GOLD = 0xE8B44C;
 let GOLD3D=0xE8B44C;
@@ -821,6 +824,8 @@ const TIER = [
   {label:"Coordenação Setorial",    y:3.0, r:7.8, size:0.31},
   {label:"Coordenação Operacional", y:0.0, r:12.2, size:0.26}
 ];
+// Pristine copy of the default tiers — used by "New Dataset" to restore the scaffold.
+const DEFAULT_TIERS = TIER.map(t=>({...t}));
 const CATEGORIES = ["Presidente","Vogal","Chefe de Divisão","Técnico Superior","Coordenador Técnico",
   "Assistente Técnico","Assistente Operacional","Encarregado Geral","Encarregado Operacional",
   "Coordenador de Escola","Monitor de CAF"];
@@ -3973,6 +3978,55 @@ importFile.onchange=()=>{
     importFile.value="";
   };
   r.readAsText(f);
+};
+
+/* New Dataset — wipe everything and start fresh with only the Executivo apex node. */
+function newDataset(){
+  clearSelection();                              // close modal/detail, clear nav history
+  // Dispose & clear procedures (with their tasks) and their sidebar rows
+  processes.slice().forEach(p=>{
+    p.tasks.slice().forEach(disposeTaskVisual);
+    disposeLayerVisual(p);
+    if(p._row)p._row.remove();
+  });
+  processes.length=0;
+  groups.length=0;
+  // Dispose & clear all nodes and agents
+  nodes.slice().forEach(disposeNodeVisual);
+  nodes.length=0;
+  agents.length=0;
+  // Reset transient UI state
+  pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";newLayerMode=false;hoverNode=null;
+  // Restore the default four-tier scaffold
+  TIER.length=0;DEFAULT_TIERS.forEach(t=>TIER.push({...t}));
+  rebuildTierRings();
+  // Fresh organisation identity
+  orgName="Nova Organização";orgNameInput.value=orgName;
+  // Seed just the Executivo node + its primary (Presidente)
+  addNodeData("c0","Executivo",0,0,null);
+  addAgent("c0",true,"Presidente");
+  // Rebuild scene + panels (mirrors the boot sequence)
+  computeColors();
+  nodes.forEach(buildNodeVisual);
+  nodes.forEach(applyNodeColor);
+  rebuildHierLinks();
+  updateGround();
+  updateLayerCounts();
+  syncLayerRows();
+  renderNodeList();
+  renderAgentsTab();
+  renderGroups();
+  applyScene(0);                                 // back to the overview scene
+  markDirty();
+  flash("Nova rede criada — apenas o Executivo.");
+}
+document.getElementById("newDatasetBtn").onclick=async()=>{
+  const ok=await askConfirm(
+    "Criar uma nova rede? Todos os nodes, agentes, procedimentos e grupos atuais serão apagados — só fica o Executivo. Exporte antes se quiser guardar.",
+    {yes:"Criar nova rede",danger:true});
+  if(!ok)return;
+  newDataset();
+  sparkBurst(document.getElementById("newDatasetBtn"));
 };
 
 /* ============================================================
