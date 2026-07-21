@@ -76,7 +76,10 @@
   }
   body.theme-light .glass{box-shadow:0 14px 38px rgba(40,55,80,0.22),inset 0 1px 0 rgba(255,255,255,0.7)}
   /* Gradient hairline on non-scrolling glass */
-  #stepper,#confirmCard,#menuBtn,#modalCard{position:relative}
+  /* #menuBtn is intentionally excluded — it is position:fixed (top-right) and that
+     already creates a containing block for its ::before hairline. Forcing relative
+     here would override the fixed positioning and drag it over the header text. */
+  #stepper,#confirmCard,#modalCard{position:relative}
   #stepper::before,#confirmCard::before,#menuBtn::before,#modalCard::before{
     content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
     background:linear-gradient(135deg,var(--gold) 0%,transparent 34%,transparent 68%,var(--hairline) 100%);
@@ -589,7 +592,7 @@
     #stepper{bottom:calc(24px + env(safe-area-inset-bottom))}
     @media (max-width:640px){
       header{padding-top:calc(12px + env(safe-area-inset-top))}
-      #menuBtn{top:calc(10px + env(safe-area-inset-top))}
+      #menuBtn{top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right))}
       #stepper{bottom:calc(10px + env(safe-area-inset-bottom))}
       #detail{bottom:calc(10px + env(safe-area-inset-bottom))}
     }
