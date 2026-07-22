@@ -511,6 +511,20 @@
   #stepCaption{animation:capFade .55s ease}
   @keyframes capFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
+  /* 3D → 2D: the procedure window unfolds from its layer plane in the scene.
+     --fx/--fy are set in JS to the procedure's projected screen offset. */
+  @keyframes flatten2D{
+    from{opacity:0;transform:translate(var(--fx,0px),var(--fy,0px)) perspective(1100px) rotateX(64deg) scale(.34)}
+    55%{opacity:1}
+    to{opacity:1;transform:translate(0,0) perspective(1100px) rotateX(0deg) scale(1)}
+  }
+  @keyframes veilIn{from{opacity:0}to{opacity:1}}
+  #modal.from-3d{animation:veilIn .34s ease both}
+  #modal.from-3d #modalCard{
+    animation:flatten2D .5s cubic-bezier(.22,1,.36,1) both;
+    transform-origin:50% 50%;will-change:transform,opacity;
+  }
+
   /* ---------- Tooltip ---------- */
   #tip{
     position:fixed;z-index:20;pointer-events:none;display:none;
@@ -565,6 +579,7 @@
     .dots span,.switch::after,summary::before,.row,.swatch{transition:none}
     #stepCaption{animation:none}
     #confirm.open #confirmCard{animation:none}
+    #modal.from-3d,#modal.from-3d #modalCard{animation:none}
     #focusBlur{display:none}
     .save-spark{display:none}
   }
@@ -2533,6 +2548,7 @@ function viewValid(v){
 }
 function closeModalSilent(){
   modal.classList.remove("open");
+  modal.classList.remove("from-3d");
   modalView=null;
 }
 function applySelection(sel){
@@ -2561,8 +2577,13 @@ function applyView(v){
     panelEl.classList.remove("open");
     menuBtn.classList.remove("active");
   }
-  if(v&&v.type==="flowchart"){modalView=v;renderFlowchart(v.layer);modal.classList.add("open");renderDetail();}
-  else if(v&&v.type==="orgchart"){modalView=v;renderOrgChart();modal.classList.add("open");renderDetail();}
+  if(v&&v.type==="flowchart"){
+    const wasOpen=modal.classList.contains("open");
+    modalView=v;renderFlowchart(v.layer);modal.classList.add("open");
+    if(!wasOpen)playFlattenIn(v.layer);   // animate only on open, not on re-render
+    renderDetail();
+  }
+  else if(v&&v.type==="orgchart"){modalView=v;modal.classList.remove("from-3d");renderOrgChart();modal.classList.add("open");renderDetail();}
   else{closeModalSilent();applySelection(v||null);}
   updateModalNav();
 }
@@ -3299,10 +3320,26 @@ function raycast(e){
   }
   return null;
 }
+// Shift+click on a task selects its whole procedure: isolates that layer in the
+// scene (dimming the rest). Shift+click again releases the isolation.
+function isolateProcedureOf(t){
+  const i=t.proc,p=processes[i];
+  if(!p)return;
+  if(!p._visible)p._visible=true;
+  isolateProc=(isolateProc===i)?null:i;
+  syncLayerRows();
+  const A=byId(t.a),B=byId(t.b);
+  if(isolateProc===i&&A&&B){
+    const mid=A.pos.clone().lerp(B.pos,0.5);
+    mid.y=(mid.y+p.height)/2;
+    pingAt(mid,1.6);
+  }
+}
 function handleClick(e){
   const hit=raycast(e);
   if(!hit){clearSelection();return;}
   if(hit.type==="node")selectNode(hit.node);
+  else if(e.shiftKey)isolateProcedureOf(hit.task);
   else selectTask(hit.task);
 }
 let hoverNode=null;
@@ -3323,7 +3360,7 @@ stage.addEventListener("pointermove",e=>{
     const A=byId(t.a),B=byId(t.b),ag=t.agent?agentById(t.agent):null;
     tip.querySelector(".t-name").textContent=(A?A.name:"?")+" → "+(B?B.name:"?");
     tip.querySelector(".t-role").textContent="Task · "+p.name+" · "+t.duration;
-    tip.querySelector(".t-agents").textContent=(ag?("Resp.: "+ag.name+" · "):"")+"clique para editar";
+    tip.querySelector(".t-agents").textContent=(ag?("Resp.: "+ag.name+" · "):"")+"clique para editar · shift+clique isola o procedimento";
     tip.style.display="block";
   }else tip.style.display="none";
   if(hit){
@@ -3349,6 +3386,34 @@ function updateModalNav(){
 }
 document.getElementById("modalClose").onclick=()=>closeModalSilent();
 modal.addEventListener("pointerdown",e=>{if(e.target===modal)closeModalSilent();});
+
+/* 3D → 2D transition: the procedure window unfolds from that procedure's plane
+   in the scene. Runs only when the modal goes closed → open, never on re-render. */
+const modalCard=document.getElementById("modalCard");
+function projectToScreen(v3){
+  const v=v3.clone().project(camera);
+  return {x:(v.x*0.5+0.5)*innerWidth, y:(-v.y*0.5+0.5)*innerHeight};
+}
+function playFlattenIn(p){
+  modal.classList.remove("from-3d");
+  if(reduceMotion||!modalCard)return;
+  let fx=0,fy=0;
+  if(p&&typeof p.height==="number"){
+    const sp=projectToScreen(new THREE.Vector3(0,p.height,0));
+    const r=modalCard.getBoundingClientRect();
+    // Offset the card toward the procedure's on-screen spot, clamped so an
+    // off-screen or behind-camera layer can't fling the window across the view.
+    // Non-finite input (degenerate viewport, point behind camera) falls back to 0,
+    // which would otherwise emit translate(NaNpx,…) and void the whole transform.
+    const lim=(v,max)=>Number.isFinite(v)&&Number.isFinite(max)?Math.max(-max,Math.min(max,v)):0;
+    fx=lim(sp.x-(r.left+r.width/2),innerWidth*0.42);
+    fy=lim(sp.y-(r.top+r.height/2),innerHeight*0.42);
+  }
+  modalCard.style.setProperty("--fx",fx.toFixed(1)+"px");
+  modalCard.style.setProperty("--fy",fy.toFixed(1)+"px");
+  void modalCard.offsetWidth;             // restart the animation
+  modal.classList.add("from-3d");
+}
 
 /* --- confirmation dialog --- */
 const confirmEl=document.getElementById("confirm");
@@ -3905,6 +3970,10 @@ importFile.onchange=()=>{
         if(typeof cn.angle==="number")n.angle=cn.angle;
         n.parent=cn.parent||null;
       });
+      // Tiers are replaced wholesale, but nodes NOT listed in the file keep their old
+      // tier — which may no longer exist (importing a 2-tier dataset over a 4-tier one
+      // strands them). TIER[n.tier] would be undefined and nodePos()/tier labels throw.
+      nodes.forEach(n=>{n.tier=THREE.MathUtils.clamp(n.tier,0,TIER.length-1);});
       nodes.forEach(n=>{
         if(n.parent&&(!byId(n.parent)||byId(n.parent).tier>=n.tier)){
           const p=leastLoaded(n.tier-1,n.id);n.parent=p?p.id:null;
