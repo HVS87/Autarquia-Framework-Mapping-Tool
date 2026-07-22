@@ -1,0 +1,12 @@
+# Claude Code local settings (machine-specific paths, not project content)
+.claude/
+
+# Local QA artifact — an instrumented copy generated during testing
+network-framework.test.html
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~

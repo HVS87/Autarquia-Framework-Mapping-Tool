@@ -1,0 +1,54 @@
+{
+  "name": "Orchestration Framework — Junta de Freguesia",
+  "short_name": "Orchestration",
+  "description": "3D interactive organizational network visualization and procedimento management for Portuguese municipal administration.",
+  "start_url": "./network-framework.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#B8AB88",
+  "background_color": "#A89A78",
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23B8AB88' width='192' height='192'/><circle cx='96' cy='96' r='40' fill='%23FFFFFF' opacity='0.9'/><circle cx='60' cy='70' r='12' fill='%232E8B62' opacity='0.8'/><circle cx='130' cy='80' r='12' fill='%23E06A8A' opacity='0.8'/><circle cx='95' cy='140' r='12' fill='%238A6115' opacity='0.8'/><path d='M 60 70 L 96 96 M 130 80 L 96 96 M 95 140 L 96 96' stroke='%238A6115' stroke-width='2' fill='none' opacity='0.5'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23B8AB88' width='512' height='512'/><circle cx='256' cy='256' r='100' fill='%23FFFFFF' opacity='0.9'/><g opacity='0.7'><circle cx='140' cy='140' r='30' fill='%232E8B62'/><circle cx='370' cy='160' r='30' fill='%23E06A8A'/><circle cx='150' cy='370' r='30' fill='%239C7A16'/><circle cx='380' cy='350' r='30' fill='%237A3E9C'/></g><g stroke='%238A6115' stroke-width='3' fill='none' opacity='0.4'><path d='M 140 140 L 256 256'/><path d='M 370 160 L 256 256'/><path d='M 150 370 L 256 256'/><path d='M 380 350 L 256 256'/></g></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova organização",
+      "short_name": "Nova org",
+      "description": "Criar uma nova estrutura organizacional",
+      "url": "./network-framework.html?new=true",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238A6115' width='96' height='96' rx='22'/><text x='48' y='60' font-size='50' font-weight='bold' fill='%23FFF' text-anchor='middle'>+</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Ver organograma 2D",
+      "short_name": "Organograma",
+      "description": "Visualizar a hierarquia em 2D",
+      "url": "./network-framework.html?view=orgchart",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%232E8B62' width='96' height='96' rx='22'/><rect x='20' y='12' width='56' height='24' fill='%23FFF' rx='4'/><rect x='12' y='44' width='26' height='24' fill='%23FFF' rx='4'/><rect x='58' y='44' width='26' height='24' fill='%23FFF' rx='4'/><line x1='48' y1='36' x2='48' y2='44' stroke='%23FFF' stroke-width='2'/><line x1='25' y1='44' x2='35' y2='68' stroke='%23FFF' stroke-width='2'/><line x1='71' y1='44' x2='61' y2='68' stroke='%23FFF' stroke-width='2'/><rect x='20' y='68' width='26' height='24' fill='%23FFF' rx='4'/><rect x='54' y='68' width='26' height='24' fill='%23FFF' rx='4'/></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
