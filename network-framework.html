@@ -4674,7 +4674,7 @@ function procWarnings(p){
   return w;
 }
 
-const FCL={NW:168,NH:56,TW:196,TH:66,GX:52,PAD:16,LANEW:150};
+const FCL={NW:168,NH:56,TW:196,TH:66,GX:52,GXV:26,GY:40,PAD:16,LANEW:150};
 /* Pure layout: returns positioned boxes + edges, shared by the interactive
    renderer, the SVG exporter and the PDF exporter. */
 function layoutProc(p,mode){
@@ -4732,44 +4732,45 @@ function layoutProc(p,mode){
       h:Math.max(140,PAD+24+ordered.length*RH+PAD)};
   }
 
+  /* FLOW — vertical: a profundidade corre de cima para baixo e os ramos
+     abrem-se lado a lado, que é como um procedimento se lê. */
   const maxL=Math.max.apply(null,g.ids.map(id=>g.layer[id]));
-  const rowOf={};
+  const colOf={};                       // posição dentro da camada (eixo horizontal)
   function bary(id){
-    const src=g.inOf[id].map(t=>rowOf[t.a]).filter(v=>v!==undefined);
+    const src=g.inOf[id].map(t=>colOf[t.a]).filter(v=>v!==undefined);
     return src.length?src.reduce((s,v)=>s+v,0)/src.length:0;
   }
   for(let L=0;L<=maxL;L++){
-    const colIds=g.ids.filter(id=>g.layer[id]===L);
-    if(L>0)colIds.sort((x,y)=>bary(x)-bary(y));
-    colIds.forEach((id,i)=>{rowOf[id]=i;});
+    const ids=g.ids.filter(id=>g.layer[id]===L);
+    if(L>0)ids.sort((x,y)=>bary(x)-bary(y));   // aproxima cada node dos seus antecessores
+    ids.forEach((id,i)=>{colOf[id]=i;});
   }
-  const ROWH=Math.max(NH,TH)+24;
-  // Column table must cover the task columns too. In a cyclic procedure a task
-  // can start at the deepest layer, needing column 2*maxL+1 — without this the
-  // box would get an undefined x and the edge builder would throw.
-  let maxCol=2*maxL;
-  g.tasks.forEach(t=>{const c=2*g.layer[t.a]+1;if(c>maxCol)maxCol=c;});
-  const colX=[];
-  let cx=PAD;
-  for(let c=0;c<=maxCol;c++){colX[c]=cx;cx+=((c%2===0)?NW:TW)+GX;}
+  const CELL=Math.max(NW,TW),PITCH=CELL+FCL.GXV;
+  // A tabela de bandas tem de cobrir também as bandas de tarefas: num
+  // procedimento cíclico uma tarefa pode partir da camada mais funda.
+  let maxBand=2*maxL;
+  g.tasks.forEach(t=>{const bd=2*g.layer[t.a]+1;if(bd>maxBand)maxBand=bd;});
+  const bandY=[];
+  let by=PAD;
+  for(let r=0;r<=maxBand;r++){bandY[r]=by;by+=((r%2===0)?NH:TH)+FCL.GY;}
   g.ids.forEach(id=>{
-    const b={key:"n"+id,kind:"node",nodeId:id,x:colX[2*g.layer[id]],
-      y:PAD+rowOf[id]*ROWH+(Math.max(NH,TH)-NH)/2,w:NW,h:NH};
+    const b={key:"n"+id,kind:"node",nodeId:id,
+      x:PAD+colOf[id]*PITCH+(CELL-NW)/2,y:bandY[2*g.layer[id]],w:NW,h:NH};
     boxes.push(b);pos[b.key]=b;
   });
-  const cols={};
+  const bands={};
   g.tasks.forEach(t=>{
-    const c=2*g.layer[t.a]+1;
-    (cols[c]=cols[c]||[]).push({t,pref:((rowOf[t.a]||0)+(rowOf[t.b]||0))/2});
+    const bd=2*g.layer[t.a]+1;
+    (bands[bd]=bands[bd]||[]).push({t,pref:((colOf[t.a]||0)+(colOf[t.b]||0))/2});
   });
-  Object.keys(cols).forEach(c=>{
-    const list=cols[c].sort((x,y)=>x.pref-y.pref);
+  Object.keys(bands).forEach(bd=>{
+    const list=bands[bd].sort((x,y)=>x.pref-y.pref);
     let floor=-1e9;
     list.forEach(item=>{
-      let y=PAD+item.pref*ROWH+(Math.max(NH,TH)-TH)/2;
-      if(y<floor)y=floor;
-      floor=y+TH+12;
-      const b={key:"t"+item.t.id,kind:"task",task:item.t,x:colX[+c],y,w:TW,h:TH};
+      let x=PAD+item.pref*PITCH+(CELL-TW)/2;
+      if(x<floor)x=floor;                 // empurra para a direita se sobrepuser
+      floor=x+TW+14;
+      const b={key:"t"+item.t.id,kind:"task",task:item.t,x,y:bandY[+bd],w:TW,h:TH};
       boxes.push(b);pos[b.key]=b;
     });
   });
@@ -4778,11 +4779,22 @@ function layoutProc(p,mode){
     edges.push({from:"t"+t.id,to:"n"+t.b,arrow:true});
   });
   const ext=f=>{const v=boxes.map(f).filter(x=>isFinite(x));return v.length?Math.max.apply(null,v):200;};
-  return {boxes,edges,pos,graph:g,rowOf,w:ext(b=>b.x+b.w)+PAD,h:ext(b=>b.y+b.h)+PAD};
+  return {boxes,edges,pos,graph:g,colOf,vertical:true,
+    w:ext(b=>b.x+b.w)+PAD,h:ext(b=>b.y+b.h)+PAD};
 }
-function edgePath(a,b){
+/* `vertical` liga as arestas de baixo→cima; as pistas continuam horizontais. */
+function edgePath(a,b,vertical){
   if(!a||!b)return "M0,0";
   const num=v=>(typeof v==="number"&&isFinite(v))?v:0;
+  if(vertical){
+    const x1=num(a.x)+num(a.w)/2,y1=num(a.y)+num(a.h),
+          x2=num(b.x)+num(b.w)/2,y2=num(b.y);
+    const dy=Math.max(18,Math.abs(y2-y1)*0.45);
+    return "M"+x1.toFixed(1)+","+y1.toFixed(1)+
+      " C"+x1.toFixed(1)+","+(y1+dy).toFixed(1)+
+      " "+x2.toFixed(1)+","+(y2-dy).toFixed(1)+
+      " "+x2.toFixed(1)+","+y2.toFixed(1);
+  }
   const x1=num(a.x)+num(a.w),y1=num(a.y)+num(a.h)/2,
         x2=num(b.x),y2=num(b.y)+num(b.h)/2;
   const dx=Math.max(20,Math.abs(x2-x1)*0.45);
@@ -4935,7 +4947,7 @@ function renderFlowchart(p){
     const A=L.pos[e.from],B=L.pos[e.to];
     if(!A||!B)return;
     const path=document.createElementNS(NS,"path");
-    path.setAttribute("d",edgePath(A,B));
+    path.setAttribute("d",edgePath(A,B,L.vertical));
     path.setAttribute("fill","none");
     path.setAttribute("stroke",col);
     path.setAttribute("stroke-width","1.6");
@@ -5305,7 +5317,7 @@ function procSVG(p,mode){
   L.edges.forEach(e=>{
     const A=L.pos[e.from],B=L.pos[e.to];
     if(!A||!B)return;
-    o+='<path d="'+edgePath(A,B)+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-opacity="0.55"'+
+    o+='<path d="'+edgePath(A,B,L.vertical)+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-opacity="0.55"'+
        (e.arrow?' marker-end="url(#ar)"':'')+'/>';
   });
   L.boxes.forEach(b=>{
