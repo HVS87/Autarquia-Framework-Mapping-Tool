@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#B8AB88">
-<meta name="description" content="3D interactive organizational network for Portuguese municipal administration — Orchestration Framework.">
+<meta name="description" content="Ferramenta de Mapeamento para Autarquias — rede organizacional interativa em 3D para a administração local portuguesa.">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23B8AB88' width='180' height='180' rx='40'/><circle cx='90' cy='90' r='36' fill='%23FFFFFF' opacity='0.9'/><circle cx='60' cy='65' r='11' fill='%232E8B62' opacity='0.8'/><circle cx='120' cy='75' r='11' fill='%23E06A8A' opacity='0.8'/><circle cx='85' cy='130' r='11' fill='%238A6115' opacity='0.8'/><path d='M 60 65 L 90 90 M 120 75 L 90 90 M 85 130 L 90 90' stroke='%238A6115' stroke-width='2' fill='none' opacity='0.5'/></svg>">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23B8AB88' width='96' height='96'/><circle cx='48' cy='48' r='24' fill='%23FFFFFF' opacity='0.9'/><circle cx='32' cy='35' r='7' fill='%232E8B62' opacity='0.8'/><circle cx='65' cy='40' r='7' fill='%23E06A8A' opacity='0.8'/><circle cx='48' cy='70' r='7' fill='%238A6115' opacity='0.8'/></svg>">
-<title>Orchestration Framework — Junta de Freguesia</title>
+<title>Ferramenta de Mapeamento para Autarquias</title>
 <style>
   :root{
     --bg-deep:#A89A78;
@@ -397,6 +397,9 @@
   .org-card .s{font-size:.68rem;color:var(--ink-dim);margin-top:2px}
   .org-kids{margin-left:26px;padding-left:16px;border-left:1px solid var(--hairline)}
   .org-card:hover{background:rgba(255,255,255,0.07)}
+  .org-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  table.mx td.cell:focus-visible,table.mx th.mxrow:focus-visible,
+  table.mx thead th.mxcol span:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
   .org-toggle{color:var(--ink-dim);cursor:pointer;font-size:.7rem}
   .org-toggle:hover{color:var(--ink)}
   .org-agent{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
@@ -973,14 +976,18 @@
   #quest.on{display:block}
   /* Encolhido é o estado normal: expandido, o cartão chegaria ao rodapé do
      painel de controlo (que desce até 100vh-142px) e taparia-lhe as últimas linhas. */
-  #quest.mini{
-    width:auto;padding:6px 12px 6px 7px;cursor:pointer;
-    display:flex;align-items:center;gap:9px;font-size:.7rem;color:var(--ink);
+  #quest.mini{width:auto;padding:0;border:none;background:none}
+  #quest .qbar{
+    display:flex;align-items:center;gap:9px;font:inherit;font-size:.7rem;
+    color:var(--ink);cursor:pointer;padding:6px 12px 6px 7px;border-radius:12px;
+    background:var(--panel);border:1px solid var(--hairline);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   }
-  #quest.mini .qring{width:24px;height:24px;font-size:.52rem}
-  #quest.mini .qm{white-space:nowrap}
-  #quest.mini .qmore{color:var(--ink-dim);font-size:.6rem}
-  #quest.mini:hover{border-color:var(--gold)}
+  #quest .qbar:hover{border-color:var(--gold)}
+  #quest .qbar:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  #quest .qbar .qring{width:24px;height:24px;font-size:.52rem}
+  #quest .qbar .qm{white-space:nowrap}
+  #quest .qbar .qmore{color:var(--ink-dim);font-size:.6rem}
   #quest .qh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
   #quest .qring{
     flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
@@ -1299,7 +1306,7 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Orchestration Framework",
+  "name": "Ferramenta de Mapeamento para Autarquias",
   "description": "3D interactive organizational network visualization for Portuguese municipal administration",
   "applicationCategory": "BusinessApplication",
   "operatingSystem": "Web (cross-platform)",
@@ -1349,7 +1356,7 @@
 
 <header>
   <div class="brand">
-    <input id="orgName" value="Organização" maxlength="48" aria-label="Organization name">
+    <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
     <p>Executivo · Coordenação · Processos · Agentes</p>
     <div class="head-actions">
       <button class="btn tiny icon-round" id="undoBtn" title="Anular (Ctrl+Z)" aria-label="Anular" disabled>↶</button>
@@ -1370,7 +1377,7 @@
   <div class="hint">Drag to orbit · Scroll to zoom<br>Click a node or task arc to inspect &amp; edit</div>
 </header>
 
-<aside id="panel" class="glass" aria-label="Framework controls">
+<aside id="panel" class="glass" aria-label="Painel de controlo">
 
   <details>
     <summary>Network legend</summary>
@@ -1510,7 +1517,7 @@
 
 </aside>
 
-<aside id="detail" class="glass" aria-label="Selection detail"></aside>
+<aside id="detail" class="glass" aria-label="Detalhe da seleção"></aside>
 
 <button id="exitPresent" class="glass">Sair da apresentação (Esc)</button>
 
@@ -1545,7 +1552,7 @@
 
 <div id="coach" role="dialog" aria-modal="true" aria-labelledby="coachTitle">
   <div id="coachCard" class="glass">
-    <h3 id="coachTitle">Bem-vindo ao Orchestration Framework</h3>
+    <h3 id="coachTitle">Bem-vindo à Ferramenta de Mapeamento para Autarquias</h3>
     <div class="sub">Uma rede 3D da estrutura da autarquia. Quatro formas de a explorar:</div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">🖱️</span>
@@ -1603,7 +1610,7 @@
   </div>
 </div>
 
-<div id="confirm" role="alertdialog" aria-modal="true">
+<div id="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmMsg">
   <div id="confirmCard" class="glass">
     <div id="confirmMsg"></div>
     <div class="confirm-btns">
@@ -1613,26 +1620,26 @@
   </div>
 </div>
 
-<div id="modal" role="dialog" aria-modal="true">
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div id="modalCard" class="glass">
     <div id="modalHead">
       <button class="d-close" id="modalBack" aria-label="Voltar" title="Voltar">←</button>
       <button class="d-close" id="modalFwd" aria-label="Avançar" title="Avançar">→</button>
       <div id="modalTitle"></div>
-      <button class="d-close" id="modalClose" aria-label="Close">✕</button>
+      <button class="d-close" id="modalClose" aria-label="Fechar">✕</button>
     </div>
     <div id="modalBody"></div>
   </div>
 </div>
 
-<div id="stepper" class="glass" role="group" aria-label="Presentation scenes">
+<div id="stepper" class="glass" role="group" aria-label="Cenas da visita guiada">
   <div class="top">
     <span class="step-num" id="stepNum">01 / 05</span>
     <h3 id="stepTitle">The full network</h3>
     <div class="controls">
-      <button class="btn" id="prevBtn" aria-label="Previous scene">◀</button>
+      <button class="btn" id="prevBtn" aria-label="Cena anterior">◀</button>
       <button class="btn" id="playBtn">Play tour</button>
-      <button class="btn" id="nextBtn" aria-label="Next scene">▶</button>
+      <button class="btn" id="nextBtn" aria-label="Cena seguinte">▶</button>
     </div>
   </div>
   <div class="caption" id="stepCaption"></div>
@@ -1871,7 +1878,10 @@ function lowestTierY(){return Math.min(...TIER.map(t=>t.y));}
 const layerHeight = idx => lowestTierY()-1.5-idx*1.15;
 
 function makeLayerData(name,color){
-  const p={id:"L"+(++layerCounter), name, color,
+  // _visible tem de nascer verdadeiro: um procedimento criado depois do
+  // arranque ficava com undefined, era exportado como visible:false e
+  // reaparecia invisível no 3D sem ninguém perceber porquê.
+  const p={id:"L"+(++layerCounter), name, color, _visible:true,
     height:layerHeight(processes.length), tasks:[]};
   processes.push(p);
   return p;
@@ -3052,8 +3062,11 @@ function renderFallbackSVG(){
     const k=agentsOf(n.id).length;
     const r=Math.max(4,Math.min(15,4+Math.log(1+k)*3.4));
     const grp=mk("g",{});
+    // O modo leve tem de aguentar um node ainda sem cor atribuída — é o
+    // caminho de recurso, não pode ser ele a rebentar.
     const c=mk("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:r.toFixed(1),
-      fill:hex(n.color),stroke:primaryOf(n.id)?pick("--gold","#E8B44C"):hair,
+      fill:hex(typeof n.color==="number"?n.color:0x9AA6B8),
+      stroke:primaryOf(n.id)?pick("--gold","#E8B44C"):hair,
       "stroke-width":primaryOf(n.id)?"2":"1",style:"cursor:pointer"});
     grp.append(c,txt(abbrev(n.name),{x:(x+r+4).toFixed(1),y:(y+3.5).toFixed(1),
       fill:n.tier<=1?ink:dim,"font-family":"Segoe UI,Helvetica,sans-serif",
@@ -3134,16 +3147,21 @@ function renderQuest(){
   const pct=Math.round(done/QUEST_STEPS.length*100);
   if(questMini){
     host.classList.add("mini");
-    host.innerHTML="";
+    // Um <button> por dentro, e não um handler no próprio #quest: o host
+    // sobrevive a cada render, e os handlers acumulavam-se nele.
+    const b=el("button","qbar");
+    b.type="button";
+    b.title="Ver os passos que faltam";
+    b.setAttribute("aria-label","Percurso de arranque, "+done+" de "+
+      QUEST_STEPS.length+" passos concluídos. Abrir para ver o que falta.");
     const ring=el("div","qring glass",done+"/"+QUEST_STEPS.length);
     ring.style.border="2px solid "+(done===QUEST_STEPS.length?"#5CC46A":hex(GOLD3D));
-    host.append(ring,el("span","qm","Percurso de arranque"),el("span","qmore","▸"));
-    host.title="Ver os passos que faltam";
-    host.onclick=()=>{questMini=false;renderQuest();};
+    b.append(ring,el("span","qm","Percurso de arranque"),el("span","qmore","▸"));
+    b.onclick=()=>{questMini=false;renderQuest();};
+    host.append(b);
     return;
   }
   host.classList.remove("mini");
-  host.onclick=null;
   const h=el("div","qh");
   const ring=el("div","qring glass",pct+"%");
   ring.style.border="2px solid "+(done===QUEST_STEPS.length?"#5CC46A":hex(GOLD3D));
@@ -3617,9 +3635,14 @@ const touchPts=new Map();
 let pinchDist=0,pinchRadius=0;
 const panelEl=document.getElementById("panel");
 const menuBtn=document.getElementById("menuBtn");
+menuBtn.setAttribute("aria-controls","panel");
+menuBtn.setAttribute("aria-expanded","false");
 menuBtn.onclick=()=>{
   const open=panelEl.classList.toggle("open");
   menuBtn.classList.toggle("active",open);
+  // O estado tem de chegar a quem não vê o painel abrir
+  menuBtn.setAttribute("aria-expanded",open?"true":"false");
+  menuBtn.setAttribute("aria-label",(open?"Fechar":"Abrir")+" painel de controlo");
 };
 
 stage.addEventListener("pointerdown",e=>{
@@ -3699,29 +3722,29 @@ stage.addEventListener("wheel",e=>{
    SCENES
 ============================================================ */
 const scenes=[
-  {title:"The full network",
-   caption:"Four tiers — Executivo (white apex), Coordenação Geral, Setorial e Operacional — colour-coded by branch. Orbiting points are the agents assigned to each node; the gold one is the primary.",
+  {title:"A rede completa",
+   caption:"Quatro níveis — Executivo (o vértice branco), Coordenação Geral, Setorial e Operacional — com uma cor por ramo. Os pontos em órbita são as pessoas de cada unidade; a dourada é a responsável.",
    cam:{phi:1.05,radius:31,targetY:2.6,auto:0.07},show:{hier:true,procs:true,isolate:null}},
-  {title:"Nodes & agents",
-   caption:"Each node carries a primary agent (★, in charge) plus optional support agents. Click any sphere to edit its tier, its team, and its tasks.",
+  {title:"Unidades e pessoas",
+   caption:"Cada unidade tem uma pessoa responsável (★, em funções) e a restante equipa. Clique numa esfera para lhe mudar o nível, a equipa e as tarefas.",
    cam:{phi:1.22,radius:18,targetY:2.0,auto:0.10},show:{hier:false,procs:false,isolate:null}},
-  {title:"Vertical oversight",
-   caption:"Gold links run upward: Coordenação Operacional reports to Setorial, Setorial to Geral, Geral to the Executivo. Drag a node onto another in the Nodes tab to re-draw this hierarchy.",
+  {title:"Quem responde a quem",
+   caption:"As ligações douradas sobem: a Coordenação Operacional responde à Setorial, esta à Geral, e a Geral ao Executivo. Arraste uma unidade para outra no separador Nodes para redesenhar a hierarquia.",
    cam:{phi:0.92,radius:24,targetY:4.4,auto:0.05},show:{hier:true,procs:false,isolate:null}},
   {title:"Procedimentos",
-   caption:"Below the structure, each arc is a directional task (cone points from → to). Arcs sharing a depth form a procedimento — click one in the panel to open its fluxograma and read the chain.",
+   caption:"Por baixo da estrutura, cada arco é uma tarefa com sentido (o cone aponta da origem para o destino). Os arcos à mesma profundidade formam um procedimento — clique num, no painel, para abrir o fluxograma.",
    cam:{phi:1.28,radius:21,targetY:-1.4,auto:0.09},show:{hier:false,procs:true,isolate:"cycle"}},
-  {title:"Directional tasks",
-   caption:"Golden-tipped streams flow along each task from origin to destination. Click any arc to edit its description, responsible agent, duration — or even its endpoints and procedimento.",
+  {title:"Tarefas com sentido",
+   caption:"As correntes douradas percorrem cada tarefa da origem ao destino. Clique num arco para editar a descrição, quem responde, a duração — ou até as pontas e o procedimento a que pertence.",
    cam:{phi:1.32,radius:15,targetY:-2.2,auto:0.06},show:{hier:false,procs:true,isolate:null}},
-  {title:"Agents & responsibility",
-   caption:"Teams live on nodes: the gold orbiter is the primary agent, and outgoing tasks are assigned to agents of the origin node. Drag agents between nodes in the Agents tab to reassign them.",
+  {title:"Pessoas e responsabilidade",
+   caption:"As equipas vivem nas unidades: a esfera dourada é quem está em funções, e as tarefas que saem daí são atribuídas a pessoas dessa mesma unidade. Arraste pessoas entre unidades no separador Agentes.",
    cam:{phi:1.12,radius:14,targetY:3.0,auto:0.08},show:{hier:true,procs:false,isolate:null}},
-  {title:"Fluxogramas & organograma",
-   caption:"Every procedimento unfolds into a 2D flowchart you can extend node by node, and the Organograma 2D button maps the whole hierarchy — both link straight back to these 3D panels.",
+  {title:"Fluxogramas e organograma",
+   caption:"Cada procedimento desdobra-se num fluxograma 2D que pode ir estendendo passo a passo, e o botão Organograma 2D mapeia a hierarquia inteira — ambos regressam a estes painéis 3D.",
    cam:{phi:0.85,radius:23,targetY:1.6,auto:0.07},show:{hier:true,procs:true,isolate:null}},
-  {title:"The network in motion",
-   caption:"Hierarchy above, procedimentos below: work flows through directional task chains while accountability flows upward. Select, edit, and extend anything.",
+  {title:"A rede em movimento",
+   caption:"A hierarquia por cima, os procedimentos por baixo: o trabalho corre pelas cadeias de tarefas enquanto a responsabilidade sobe. Selecione, edite e estenda o que quiser.",
    cam:{phi:1.02,radius:32,targetY:2.0,auto:0.12},show:{hier:true,procs:true,isolate:null}}
 ];
 let sceneIdx=0,isolateProc=null,cycleTimer=0,autoplay=false,autoTimer=0;
@@ -3758,7 +3781,7 @@ document.getElementById("nextBtn").onclick=()=>{autoplay=false;syncPlay();applyS
 const playBtn=document.getElementById("playBtn");
 playBtn.onclick=()=>{autoplay=!autoplay;autoTimer=0;syncPlay();};
 function syncPlay(){
-  playBtn.textContent=autoplay?"Pause tour":"Play tour";
+  playBtn.textContent=autoplay?"Pausar visita":"Visita guiada";
   playBtn.classList.toggle("playing",autoplay);
 }
 
@@ -3770,6 +3793,21 @@ function el(tag,cls,text){
   if(cls)e.className=cls;
   if(text!==undefined)e.textContent=text;
   return e;
+}
+/* Nem tudo o que se clica pode ser um <button> — uma célula de tabela ou um
+   <text> de SVG não podem. Quando não pode, tem pelo menos de se comportar
+   como um: foco pelo Tab, activação por Enter ou Espaço, e um nome. */
+function clickable(node,label,onActivate){
+  if(!node)return node;
+  node.setAttribute("role","button");
+  node.setAttribute("tabindex","0");
+  if(label)node.setAttribute("aria-label",label);
+  const go=ev=>{ev.preventDefault();ev.stopPropagation();onActivate(ev);};
+  node.addEventListener("click",go);
+  node.addEventListener("keydown",ev=>{
+    if(ev.key==="Enter"||ev.key===" "||ev.key==="Spacebar")go(ev);
+  });
+  return node;
 }
 function mkSelect(options,value,onChange){
   const s=el("select","dark");
@@ -3871,7 +3909,7 @@ function addLayerRow(p){
 
   const swatch=el("button","swatch-btn");
   swatch.title="Isolate this layer";
-  swatch.setAttribute("aria-label","Isolate "+p.name);
+  swatch.setAttribute("aria-label","Isolar "+p.name);
   swatch.innerHTML=`<span class="swatch" style="background:currentColor"></span>`;
   swatch.onclick=()=>{
     const i=processes.indexOf(p);
@@ -4016,12 +4054,12 @@ function renderGroups(){
     sw.setAttribute("aria-label","Alternar grupo "+g.name);
     sw.onclick=()=>{
       const target=!allOn;
-      markDirty();
       members.forEach(p=>{
         p._visible=target;
         const i=processes.indexOf(p);
         if(!target&&isolateProc===i)isolateProc=null;
       });
+      markDirty();          // depois de mudar: o histórico grava o estado anterior
       syncLayerRows();
       if(selected&&selected.type==="group")renderDetail();
     };
@@ -4061,7 +4099,7 @@ function renderNodeList(){
       row.style.width="calc(100% - "+(depth*14)+"px)";
     }
     row.title=TIER[n.tier].label+" — abrir painel";
-    row.setAttribute("aria-label","Open "+n.name);
+    row.setAttribute("aria-label","Abrir "+n.name);
 
     if(kids.length){
       const tg=el("span","tree-toggle",n._collapsed?"▸":"▾");
@@ -4158,7 +4196,7 @@ agentList.parentNode.insertBefore(
 function agentRowBtn(a,tagText){
   const row=el("button","row");
   row.style.color=a.primary?"var(--gold)":"var(--steel)";
-  row.setAttribute("aria-label","Open agent "+a.name);
+  row.setAttribute("aria-label","Abrir o painel de "+a.name);
   const star=el("span",null,a.primary?"★":"·");
   star.style.flex="none";
   const name=el("span","row-name",a.name);
@@ -4525,6 +4563,7 @@ function closeReassign(v){
   if(reassignEl)reassignEl.classList.remove("open");
   const r=reassignResolve;
   reassignResolve=null;
+  restoreFocus();
   if(r)r(v||null);
 }
 /* Generic shell: a title, a summary, quick actions and a body of choices.
@@ -4532,6 +4571,7 @@ function closeReassign(v){
 function openReassignPanel(opts){
   return new Promise(res=>{
     if(reassignResolve)closeReassign(null);
+    rememberFocus();
     reassignResolve=res;
     document.getElementById("raTitle").textContent=opts.title;
     document.getElementById("raSub").textContent=opts.sub;
@@ -4871,6 +4911,9 @@ function applyAgentRemoval(a,plan){
   if(i>=0)agents.splice(i,1);
   // anything still pointing at the removed agent loses its owner
   processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===a.id)t.agent=null;}));
+  // …incluindo quem estava a ser assegurado por ele: um substituto que já não
+  // existe é pior do que nenhum, porque a unidade parece coberta e não está.
+  agents.forEach(x=>{if(x.subst===a.id)x.subst=null;});
   if(plan){
     plan.tasks.forEach(x=>{
       const to=x.to&&agentById(x.to);
@@ -4944,7 +4987,7 @@ function renderDetail(){
     head.append(fwd);
   }
   const closeBtn=el("button","d-close","✕");
-  closeBtn.setAttribute("aria-label","Close detail panel");
+  closeBtn.setAttribute("aria-label","Fechar o painel de detalhe");
   closeBtn.onclick=clearSelection;
 
   if(selected.type==="node")renderNodeDetail(head,closeBtn);
@@ -4982,7 +5025,7 @@ function renderNodeDetail(head,closeBtn){
   const n=selected.node;
   const titleIn=el("input","d-title-input");
   titleIn.value=n.name;titleIn.maxLength=40;
-  titleIn.setAttribute("aria-label","Node name");
+  titleIn.setAttribute("aria-label","Nome da unidade");
   titleIn.addEventListener("change",()=>{
     const v=titleIn.value.trim();
     if(!v){titleIn.value=n.name;return;}
@@ -4999,7 +5042,7 @@ function renderNodeDetail(head,closeBtn){
   if(crumbs)detail.append(crumbs);
 
   // Tier + parent
-  detail.append(el("h4",null,"Tier"));
+  detail.append(el("h4",null,"Nível"));
   const tierSel=mkSelect(
     TIER.map((t,i)=>({label:"Tier "+i+" — "+t.label,value:String(i)})),
     String(n.tier),
@@ -5016,12 +5059,12 @@ function renderNodeDetail(head,closeBtn){
   detail.append(meta);
 
   // Agents
-  detail.append(el("h4",null,"Agents"));
+  detail.append(el("h4",null,"Equipa"));
   agentsOf(n.id).forEach(a=>{
     const row=el("div","agent-row");
     const star=el("button","star"+(a.primary?" on":""),"★");
     star.title=a.primary?"Responsável (em funções)":"Tornar responsável";
-    star.setAttribute("aria-label","Make "+a.name+" primary");
+    star.setAttribute("aria-label","Tornar "+a.name+" responsável");
     star.onclick=e=>{
       e.stopPropagation();
       agentsOf(n.id).forEach(x=>x.primary=false);
@@ -5034,7 +5077,7 @@ function renderNodeDetail(head,closeBtn){
     name.style.background="none";name.style.border="none";
     name.style.font="inherit";name.style.cursor="pointer";name.style.padding="0";
     name.title=a.absent?(a.name+" está ausente — abrir painel"):"Abrir painel do agente";
-    name.setAttribute("aria-label","Open agent "+a.name);
+    name.setAttribute("aria-label","Abrir o painel de "+a.name);
     name.onclick=()=>selectAgent(a);
     const cat=el("span","count",a.category);
     row.draggable=true;
@@ -5048,7 +5091,7 @@ function renderNodeDetail(head,closeBtn){
     row.addEventListener("dragend",()=>{dragPayload=null;});
     const del=el("button","icon-btn","✕");
     del.title="Remover agente";
-    del.setAttribute("aria-label","Remove "+a.name);
+    del.setAttribute("aria-label","Remover "+a.name);
     del.onclick=e=>{
       e.stopPropagation();
       removeAgentInteractive(a);
@@ -5066,7 +5109,7 @@ function renderNodeDetail(head,closeBtn){
   detail.append(addA);
 
   // Connected tasks
-  detail.append(el("h4",null,"Connected tasks"));
+  detail.append(el("h4",null,"Tarefas ligadas"));
   let any=false;
   processes.forEach(p=>{
     p.tasks.forEach(t=>{
@@ -5096,13 +5139,13 @@ function renderNodeDetail(head,closeBtn){
   if(!any)detail.append(el("div","empty-note","Nenhuma tarefa liga este node."));
 
   // New task
-  detail.append(el("h4",null,"New task from this node"));
+  detail.append(el("h4",null,"Nova tarefa a partir desta unidade"));
   if(!pendingTarget){
     const wrap=el("div","search-wrap");
     const input=el("input","search-input");
     input.type="text";input.placeholder="Procurar node de destino…";
     input.value=searchQuery;
-    input.setAttribute("aria-label","Search target node");
+    input.setAttribute("aria-label","Procurar a unidade de destino");
     const results=el("div","search-results");
     function renderResults(){
       results.innerHTML="";
@@ -5129,7 +5172,7 @@ function renderNodeDetail(head,closeBtn){
     chosen.innerHTML=`<span class="swatch" style="background:${hex(pendingTarget.color)}"></span>
       ${esc(n.name)} → <b>${esc(pendingTarget.name)}</b>`;
     const clear=el("button","clear","✕");
-    clear.setAttribute("aria-label","Clear chosen node");
+    clear.setAttribute("aria-label","Limpar a unidade escolhida");
     clear.onclick=()=>{pendingTarget=null;searchQuery="";renderDetail();};
     chosen.append(clear);
     detail.append(chosen);
@@ -5214,7 +5257,7 @@ function renderAgentDetail(head,closeBtn){
 
   const titleIn=el("input","d-title-input");
   titleIn.value=a.name;titleIn.maxLength=30;
-  titleIn.setAttribute("aria-label","Agent name");
+  titleIn.setAttribute("aria-label","Nome da pessoa");
   titleIn.addEventListener("change",()=>{
     const v=titleIn.value.trim();
     if(!v){titleIn.value=a.name;return;}
@@ -5229,7 +5272,7 @@ function renderAgentDetail(head,closeBtn){
 
   const subLine=el("div","d-sub",a.primary&&n?("Responsável — "+n.name):"Agente de apoio");
   if(a.absent){
-    const cover=actingFor(a)||(continuityOn?null:(a.subst?agentById(a.subst):null));
+    const cover=coverFor(a);
     subLine.append(el("span","cont-tag"+(cover?" cover":""),
       cover?("ausente · assegura "+cover.name):"ausente · sem cobertura"));
   }
@@ -5259,14 +5302,14 @@ function renderAgentDetail(head,closeBtn){
   }
   detail.append(contRow);
 
-  detail.append(el("h4",null,"Category"));
+  detail.append(el("h4",null,"Categoria"));
   const cat=mkSelect(CATEGORIES.map(c=>({label:c,value:c})),a.category,v=>{
     a.category=v;markDirty();renderAgentsTab();
   });
   cat.style.width="100%";
   detail.append(cat);
 
-  detail.append(el("h4",null,"Assigned node"));
+  detail.append(el("h4",null,"Unidade onde está"));
   if(n){
     const row=el("button","conn-row");
     row.style.color=hex(n.color);
@@ -5281,7 +5324,7 @@ function renderAgentDetail(head,closeBtn){
     detail.append(el("div","empty-note","Sem node atribuído."));
   }
 
-  detail.append(el("h4",null,"Tasks under responsibility"));
+  detail.append(el("h4",null,"Tarefas à sua responsabilidade"));
   let any=false;
   processes.forEach(p=>{
     p.tasks.forEach(t=>{
@@ -5458,6 +5501,7 @@ function renderGroupDetail(head,closeBtn){
   nb.onclick=()=>{
     const p=createLayer();
     g.layers.push(p.id);
+    markDirty();          // sem isto a pertença ao grupo não entrava no histórico
     renderGroups();renderDetail();
   };
   detail.append(nb);
@@ -5503,7 +5547,7 @@ function renderTaskDetail(head,closeBtn){
 
   detail.append(grid);
 
-  detail.append(el("h4",null,"Description"));
+  detail.append(el("h4",null,"Descrição"));
   const box=el("textarea","desc-box");
   box.value=t.desc;box.maxLength=400;
   box.setAttribute("aria-label","Task description");
@@ -5717,15 +5761,28 @@ const confirmMsg=document.getElementById("confirmMsg");
 const confirmYes=document.getElementById("confirmYes");
 const confirmNo=document.getElementById("confirmNo");
 let confirmResolve=null;
+/* Quem abriu o diálogo tem de o receber de volta: sem isto, fechar por teclado
+   devolve o foco ao <body> e a navegação recomeça do topo da página. */
+let focusReturn=null;
+function rememberFocus(){
+  const a=document.activeElement;
+  focusReturn=(a&&a!==document.body&&typeof a.focus==="function")?a:null;
+}
+function restoreFocus(){
+  const t=focusReturn;focusReturn=null;
+  if(t&&document.contains(t))setTimeout(()=>{try{t.focus();}catch(e){}},0);
+}
 function settleConfirm(v){
   confirmEl.classList.remove("open");
   const r=confirmResolve;confirmResolve=null;
+  restoreFocus();
   if(r)r(v);
 }
 function askConfirm(msg,opts){
   opts=opts||{};
   return new Promise(res=>{
     if(confirmResolve)confirmResolve(false);
+    rememberFocus();
     confirmResolve=res;
     confirmMsg.innerHTML="";
     const ic=el("span","c-ico"+(opts.danger?" danger":""),opts.danger?"⚠":"?");
@@ -6654,7 +6711,9 @@ function renderOrgChart(){
     const card=el("div","org-card");
     card.style.cursor="pointer";
     card.title="Abrir painel do node · arraste para reorganizar";
-    card.onclick=()=>selectNode(n);
+    // O organograma 2D inteiro era intocável pelo teclado: cartões clicáveis
+    // sem foco nem activação. Cada um passa a ser um alvo a sério.
+    clickable(card,"Abrir "+n.name,()=>selectNode(n));
 
     card.draggable=true;
     card.addEventListener("dragstart",e=>{
@@ -6836,7 +6895,7 @@ function flash(msg,opts){
 }
 document.getElementById("exportBtn").onclick=()=>{
   const cfg={
-    format:"orchestration-framework-setup",
+    format:"mapeamento-autarquias-setup",
     version:3,
     exported:new Date().toISOString(),
     orgName,
@@ -6870,7 +6929,10 @@ importFile.onchange=()=>{
     const preImport=booted?snapshotState():null;   // so Ctrl+Z can undo the import
     try{
       const cfg=JSON.parse(r.result);
-      if(cfg.format!=="orchestration-framework-setup")throw new Error("format");
+      // O identificador antigo continua a ser aceite: datasets exportados antes
+      // da mudança de nome têm de continuar a abrir.
+      if(cfg.format!=="mapeamento-autarquias-setup"&&
+         cfg.format!=="orchestration-framework-setup")throw new Error("format");
       clearSelection();
 
       if(typeof cfg.orgName==="string"&&cfg.orgName.trim()){
@@ -6879,11 +6941,15 @@ importFile.onchange=()=>{
       // 0) Tiers
       if(Array.isArray(cfg.tiers)&&cfg.tiers.length>=1){
         TIER.length=0;
+        // Number.isFinite e não typeof: JSON.parse("1e400") dá Infinity, que
+        // passaria no teste e depois entra na câmara — e um lerp com Infinity
+        // vira NaN à segunda frame, deixando a vista 3D morta até recarregar.
         cfg.tiers.slice(0,8).forEach((t,i)=>{
+          const num=(v,d,lo,hi)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):d;
           TIER.push({label:String(t.label||("Tier "+i)).slice(0,28),
-            y:typeof t.y==="number"?t.y:9-i*3,
-            r:typeof t.r==="number"?t.r:i*2.5,
-            size:typeof t.size==="number"?t.size:0.28});
+            y:num(t.y,9-i*3,-200,200),
+            r:num(t.r,i*2.5,0,400),
+            size:num(t.size,0.28,0.02,4)});
         });
         rebuildTierRings();
       }
@@ -6931,9 +6997,23 @@ importFile.onchange=()=>{
       nodes.forEach(applyNodeColor);
       rebuildHierLinks();
       // 4) Layers & tasks: replace tasks wholesale
-      (cfg.layers||[]).forEach((cl,i)=>{
+      const impLayers=Array.isArray(cfg.layers)?cfg.layers:[];
+      // Procedimentos a mais do dataset anterior teriam de desaparecer: ficavam
+      // com os arcos 3D antigos por cima de uma organização que já não é a deles.
+      processes.slice(impLayers.length).forEach(p=>{
+        p.tasks.slice().forEach(disposeTaskVisual);
+        disposeLayerVisual(p);
+        if(p._row)p._row.remove();
+        groups.forEach(g=>{const j=g.layers.indexOf(p.id);if(j>=0)g.layers.splice(j,1);});
+      });
+      processes.length=Math.min(processes.length,impLayers.length);
+      impLayers.forEach((cl,i)=>{
+        if(!cl)return;
         let p=processes[i];
         if(!p)p=createLayer(cl.name,typeof cl.color==="number"?cl.color:undefined);
+        // O id tem de vir do ficheiro, senão as referências dos grupos apontam
+        // para procedimentos que já não existem — ou, pior, para os errados.
+        if(typeof cl.id==="string"&&cl.id)p.id=cl.id;
         if(typeof cl.color==="number"&&cl.color!==p.color){
           p.color=cl.color;
           if(p._row)p._row.style.color=hex(p.color);
@@ -6942,9 +7022,12 @@ importFile.onchange=()=>{
         }
         if(cl.name){p.name=String(cl.name).slice(0,28);if(p._nameEl)p._nameEl.textContent=p.name;p.refreshLabel();}
         if(typeof cl.visible==="boolean")p._visible=cl.visible;
+        // Validar ANTES de destruir: com `tasks` a vir noutro formato, o
+        // procedimento ficaria vazio em vez de intacto.
+        const impTasks=Array.isArray(cl.tasks)?cl.tasks:[];
         p.tasks.slice().forEach(t=>disposeTaskVisual(t));
         p.tasks.length=0;
-        (cl.tasks||[]).forEach(ct=>{
+        impTasks.forEach(ct=>{
           if(!ct||!byId(ct.a)||!byId(ct.b)||ct.a===ct.b)return;   // a===b seria um auto-laço
           const t=makeTaskData(p,ct.a,ct.b,
             typeof ct.desc==="string"?ct.desc.slice(0,400):undefined,
@@ -6970,12 +7053,16 @@ importFile.onchange=()=>{
       // Agents are replaced wholesale, but tasks in procedures the file did not
       // describe keep their old owner ids — drop the ones that no longer resolve.
       processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent&&!agentById(t.agent))t.agent=null;}));
+      // Os ids vieram do ficheiro; sem isto os geradores voltariam a emitir
+      // ids já em uso e duas entidades diferentes passariam a partilhar um.
+      bumpCounters();
       isolateProc=null;
       relayoutLayers();
       updateLayerCounts();
       syncLayerRows();
       renderNodeList();
       renderAgentsTab();
+      renderGroups();
       clearDirty();
       // Reset the history baseline to the imported document; without this the
       // next edit would push the stale pre-import snapshot and one undo would
@@ -6988,9 +7075,9 @@ importFile.onchange=()=>{
       lastSnap=snapshotState();
       updateHistoryUI();
       scheduleAutosave();
-      flash("Dataset imported.");
+      flash("Dataset importado.");
     }catch(err){
-      flash("Couldn't read that file — export a dataset from here first.",{type:"err"});
+      flash("Não foi possível ler esse ficheiro — exporte primeiro um dataset daqui.",{type:"err"});
     }
     importFile.value="";
   };
@@ -7019,8 +7106,11 @@ function newDataset(){
   rebuildTierRings();
   // Fresh organisation identity
   orgName="Nova Organização";orgNameInput.value=orgName;
-  // Seed just the Executivo node + its primary (Presidente)
+  // Seed just the Executivo node + its primary (Presidente).
+  // computeColors() antes de addAgent: este chama markDirty(), que em modo
+  // leve redesenha o SVG e leria n.color de um node ainda sem cor.
   addNodeData("c0","Executivo",0,0,null);
+  computeColors();
   addAgent("c0",true,"Presidente");
   // Rebuild scene + panels (mirrors the boot sequence)
   computeColors();
@@ -8374,7 +8464,7 @@ function renderMatrix(){
     const s=el("span",null,p.name);
     s.style.color=hex(p.color);
     s.title="Abrir o fluxograma de "+p.name;
-    s.onclick=()=>showFlowchart(p);
+    clickable(s,"Abrir o fluxograma de "+p.name,()=>showFlowchart(p));
     th.append(s);
     hr.append(th);
   });
@@ -8388,7 +8478,7 @@ function renderMatrix(){
     const th=el("th","mxrow",abbrev(n.name));
     th.title=n.name+" — abrir o painel desta unidade";
     th.style.cursor="pointer";
-    th.onclick=()=>{closeModalSilent();selectNode(n);};
+    clickable(th,"Abrir o painel de "+n.name,()=>{closeModalSilent();selectNode(n);});
     tr.append(th);
     D.procs.forEach((p,pi)=>{
       const c=D.count[id+"|"+pi]||0;
@@ -8397,7 +8487,10 @@ function renderMatrix(){
         const u=c/D.max;
         td.style.background=`rgba(232,180,76,${(0.10+u*0.55).toFixed(3)})`;
         td.title=n.name+" · "+p.name+" — "+c+" ocorrência(s). Abrir o fluxograma.";
-        td.onclick=()=>showFlowchart(p);
+        clickable(td,n.name+" em "+p.name+": "+c+" ocorrências. Abrir o fluxograma.",
+          ()=>showFlowchart(p));
+      }else{
+        td.setAttribute("aria-label",n.name+" não participa em "+p.name);
       }
       tr.append(td);
     });
@@ -8960,17 +9053,24 @@ document.getElementById("linkBtn").onclick=()=>setLinkMode(!linkMode);
    Com o modo ligado, o organograma mostra quem está *em funções hoje*.
 ============================================================ */
 /* (continuityOn está declarado no topo — ver a nota lá.) */
-/* Quem responde por este agente hoje. Segue a cadeia de substituições, com
+/* Quem cobre este agente, independentemente de o modo estar ligado — é o que
+   o painel de ausências tem de mostrar. Segue a cadeia de substituições, com
    guarda contra ciclos (A substitui B, B substitui A). */
-function actingFor(a,seen){
+function coverFor(a,seen){
   if(!a)return null;
-  if(!continuityOn||!a.absent)return a;
+  if(!a.absent)return a;
   seen=seen||new Set();
   if(seen.has(a.id))return null;
   seen.add(a.id);
   const s=a.subst?agentById(a.subst):null;
-  if(!s)return null;
-  return actingFor(s,seen);
+  return s?coverFor(s,seen):null;
+}
+/* Quem responde por este agente hoje: com o modo desligado é sempre a própria
+   pessoa, porque o organograma está a mostrar o quadro e não a escala do dia. */
+function actingFor(a){
+  if(!a)return null;
+  if(!continuityOn)return a;
+  return coverFor(a);
 }
 /* O responsável em funções de um node: o titular se estiver, senão o seu
    substituto, senão o primeiro agente presente do próprio node. */
@@ -9070,7 +9170,7 @@ function renderContinuity(){
       who.append(el("div","row-name",(a.primary?"★ ":"")+a.name));
       who.append(el("div","count",(n?abbrev(n.name):"?")+" · "+a.category));
       row.append(who);
-      const cover=actingFor(a);
+      const cover=coverFor(a);
       const tag=el("span","count",cover?("assegura: "+cover.name):"sem cobertura");
       if(!cover)tag.style.color="#E0554F";
       row.append(tag);
@@ -9214,12 +9314,10 @@ function applyMorph(t){
   });
   // presente só num cenário → aparece/desaparece suavemente
   nodes.forEach(n=>{if(A&&!old[n.id])n._morphScale=morphT;});
-  nodes.forEach(n=>{
-    if(!n._mesh)return;
-    n._mesh.position.copy(n.pos);
-    if(n._socket)n._socket.position.set(n.pos.x,n.pos.y-(n._rad||0.3)*0.9,n.pos.z);
-    if(n._label)n._label.position.set(n.pos.x,n.pos.y+(n._rad||0.3)+0.42,n.pos.z);
-  });
+  // A posição de mundo vive no grupo (buildNodeVisual: g.position.copy(pos));
+  // a esfera, o disco e o rótulo estão em coordenadas locais lá dentro. Mexer
+  // nos filhos somaria a posição duas vezes — move-se o grupo.
+  nodes.forEach(n=>{if(n._group)n._group.position.copy(n.pos);});
   rebuildHierLinks();
   processes.forEach(p=>p.tasks.slice().forEach(rebuildTaskVisual));
 }
@@ -9511,12 +9609,15 @@ function openPalette(){
   palItems=buildPaletteItems();
   palIdx=0;
   paletteInput.value="";
+  rememberFocus();
   paletteEl.classList.add("open");
   renderPalette();
   setTimeout(()=>paletteInput.focus(),20);
 }
 function closePalette(){
-  if(paletteEl)paletteEl.classList.remove("open");
+  if(!paletteEl||!paletteEl.classList.contains("open"))return;
+  paletteEl.classList.remove("open");
+  restoreFocus();
 }
 function togglePalette(){
   if(paletteEl.classList.contains("open"))closePalette();else openPalette();

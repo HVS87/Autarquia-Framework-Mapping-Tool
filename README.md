@@ -1,4 +1,4 @@
-# Orchestration Framework — Junta de Freguesia
+# Ferramenta de Mapeamento para Autarquias
 
 Um sistema interativo de 3D para visualização e gestão de estruturas organizacionais municipais portuguesas. Combina hierarquia vertical (organograma) com procedimentos horizontais (fluxos de trabalho), permitindo explorar responsabilidades, equipas e tarefas direcionais num espaço imersivo.
 
@@ -45,8 +45,8 @@ Abra [o link do GitHub Pages](#) e comece imediatamente — não é necessário 
 
 ### Instalação Local
 ```bash
-git clone https://github.com/seu-utilizador/orchestration-framework.git
-cd orchestration-framework
+git clone https://github.com/HVS87/Autarquia-Framework-Mapping-Tool.git
+cd Autarquia-Framework-Mapping-Tool
 # Abra network-framework.html num browser moderno (Chrome, Firefox, Safari, Edge)
 ```
 

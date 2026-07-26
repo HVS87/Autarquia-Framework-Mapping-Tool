@@ -6,8 +6,8 @@
 
 ```bash
 # Clone ou crie um novo repo
-git clone https://github.com/seu-utilizador/orchestration-framework.git
-cd orchestration-framework
+git clone https://github.com/HVS87/Autarquia-Framework-Mapping-Tool.git
+cd Autarquia-Framework-Mapping-Tool
 ```
 
 ### 2. Adicione os ficheiros
@@ -36,7 +36,7 @@ Os seguintes ficheiros devem estar na **raiz do repositório**:
 - Source: Deploy from a branch
 - Branch: `main` (ou o seu default)
 - Folder: `/ (root)`
-- Custom domain: (opcional; deixe em branco para usar `username.github.io/orchestration-framework`)
+- Custom domain: (opcional; deixe em branco para usar `HVS87.github.io/Autarquia-Framework-Mapping-Tool`)
 
 Clique **Save**.
 
@@ -44,7 +44,7 @@ Clique **Save**.
 
 GitHub construirá o site. Visite:
 ```
-https://seu-utilizador.github.io/orchestration-framework/
+https://HVS87.github.io/Autarquia-Framework-Mapping-Tool/
 ```
 
 Pronto! 🎉
@@ -64,7 +64,7 @@ Pronto! 🎉
 
 ### Domínio Personalizado
 
-1. No GitHub Settings → Pages, adicione o seu domínio (ex: `orchestration.cm-exemplo.pt`)
+1. No GitHub Settings → Pages, adicione o seu domínio (ex: `mapeamento.cm-exemplo.pt`)
 2. Configure os DNS records da sua autarquia:
    - A: `185.199.108.153`
    - CNAME: `seu-utilizador.github.io`

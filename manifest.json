@@ -1,7 +1,7 @@
 {
-  "name": "Orchestration Framework — Junta de Freguesia",
-  "short_name": "Orchestration",
-  "description": "3D interactive organizational network visualization and procedimento management for Portuguese municipal administration.",
+  "name": "Ferramenta de Mapeamento para Autarquias",
+  "short_name": "Mapeamento",
+  "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa.",
   "start_url": "./network-framework.html",
   "scope": "./",
   "display": "standalone",
