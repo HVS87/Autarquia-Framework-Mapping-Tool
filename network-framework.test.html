@@ -1316,6 +1316,11 @@
 </script>
 </head>
 <body>
+<script>
+window.__errs=[];
+window.addEventListener("error",e=>{window.__errs.push((e.message||"")+" @"+(e.lineno||"?"));});
+window.addEventListener("unhandledrejection",e=>{window.__errs.push("REJECT: "+e.reason);});
+</script>
 <a class="skip-link glass" href="#panel">Saltar para o painel de controlo</a>
 <div id="stage"></div>
 <div id="vignette" aria-hidden="true"></div>
@@ -10070,7 +10075,34 @@ setTimeout(offerSessionRestore,1500);
   const n=nodeByAddress(h);
   if(n)setTimeout(()=>locateNode(n),1250);
 })();
-})();
+
+/* ---- QA harness ---- */
+window.__F=(function(){
+  const o={};
+  const names=("TIER nodes agents processes groups orgName booted noGL questDone QUEST_STEPS "+
+    "renderFallbackSVG showFallback hideFallback questMark renderQuest "+
+    "createNode createTask addAgent removeNode selectNode locateNode "+
+    "nodeAddress nodeAddressPath nodeByAddress abbrev byId agentsOf primaryOf "+
+    "snapshotState restoreState markDirty flash renderCodeKey drawRadar updateWhereBar "+
+    "procGraph procStats layoutProc procSVG kbMove startPeek endPeek nodePunch "+
+    "startColorWipe stepColorWipe applySun setMaquete rig camera scene renderer "+
+    "storageGet storageSet trail pushTrail radarGeom tierPrefix nodeBusy "+
+    "VIEWS showView showViewGallery renderView modalView viewValid viewsEqual "+
+    "renderMatrix renderSankey renderMural renderMetro renderOficial renderMunicipe "+
+    "matrixData sankeyData metroData municipeCards paletteActions goBack goForward "+
+    "continuityOn setContinuity actingFor actingPrimary uncoveredNodes absentAgents "+
+    "substituteOptions setAbsent showContinuity renderContinuity "+
+    "baseline saveBaseline clearBaseline scenarioDiff diffCount applyMorph endMorph "+
+    "showScenario renderScenario morphT parsePasted renderPaste showPaste "+
+    "linkMode setLinkMode cometFrom cometHover updateComet finishComet cancelComet cometLine "+
+    "anchorMap showFlowchart renderFlowchart fcSel createLayer deleteNode agentById "+
+    "closeModalSilent selectAgent selectTask isApexNode nodeImpact").split(/\s+/);
+  names.forEach(n=>{try{o[n]=eval(n);}catch(e){o[n]="__MISSING__";}});
+  o.get=n=>{try{return eval(n);}catch(e){return "__MISSING__";}};
+  o.set=(n,v)=>{try{eval(n+"=v");return true;}catch(e){return false;}};
+  o.run=src=>{try{return eval(src);}catch(e){return "ERR: "+e.message;}};
+  return o;
+})();})();
 
 </script>
 </body>

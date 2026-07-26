@@ -1,14 +1,14 @@
 # 🤝 Contribuir
 
-Obrigado por querer melhorar o Orchestration Framework!
+Obrigado por querer melhorar a Ferramenta de Mapeamento para Autarquias!
 
 ## Como Começar
 
 1. **Fork** o repositório no GitHub
 2. **Clone** para a sua máquina:
    ```bash
-   git clone https://github.com/seu-utilizador/orchestration-framework.git
-   cd orchestration-framework
+   git clone https://github.com/HVS87/Autarquia-Framework-Mapping-Tool.git
+   cd Autarquia-Framework-Mapping-Tool
    ```
 3. **Edite** os ficheiros:
    - **App logic**: `app.js` (em `/home/claude/` se for o dev local)
