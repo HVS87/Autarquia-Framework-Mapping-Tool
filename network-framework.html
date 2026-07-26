@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -946,6 +946,324 @@
     .ra-row select,.ra-none{width:100%;max-width:none}
   }
 
+  /* ---- Plano B: estrutura em SVG sem WebGL ---- */
+  #fallback2d{
+    position:fixed;inset:0;z-index:4;display:none;overflow:auto;
+    background:var(--bg-deep);padding:16px;
+  }
+  body.no-gl #fallback2d{display:block}
+  body.no-gl #stage canvas{display:none}
+  #fallback2d svg{display:block;margin:0 auto;max-width:100%;height:auto}
+  #glBanner{
+    position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:64;display:none;
+    align-items:center;gap:10px;padding:8px 14px;border-radius:10px;font-size:.74rem;
+    background:rgba(232,180,76,.14);border:1px solid rgba(232,180,76,.44);color:var(--ink);
+  }
+  body.no-gl #glBanner{display:flex}
+  #glBanner button{
+    font:inherit;font-size:.7rem;padding:3px 10px;border-radius:6px;
+    border:1px solid var(--hairline);background:none;color:var(--gold);cursor:pointer;
+  }
+
+  /* ---- Percurso de arranque ---- */
+  #quest{
+    position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:15;
+    width:250px;padding:12px 13px;border-radius:12px;display:none;
+  }
+  #quest.on{display:block}
+  /* Encolhido é o estado normal: expandido, o cartão chegaria ao rodapé do
+     painel de controlo (que desce até 100vh-142px) e taparia-lhe as últimas linhas. */
+  #quest.mini{
+    width:auto;padding:6px 12px 6px 7px;cursor:pointer;
+    display:flex;align-items:center;gap:9px;font-size:.7rem;color:var(--ink);
+  }
+  #quest.mini .qring{width:24px;height:24px;font-size:.52rem}
+  #quest.mini .qm{white-space:nowrap}
+  #quest.mini .qmore{color:var(--ink-dim);font-size:.6rem}
+  #quest.mini:hover{border-color:var(--gold)}
+  #quest .qh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  #quest .qring{
+    flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+    font-size:.58rem;font-weight:700;color:var(--ink);
+  }
+  #quest .qt{flex:1;font-size:.74rem;font-weight:600}
+  #quest .qx{
+    flex:none;background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:.8rem;padding:0 2px;
+  }
+  #quest ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  #quest li{display:flex;align-items:center;gap:8px;font-size:.7rem;color:var(--ink-dim);line-height:1.35}
+  #quest li .qc{
+    flex:none;width:15px;height:15px;border-radius:50%;border:1px solid var(--hairline);
+    display:grid;place-items:center;font-size:.56rem;
+  }
+  #quest li.done{color:var(--ink-dim);text-decoration:line-through;opacity:.62}
+  #quest li.done .qc{background:var(--gold);border-color:var(--gold);color:var(--bg-deep)}
+  @media (max-width:980px){ #quest{display:none!important} }
+  body.presenting #quest{display:none!important}
+
+  /* ---- Galeria de vistas ---- */
+  .vg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .vg-card{
+    text-align:left;border:1px solid var(--hairline);border-radius:11px;padding:12px 13px;
+    background:rgba(255,255,255,0.03);color:var(--ink);cursor:pointer;font:inherit;
+    display:flex;flex-direction:column;gap:4px;transition:border-color .16s,transform .16s;
+  }
+  .vg-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .vg-card .vg-ico{font-size:1.15rem;line-height:1}
+  .vg-card .vg-t{font-size:.8rem;font-weight:600}
+  .vg-card .vg-d{font-size:.66rem;color:var(--ink-dim);line-height:1.4}
+
+  /* ---- barra de acções comum às vistas ---- */
+  .vw-bar{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    margin:-4px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--hairline);
+  }
+  .vw-bar .vw-note{font-size:.66rem;color:var(--ink-dim);flex:1;min-width:120px}
+  .vw-scroll{overflow-x:auto;scrollbar-width:thin;max-width:100%}
+
+  /* ---- Matriz Nó × Procedimento ---- */
+  table.mx{border-collapse:separate;border-spacing:0;font-size:.68rem}
+  table.mx th,table.mx td{padding:4px 6px;text-align:center;white-space:nowrap}
+  table.mx th.mxrow{
+    text-align:left;position:sticky;left:0;z-index:1;background:var(--panel);
+    max-width:190px;overflow:hidden;text-overflow:ellipsis;font-weight:500;color:var(--ink);
+  }
+  table.mx thead th{
+    font-weight:600;font-size:.6rem;color:var(--ink-dim);
+    vertical-align:bottom;border-bottom:1px solid var(--hairline);
+  }
+  table.mx thead th.mxcol span{
+    display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);
+    max-height:130px;overflow:hidden;cursor:pointer;
+  }
+  table.mx thead th.mxcol span:hover{color:var(--gold)}
+  table.mx td.cell{cursor:pointer;border-radius:4px;font-variant-numeric:tabular-nums}
+  table.mx td.cell.zero{color:var(--ink-dim);opacity:.35;cursor:default}
+  table.mx td.cell:not(.zero):hover{outline:1px solid var(--gold)}
+  table.mx tr.tot td,table.mx td.tot{
+    font-weight:600;color:var(--ink-dim);border-top:1px solid var(--hairline);
+  }
+  table.mx tbody tr:hover th.mxrow{color:var(--gold)}
+
+  /* ---- Sankey ---- */
+  .sk-wrap svg{display:block;max-width:100%;height:auto}
+  .sk-wrap .sk-link{cursor:pointer}
+  .sk-wrap .sk-link:hover{fill-opacity:.72!important}
+
+  /* ---- Mural de procedimentos ---- */
+  .mu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+  .mu-card{
+    border:1px solid var(--hairline);border-radius:11px;overflow:hidden;background:rgba(255,255,255,0.03);
+    cursor:pointer;display:flex;flex-direction:column;color:var(--ink);font:inherit;text-align:left;padding:0;
+    transition:border-color .16s,transform .16s;
+  }
+  .mu-card:hover{border-color:currentColor;transform:translateY(-2px)}
+  .mu-thumb{height:118px;background:var(--bg-mid);display:grid;place-items:center;overflow:hidden;border-bottom:1px solid var(--hairline)}
+  .mu-thumb svg{max-width:100%;max-height:100%}
+  .mu-meta{padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+  .mu-meta .mu-n{font-size:.76rem;font-weight:600;color:var(--ink)}
+  .mu-meta .mu-s{font-size:.63rem;color:var(--ink-dim)}
+  .mu-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+  .mu-tag{font-size:.56rem;padding:1px 6px;border-radius:20px;border:1px solid var(--hairline);color:var(--ink-dim)}
+  .mu-tag.warn{border-color:#E0554F;color:#E0554F}
+  .mu-tag.fork{border-color:var(--gold);color:var(--gold)}
+
+  /* ---- Mapa de metro ---- */
+  .mt-wrap svg{display:block;max-width:100%;height:auto}
+  .mt-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .mt-leg{
+    display:flex;align-items:center;gap:6px;font-size:.65rem;color:var(--ink-dim);
+    border:1px solid var(--hairline);border-radius:20px;padding:2px 9px;cursor:pointer;background:none;font:inherit;
+  }
+  .mt-leg:hover{border-color:currentColor}
+  .mt-leg i{width:16px;height:3px;border-radius:2px;background:currentColor;display:block}
+
+  /* ---- Organograma oficial (documento) ---- */
+  .doc{background:#fff;color:#15181d;border-radius:6px;padding:26px 30px;font-family:Georgia,"Times New Roman",serif}
+  .doc h1{font-size:1.15rem;margin:0 0 2px;letter-spacing:.02em}
+  .doc .doc-sub{font-size:.72rem;color:#5a616b;margin-bottom:4px}
+  .doc .doc-rule{height:2px;background:#15181d;margin:10px 0 18px}
+  .doc h2{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:#5a616b;margin:20px 0 8px}
+  .doc-tree{font-family:Segoe UI,Helvetica,sans-serif}
+  .doc-lvl{margin-left:20px;padding-left:14px;border-left:1px solid #c8ccd2}
+  .doc-box{
+    display:inline-block;border:1px solid #15181d;border-radius:3px;padding:5px 10px;margin:4px 0;
+    min-width:190px;background:#fff;
+  }
+  .doc-box .dn{font-size:.78rem;font-weight:600}
+  .doc-box .dp{font-size:.68rem;color:#3d434b}
+  .doc-box .dc{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a808a}
+  table.doc-t{border-collapse:collapse;width:100%;font-family:Segoe UI,Helvetica,sans-serif;font-size:.7rem}
+  table.doc-t th,table.doc-t td{border:1px solid #c8ccd2;padding:4px 8px;text-align:left}
+  table.doc-t th{background:#eef0f3;font-weight:600;font-size:.64rem;letter-spacing:.06em;text-transform:uppercase}
+  .doc-foot{margin-top:22px;font-size:.62rem;color:#7a808a;border-top:1px solid #c8ccd2;padding-top:8px}
+  @media print{
+    body>*{display:none!important}
+    #modal,#modal.open{display:block!important;position:static!important;background:none!important;padding:0!important}
+    #modalCard{max-height:none!important;width:100%!important;box-shadow:none!important}
+    #modalHead,.vw-bar{display:none!important}
+    #modalBody{overflow:visible!important;padding:0!important}
+    .doc{border-radius:0;padding:0}
+  }
+
+  /* ---- Vista do munícipe ---- */
+  .mc-list{display:flex;flex-direction:column;gap:10px}
+  .mc-card{
+    border:1px solid var(--hairline);border-radius:11px;padding:13px 15px;
+    background:rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:6px;
+  }
+  .mc-card h4{margin:0;font-size:.86rem;font-weight:600;color:var(--ink)}
+  .mc-lead{font-size:.72rem;color:var(--ink);line-height:1.5}
+  .mc-lead b{color:var(--gold);font-weight:600}
+  .mc-steps{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:.66rem;color:var(--ink-dim)}
+  .mc-steps .mc-st{
+    border:1px solid var(--hairline);border-radius:20px;padding:2px 9px;
+    background:none;font:inherit;color:var(--ink-dim);cursor:pointer;
+  }
+  .mc-steps .mc-st:hover{border-color:var(--gold);color:var(--gold)}
+  .mc-steps .mc-ar{color:var(--ink-dim);opacity:.6}
+  .mc-facts{display:flex;flex-wrap:wrap;gap:14px;font-size:.65rem;color:var(--ink-dim)}
+  .mc-facts b{color:var(--ink);font-weight:600}
+  .mc-search{
+    width:100%;margin-bottom:12px;background:rgba(255,255,255,0.04);
+    border:1px solid var(--hairline);border-radius:7px;color:var(--ink);
+    font:inherit;font-size:.76rem;padding:7px 10px;
+  }
+  .mc-search:focus{outline:none;border-color:var(--steel)}
+
+  /* ---- Modo continuidade ---- */
+  body.continuity .agent-row .row-name.absent{text-decoration:line-through;opacity:.55}
+  .cont-tag{
+    font-size:.56rem;padding:1px 6px;border-radius:20px;margin-left:6px;
+    border:1px solid #E0554F;color:#E0554F;
+  }
+  .cont-tag.cover{border-color:var(--gold);color:var(--gold)}
+  #contBtn.active,#linkBtn.active{border-color:var(--gold);color:var(--gold)}
+  body.linking #stage{cursor:crosshair}
+
+  /* ---- Comparar cenários ---- */
+  .sc-morph{display:flex;align-items:center;gap:10px;margin:4px 0 6px}
+  .sc-morph input[type=range]{flex:1;accent-color:var(--gold);min-width:80px}
+  .sc-morph .sc-end{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim)}
+
+  /* ---- Colar do Excel ---- */
+  .paste-area{
+    width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--hairline);
+    border-radius:8px;color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:.7rem;padding:9px 11px;resize:vertical;line-height:1.5;
+  }
+  .paste-area:focus{outline:none;border-color:var(--steel)}
+  table.paste-t{margin-top:8px;background:none;color:var(--ink)}
+  table.paste-t th,table.paste-t td{border-color:var(--hairline)}
+  table.paste-t th{background:rgba(255,255,255,0.05);color:var(--ink-dim)}
+
+  /* ---- Âncora espacial no fluxograma ---- */
+  .fc-anchor{
+    position:absolute;right:10px;bottom:10px;z-index:3;
+    padding:8px 9px 6px;border-radius:11px;
+    background:var(--panel);border:1px solid var(--hairline);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  }
+  .fc-anchor-t{font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px}
+  .fc-anchor-svg{display:block}
+  .fc-anchor-l{font-size:.55rem;color:var(--ink-dim);margin-top:3px;max-width:150px;line-height:1.35}
+  @media (max-width:720px){ .fc-anchor{display:none} }
+
+  /* ---- Barra "Onde estou" ---- */
+  #whereBar{
+    position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:13;
+    display:flex;align-items:center;gap:9px;max-width:min(560px,52vw);
+    padding:6px 11px;border-radius:10px;font-size:.7rem;white-space:nowrap;
+  }
+  #whereBar .wb-path{overflow:hidden;text-overflow:ellipsis;color:var(--ink-dim);min-width:0}
+  #whereBar .wb-path b{color:var(--ink);font-weight:600}
+  #whereBar .wb-addr{
+    flex:none;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.62rem;
+    color:var(--gold);border:1px solid var(--hairline);border-radius:5px;padding:1px 6px;cursor:pointer;
+  }
+  #whereBar .wb-addr:hover{border-color:var(--gold)}
+  #whereBar button{
+    flex:none;font:inherit;font-size:.68rem;padding:2px 8px;border-radius:6px;
+    border:1px solid var(--hairline);background:none;color:var(--ink);cursor:pointer;
+  }
+  #whereBar button:disabled{opacity:.3;cursor:default}
+  #whereBar button:not(:disabled):hover{border-color:var(--gold);color:var(--gold)}
+  #trailMenu{
+    position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:13;display:none;
+    flex-direction:column;gap:3px;padding:7px;border-radius:10px;
+    max-height:44vh;overflow:auto;min-width:min(300px,46vw);
+  }
+  #trailMenu.open{display:flex}
+  #trailMenu button{
+    text-align:left;font:inherit;font-size:.72rem;padding:5px 9px;border-radius:7px;
+    border:none;background:none;color:var(--ink);cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  #trailMenu button:hover{background:rgba(127,127,127,.16)}
+
+  /* ---- Bússola-Radar ---- */
+  #radarWrap{
+    position:fixed;top:14px;right:14px;z-index:13;padding:7px;border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+  }
+  #radar{display:block;cursor:pointer;border-radius:50%}
+  #radarWrap .rlbl{font-size:.58rem;color:var(--ink-dim);letter-spacing:.08em}
+  @media (max-width:980px){ #whereBar,#trailMenu,#radarWrap{display:none!important} }
+  body.presenting #whereBar,body.presenting #trailMenu,body.presenting #radarWrap{display:none!important}
+
+  /* ---- Chave de codificação ---- */
+  #codeKey{display:flex;flex-direction:column;gap:7px;margin:4px 0 8px}
+  .ck-row{display:flex;align-items:center;gap:8px;font-size:.66rem;color:var(--ink-dim)}
+  .ck-sizes{display:flex;align-items:flex-end;gap:10px}
+  .ck-sizes i{display:block;border-radius:50%;background:var(--ink-dim);opacity:.75;font-style:normal}
+  .ck-sizes span{font-size:.58rem;color:var(--ink-dim);text-align:center;display:block;margin-top:2px}
+  .ck-branches{display:flex;flex-wrap:wrap;gap:5px}
+  .ck-br{
+    display:flex;align-items:center;gap:5px;font-size:.62rem;padding:2px 7px;border-radius:999px;
+    border:1px solid var(--hairline);background:none;color:var(--ink-dim);cursor:pointer;
+  }
+  .ck-br:hover{border-color:currentColor;color:var(--ink)}
+  .ck-br i{width:8px;height:8px;border-radius:50%;background:currentColor;display:block;font-style:normal}
+  .ck-ramp{flex:1;height:8px;border-radius:4px;min-width:60px}
+
+  /* ---- Controlos de cena ---- */
+  .scene-row{display:flex;align-items:center;gap:12px;font-size:.72rem;padding:2px 0;flex-wrap:wrap}
+  .scene-row label{display:flex;align-items:center;gap:5px;cursor:pointer}
+  .scene-row input[type=checkbox]{accent-color:var(--gold);cursor:pointer}
+  .sun-val{margin-left:auto;font-size:.66rem;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+
+  /* ---- Espreitar o Todo ---- */
+  body.peeking #panel,body.peeking #detail{opacity:.22;transition:opacity .18s ease}
+  #peekHint{
+    position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:60;display:none;
+    padding:7px 15px;border-radius:9px;font-size:.72rem;color:var(--ink-dim);white-space:nowrap;
+  }
+  body.peeking #peekHint{display:block}
+
+  /* ---- Setas de vizinhança ---- */
+  #chevrons{position:fixed;inset:0;pointer-events:none;z-index:14}
+  .chev{
+    position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;
+    padding:3px 9px;border-radius:999px;font-size:.62rem;white-space:nowrap;max-width:160px;
+    background:var(--panel);border:1px solid currentColor;pointer-events:auto;cursor:pointer;
+  }
+  .chev .ar{flex:none;font-size:.72rem;line-height:1}
+  .chev .nm{overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .chev.pai{color:var(--gold)}
+  .chev.filho{color:var(--steel)}
+  .chev.fluxo{color:var(--ink-dim)}
+  .chev:hover{background:var(--bg-mid)}
+
+  /* ---- Navegação 3D por teclado ---- */
+  #stage:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
+  #kbStatus{
+    position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);z-index:62;display:none;padding:6px 14px;border-radius:9px;
+    font-size:.7rem;color:var(--ink);white-space:nowrap;
+  }
+  body.kb-nav #kbStatus{display:block}
+  body.kb-nav.presenting #kbStatus{display:none}
+
   /* ---- history buttons ---- */
   .btn.icon-round[disabled]{opacity:.3;cursor:default}
 
@@ -997,6 +1315,32 @@
 <button id="menuBtn" class="glass" aria-label="Abrir painel de controlo">☰ Painel</button>
 <div id="focusBlur" aria-hidden="true"></div>
 <div id="toasts" role="status" aria-live="polite"></div>
+<div id="chevrons" aria-hidden="true"></div>
+<div id="peekHint" class="glass" aria-hidden="true">Solte para voltar à vista anterior</div>
+<div id="kbStatus" class="glass" role="status" aria-live="polite"></div>
+
+<div id="fallback2d" role="img" aria-label="Estrutura da organização em 2D"></div>
+<div id="glBanner" class="glass" role="status">
+  <span>Modo leve ativado — a aceleração gráfica não está disponível.</span>
+  <button id="glRetry" type="button">Tentar 3D de novo</button>
+</div>
+
+<div id="quest" class="glass" aria-label="Percurso de arranque"></div>
+
+<div id="whereBar" class="glass" role="status" aria-live="polite">
+  <button id="wbBack" title="Voltar" aria-label="Voltar">‹</button>
+  <button id="wbFwd" title="Avançar" aria-label="Avançar">›</button>
+  <span class="wb-path" id="wbPath">Rede completa</span>
+  <span class="wb-addr" id="wbAddr" role="button" tabindex="0" title="Copiar ligação para esta unidade"></span>
+  <button id="wbTrail" title="Sítios por onde passou">Trilho</button>
+</div>
+<div id="trailMenu" class="glass" role="menu" aria-label="Trilho"></div>
+
+<div id="radarWrap" class="glass">
+  <canvas id="radar" width="132" height="132" role="img"
+    aria-label="Radar da estrutura — clique para ir a uma unidade"></canvas>
+  <span class="rlbl" id="radarLbl">RADAR</span>
+</div>
 
 <div id="emptyHint" class="glass" aria-hidden="true">
   <div class="eh-t">Rede vazia — só o Executivo</div>
@@ -1012,8 +1356,12 @@
       <button class="btn tiny icon-round" id="redoBtn" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer" disabled>↷</button>
       <button class="btn tiny" id="orgChartBtn">Organograma 2D</button>
       <button class="btn tiny" id="flowIndexBtn" title="Abrir a lista de fluxogramas dos procedimentos">Fluxogramas</button>
+      <button class="btn tiny" id="viewsBtn" title="Outras vistas da mesma informação (V)">Vistas</button>
+      <button class="btn tiny" id="contBtn" title="Modo continuidade — quem assegura o quê quando alguém falta" aria-pressed="false">Continuidade</button>
+      <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de uma unidade para outra para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
       <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detectados">Estado</button>
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
+      <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo">👁</button>
       <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação">⛶</button>
       <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D actual como imagem PNG" aria-label="Guardar vista como imagem">📷</button>
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
@@ -1031,6 +1379,9 @@
       <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Tier 1 · Coordenação Geral<span class="legend-note">primary colours</span></button>
       <button type="button" class="legend-row jump" data-tier="2" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#7FB2EC"></span><span style="background:#EC8B86"></span><span style="background:#F2DA84"></span></span>Tier 2 · Coordenação Setorial<span class="legend-note">branch tints</span></button>
       <button type="button" class="legend-row jump" data-tier="3" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#AECFF4"></span><span style="background:#F4B7B3"></span><span style="background:#F8EAB4"></span></span>Tier 3 · Coordenação Operacional<span class="legend-note">lighter tints</span></button>
+      <div class="mini-title" style="margin-top:8px">Chave de codificação</div>
+      <div id="codeKey"></div>
+
       <div class="mini-title" style="margin-top:8px">Cor dos nodes</div>
       <div class="seg" id="colorModeSeg" role="group" aria-label="Modo de cor dos nodes">
         <button type="button" data-cmode="struct" class="on" title="Cor por ramo da hierarquia">Estrutura</button>
@@ -1042,6 +1393,18 @@
         <span class="heat-bar" id="heatBar"></span>
         <span id="heatMax">0</span>
       </div>
+      <div class="mini-title" style="margin-top:8px">Cena</div>
+      <div class="scene-row">
+        <label><input type="checkbox" id="ambientChk" checked> Vida ambiente</label>
+        <label><input type="checkbox" id="maqueteChk"> Maquete</label>
+      </div>
+      <div class="scene-row">
+        <label><input type="checkbox" id="sunChk"> Sol de Lisboa</label>
+        <span class="sun-val" id="sunVal">14:00</span>
+      </div>
+      <input type="range" id="sunRange" min="6" max="22" step="0.5" value="14"
+        aria-label="Hora do dia" style="width:100%;accent-color:var(--gold);display:none">
+
       <div class="density-row">
         <label for="densityRange" style="flex:none">Densidade</label>
         <input type="range" id="densityRange" min="0" max="3" step="1" value="3" aria-label="Profundidade visível da hierarquia">
@@ -1219,7 +1582,8 @@
     <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o node e as suas ligações directas</span></div>
     <h4>Teclado</h4>
     <div class="kbd-row"><kbd>← / →</kbd><span>Cena anterior / seguinte do tour</span></div>
-    <div class="kbd-row"><kbd>Espaço</kbd><span>Reproduzir ou pausar o tour</span></div>
+    <div class="kbd-row"><kbd>Espaço</kbd><span>Toque: reproduzir/pausar o tour · Manter: espreitar o todo</span></div>
+    <div class="kbd-row"><kbd>Tab → setas</kbd><span>Com a rede em foco: ↑ superior · ↓ subordinado · ←/→ irmãos</span></div>
     <div class="kbd-row"><kbd>R</kbd><span>Recentrar a câmara na vista inicial</span></div>
     <div class="kbd-row"><kbd>P</kbd><span>Modo apresentação — esconde os painéis</span></div>
     <div class="kbd-row"><kbd>Ctrl + K</kbd><span>Paleta de comandos — procurar tudo e executar acções</span></div>
@@ -1354,6 +1718,9 @@ const nextName = ()=>{
 const deg = d => d*Math.PI/180;
 let orgName = "Junta de Freguesia";
 let dirty=false,booted=false;
+// Declarado aqui, e não junto ao resto do modo continuidade, porque
+// buildNodeVisual corre durante a semente — muito antes desse bloco.
+let continuityOn=false;
 
 /* ============================================================
    DATA — NODES & AGENTS (seed structure)
@@ -1373,8 +1740,13 @@ const agents=[];
 function addAgent(nodeId, primary, category, name){
   const a={id:"a"+(++agentCounter), name:name||nextName(),
     category:category||PRIMARY_CAT_BY_TIER[Math.min(byId(nodeId).tier,PRIMARY_CAT_BY_TIER.length-1)], nodeId, primary:!!primary};
+  // "Um responsável por unidade" tem de valer por construção, não por convenção:
+  // chamar isto com primary=true numa unidade que já tem titular passa a
+  // render-lhe o lugar em vez de criar dois responsáveis em simultâneo.
+  if(a.primary)agentsOf(nodeId).forEach(x=>{x.primary=false;});
   agents.push(a);
   markDirty();
+  if(booted)questMark("agent");
   return a;
 }
 const agentsOf = nodeId => agents.filter(a=>a.nodeId===nodeId);
@@ -1592,9 +1964,19 @@ scene.background=new THREE.Color(C_BG);
 scene.fog=new THREE.FogExp2(C_BG,0.011);
 
 const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,0.1,300);
-const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(innerWidth,innerHeight);
+/* Plano B: sem WebGL (PC antigo da autarquia, driver em falta, contexto perdido)
+   a app não pode virar um retângulo preto. Um renderer-manequim mantém todo o
+   resto a funcionar e mostramos a mesma estrutura em SVG. */
+let noGL=false,renderer;
+try{
+  renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,powerPreference:"high-performance"});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+}catch(e){
+  noGL=true;
+  renderer={domElement:document.createElement("canvas"),
+    setPixelRatio(){},setSize(){},render(){},dispose(){}};
+}
 stage.appendChild(renderer.domElement);
 
 const amb=new THREE.AmbientLight(0x8FA2BC,0.55);
@@ -2004,24 +2386,33 @@ function buildNodeVisual(n){
   const list=agentsOf(n.id);
   const nmAbbr=abbrev(n.name);
   const nmShow=nmAbbr.length>30?nmAbbr.slice(0,29)+"…":nmAbbr;
-  const prim=primaryOf(n.id);
-  const lbl=textSprite(nmShow,prim?("★ "+prim.name):(list.length+" agentes"));
+  // Com o modo continuidade ligado o rótulo mostra quem está em funções hoje,
+  // não quem consta do quadro.
+  const prim=continuityOn?actingPrimary(n.id):primaryOf(n.id);
+  const titular=primaryOf(n.id);
+  const sub=continuityOn&&prim&&titular&&prim!==titular;
+  const lbl=textSprite(nmShow,
+    prim?((sub?"⇢ ":"★ ")+prim.name):(continuityOn&&list.length?"sem cobertura":(list.length+" agentes")));
   lbl.position.y=rad+0.62;
   if(n.tier>=2)lbl.scale.multiplyScalar(0.92);
   g.add(lbl);
   n._label=lbl;
 
   // Show at most 8 orbiters (primary first) — full team lives in the panel
-  const sorted=[...list].sort((a,b)=>(b.primary?1:0)-(a.primary?1:0));
+  const lead=a=>(prim?a===prim:a.primary);
+  const sorted=[...list].sort((a,b)=>(lead(b)?1:0)-(lead(a)?1:0));
   const shown=sorted.slice(0,8);
   const orb=[];
   shown.forEach((a,i)=>{
+    const isLead=lead(a);
+    const away=continuityOn&&a.absent;
     const m=new THREE.Mesh(
-      new THREE.SphereGeometry(a.primary?0.075:0.05,10,10),
-      new THREE.MeshBasicMaterial({color:a.primary?GOLD:0xFFFFFF,transparent:true,opacity:a.primary?0.95:0.75})
+      new THREE.SphereGeometry(isLead?0.075:0.05,10,10),
+      new THREE.MeshBasicMaterial({color:away?0x8A4A46:(isLead?GOLD:0xFFFFFF),
+        transparent:true,opacity:away?0.32:(isLead?0.95:0.75)})
     );
-    m.material.userData.base=a.primary?0.95:0.75;
-    if(a.primary){
+    m.material.userData.base=away?0.32:(isLead?0.95:0.75);
+    if(isLead&&!away){
       // Cheap stand-in for a bloom pass: an additive halo riding the gold orbiter
       const bloom=new THREE.Sprite(new THREE.SpriteMaterial({
         map:glowTexture(GOLD),transparent:true,opacity:0.55,
@@ -2115,10 +2506,10 @@ function updateHeatScale(){
 function setColorMode(m){
   colorMode=m;
   document.querySelectorAll("#colorModeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.cmode===m));
-  computeColors();
-  nodes.forEach(applyNodeColor);
+  startColorWipe(()=>computeColors());   // a nova cor escorre do topo para fora
   renderNodeList();
   updateHeatScale();
+  renderCodeKey();
 }
 
 /* ============================================================
@@ -2298,6 +2689,7 @@ function createNode(opts){
   renderNodeList();
   renderAgentsTab();
   markDirty();
+  if(booted)questMark("node");
   return n;
 }
 function changeNodeTier(n,newTier){
@@ -2419,6 +2811,7 @@ function createTask(procIdx,aId,bId,desc,agentId,duration){
   buildTaskVisual(t);
   updateLayerCounts();
   markDirty();
+  if(booted)questMark("task");
   return t;
 }
 function moveTaskToLayer(t,newIdx){
@@ -2459,6 +2852,709 @@ function releaseFocus(){
   rig.goal.phi=s.cam.phi;
   rig.auto=reduceMotion?0:s.cam.auto*0.50;
 }
+/* ============================================================
+   NAVEGAÇÃO — inércia, espreitar o todo, teclado, vizinhança
+============================================================ */
+let spinVel=0,snapTheta=null,autoPauseUntil=0;
+let spaceTimer=null,spacePeeked=false;
+
+/* Quando a rotação lançada abranda perto de um ângulo canónico, encaixa os
+   últimos graus para a vista ficar direita — quem não é fluente em 3D acerta
+   num enquadramento apresentável sem esforço. */
+function maybeCardinalSnap(){
+  if(reduceMotion)return;
+  const TAU=Math.PI*2,STEP=Math.PI/2;
+  const t=((rig.theta%TAU)+TAU)%TAU;
+  const near=Math.round(t/STEP)*STEP;
+  if(Math.abs(t-near)<0.22)snapTheta=rig.theta+(near-t);
+}
+
+/* ---- Espreitar o Todo: afasta para ver tudo, solta e volta ao sítio ---- */
+let peek=null;
+function startPeek(){
+  if(peek||document.body.classList.contains("presenting"))return;
+  peek={phi:rig.goal.phi,radius:rig.goal.radius,target:rig.goal.target.clone(),auto:rig.auto};
+  const rs=TIER.map(t=>t.r).concat([6]),ys=TIER.map(t=>t.y).concat([0]);
+  rig.goal.radius=THREE.MathUtils.clamp(Math.max.apply(null,rs)*2.3+13,10,56);
+  rig.goal.phi=0.88;
+  rig.goal.target.set(0,(Math.max.apply(null,ys)+Math.min.apply(null,ys))/2,0);
+  rig.auto=0;spinVel=0;snapTheta=null;
+  document.body.classList.add("peeking");
+}
+function endPeek(){
+  if(!peek)return;
+  rig.goal.phi=peek.phi;
+  rig.goal.radius=peek.radius;
+  rig.goal.target.copy(peek.target);
+  rig.auto=peek.auto;
+  peek=null;
+  document.body.classList.remove("peeking");
+}
+const peekBtn=document.getElementById("peekBtn");
+if(peekBtn){
+  peekBtn.addEventListener("pointerdown",e=>{e.preventDefault();startPeek();});
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>peekBtn.addEventListener(ev,()=>endPeek()));
+}
+
+/* ---- Peso ao clicar: o raio já codifica a equipa, agora sente-se ---- */
+function nodePunch(n){
+  if(!n||!n._mesh||reduceMotion)return;
+  const r=n._rad||0.3;
+  n._punch={t:0,dur:0.16+Math.min(0.20,r*0.34),depth:Math.max(0.026,0.068-r*0.05)};
+  n._ripple={t:0,dur:0.42+Math.min(0.6,r*0.9)};
+}
+
+/* ---- Navegação por teclado na própria rede 3D ---- */
+let kbFocus=null;
+const kbStatusEl=document.getElementById("kbStatus");
+function kbSiblings(n){
+  return nodes.filter(m=>m.tier===n.tier&&m.parent===n.parent).sort((a,b)=>a.angle-b.angle);
+}
+function kbAnnounce(n){
+  if(!kbStatusEl||!n)return;
+  const sibs=kbSiblings(n),i=sibs.indexOf(n);
+  kbStatusEl.textContent=((TIER[n.tier]&&TIER[n.tier].label)||("Tier "+n.tier))+" · "+n.name+
+    (sibs.length>1?("  ·  "+(i+1)+" de "+sibs.length):"");
+}
+function kbMove(dir){
+  const cur=(kbFocus&&nodes.includes(kbFocus))?kbFocus:
+    ((selected&&selected.type==="node")?selected.node:nodes.find(n=>n.tier===0));
+  if(!cur)return;
+  let next=null;
+  if(dir==="up")next=cur.parent?byId(cur.parent):null;
+  else if(dir==="down"){
+    const kids=nodes.filter(m=>m.parent===cur.id).sort((a,b)=>a.angle-b.angle);
+    next=kids[0]||null;
+  }else{
+    const sibs=kbSiblings(cur),i=sibs.indexOf(cur);
+    if(i>=0&&sibs.length>1)next=sibs[(i+(dir==="right"?1:-1)+sibs.length)%sibs.length];
+  }
+  if(!next){flash("Não há para onde ir nessa direção.");return;}
+  kbFocus=next;
+  selectNode(next);
+  nodePunch(next);
+  kbAnnounce(next);
+}
+stage.tabIndex=0;
+stage.setAttribute("role","application");
+stage.setAttribute("aria-label","Rede 3D — use as setas para percorrer a hierarquia");
+stage.addEventListener("focus",()=>{
+  document.body.classList.add("kb-nav");
+  if(!kbFocus||!nodes.includes(kbFocus))
+    kbFocus=(selected&&selected.type==="node")?selected.node:nodes.find(n=>n.tier===0);
+  kbAnnounce(kbFocus);
+});
+stage.addEventListener("blur",()=>{document.body.classList.remove("kb-nav");});
+
+/* ---- Setas de vizinhança: o que está ligado mas fora do enquadramento ---- */
+const chevHost=document.getElementById("chevrons");
+let chevItems=[],chevFor=null;
+function rebuildChevrons(){
+  if(!chevHost)return;
+  chevHost.innerHTML="";chevItems=[];
+  const sel=(selected&&selected.type==="node")?selected.node:null;
+  chevFor=sel;
+  if(!sel)return;
+  const seen=new Set([sel.id]),rel=[];
+  const add=(n,kind)=>{if(n&&!seen.has(n.id)){seen.add(n.id);rel.push({n,kind});}};
+  if(sel.parent)add(byId(sel.parent),"pai");
+  nodes.filter(m=>m.parent===sel.id).forEach(m=>add(m,"filho"));
+  processes.forEach(p=>{
+    if(!p._visible)return;
+    p.tasks.forEach(t=>{
+      if(t.a===sel.id)add(byId(t.b),"fluxo");
+      else if(t.b===sel.id)add(byId(t.a),"fluxo");
+    });
+  });
+  rel.slice(0,10).forEach(r=>{
+    const b=el("button","chev "+r.kind);
+    b.append(el("span","ar","➤"),el("span","nm",abbrev(r.n.name)));
+    b.title=r.kind+" · "+r.n.name;
+    b.onclick=()=>selectNode(r.n);
+    b.style.display="none";
+    chevHost.append(b);
+    chevItems.push({el:b,node:r.n});
+  });
+}
+function updateChevrons(){
+  if(!chevHost)return;
+  const sel=(selected&&selected.type==="node")?selected.node:null;
+  if(sel!==chevFor)rebuildChevrons();
+  if(!chevItems.length)return;
+  const hide=document.body.classList.contains("presenting")||!!peek||innerWidth<60;
+  const W=innerWidth,H=innerHeight,M=54,cx=W/2,cy=H/2;
+  chevItems.forEach(c=>{
+    if(hide||!nodes.includes(c.node)){c.el.style.display="none";return;}
+    const v=c.node.pos.clone().project(camera);
+    const behind=v.z>1;
+    let x=(v.x*0.5+0.5)*W,y=(-v.y*0.5+0.5)*H;
+    if(behind){x=W-x;y=H-y;}          // atrás da câmara: aponta para o lado oposto
+    if(!behind&&x>M&&x<W-M&&y>M&&y<H-M){c.el.style.display="none";return;}
+    let dx=x-cx,dy=y-cy;
+    const len=Math.hypot(dx,dy);
+    if(!isFinite(len)||len<1e-3){c.el.style.display="none";return;}
+    dx/=len;dy/=len;
+    const s=Math.min((W/2-M)/Math.max(Math.abs(dx),1e-6),(H/2-M)/Math.max(Math.abs(dy),1e-6));
+    const ex=cx+dx*s,ey=cy+dy*s;
+    if(!isFinite(ex)||!isFinite(ey)){c.el.style.display="none";return;}
+    c.el.style.display="flex";
+    c.el.style.left=ex.toFixed(0)+"px";
+    c.el.style.top=ey.toFixed(0)+"px";
+    const ar=c.el.querySelector(".ar");
+    if(ar)ar.style.transform="rotate("+(Math.atan2(dy,dx)*180/Math.PI).toFixed(0)+"deg)";
+  });
+}
+
+/* ============================================================
+   PLANO B — a mesma estrutura em SVG quando não há WebGL
+============================================================ */
+function renderFallbackSVG(){
+  const host=document.getElementById("fallback2d");
+  if(!host)return;
+  host.innerHTML="";
+  const cs=getComputedStyle(document.documentElement);
+  const pick=(v,d)=>{const s=(cs.getPropertyValue(v)||"").trim();return s||d;};
+  const ink=pick("--ink","#111"),dim=pick("--ink-dim","#777"),hair=pick("--hairline","#999");
+  const R=Math.max.apply(null,TIER.map(t=>t.r).concat([1]))||1;
+  const S=Math.min(900,Math.max(420,(innerWidth||900)-60));
+  const cx=S/2,cy=S/2,rad=S/2-40;
+  const NS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 0 "+S+" "+(S+34));
+  svg.setAttribute("width",S);svg.setAttribute("height",S+34);
+  const mk=(t,a)=>{const e=document.createElementNS(NS,t);
+    Object.keys(a).forEach(k=>e.setAttribute(k,a[k]));return e;};
+  const txt=(s,a)=>{const e=mk("text",a);e.textContent=s;return e;};
+  svg.append(txt(orgName+" — estrutura",{x:14,y:22,fill:ink,
+    "font-family":"Segoe UI,Helvetica,sans-serif","font-size":"15","font-weight":"600"}));
+  const g=mk("g",{transform:"translate(0,34)"});
+  TIER.forEach(t=>{
+    if(!t.r)return;
+    g.append(mk("circle",{cx,cy,r:((t.r/R)*rad).toFixed(1),fill:"none",
+      stroke:hair,"stroke-opacity":"0.45","stroke-dasharray":"3 5"}));
+  });
+  // ligações hierárquicas
+  nodes.forEach(n=>{
+    if(!n.parent)return;
+    const p=byId(n.parent);if(!p)return;
+    const tn=TIER[n.tier],tp=TIER[p.tier];if(!tn||!tp)return;
+    const x1=cx+Math.cos(n.angle)*(tn.r/R)*rad,y1=cy+Math.sin(n.angle)*(tn.r/R)*rad;
+    const x2=cx+Math.cos(p.angle)*(tp.r/R)*rad,y2=cy+Math.sin(p.angle)*(tp.r/R)*rad;
+    if(![x1,y1,x2,y2].every(isFinite))return;
+    g.append(mk("line",{x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),
+      stroke:hair,"stroke-opacity":"0.5"}));
+  });
+  // nodes
+  nodes.forEach(n=>{
+    const t=TIER[n.tier];if(!t)return;
+    const x=cx+Math.cos(n.angle)*(t.r/R)*rad,y=cy+Math.sin(n.angle)*(t.r/R)*rad;
+    if(!isFinite(x)||!isFinite(y))return;
+    const k=agentsOf(n.id).length;
+    const r=Math.max(4,Math.min(15,4+Math.log(1+k)*3.4));
+    const grp=mk("g",{});
+    const c=mk("circle",{cx:x.toFixed(1),cy:y.toFixed(1),r:r.toFixed(1),
+      fill:hex(n.color),stroke:primaryOf(n.id)?pick("--gold","#E8B44C"):hair,
+      "stroke-width":primaryOf(n.id)?"2":"1",style:"cursor:pointer"});
+    grp.append(c,txt(abbrev(n.name),{x:(x+r+4).toFixed(1),y:(y+3.5).toFixed(1),
+      fill:n.tier<=1?ink:dim,"font-family":"Segoe UI,Helvetica,sans-serif",
+      "font-size":n.tier<=1?"11":"9"}));
+    const ttl=document.createElementNS(NS,"title");
+    ttl.textContent=n.name+" · "+k+" pessoa(s)";
+    grp.append(ttl);
+    grp.style.cursor="pointer";
+    grp.addEventListener("click",()=>selectNode(n));
+    g.append(grp);
+  });
+  svg.append(g);
+  host.append(svg);
+}
+function showFallback(msg){
+  noGL=true;
+  document.body.classList.add("no-gl");
+  renderFallbackSVG();
+  if(msg)flash(msg,{type:"err",key:"nogl"});
+}
+function hideFallback(){
+  document.body.classList.remove("no-gl");
+}
+(function(){
+  const cv=renderer&&renderer.domElement;
+  if(!cv||!cv.addEventListener)return;
+  cv.addEventListener("webglcontextlost",e=>{
+    e.preventDefault();
+    showFallback("Modo leve ativado — a aceleração gráfica falhou.");
+  });
+  cv.addEventListener("webglcontextrestored",()=>{noGL=false;hideFallback();});
+})();
+const glRetry=document.getElementById("glRetry");
+if(glRetry)glRetry.onclick=()=>{
+  hideFallback();
+  noGL=false;
+  try{renderer.setSize(innerWidth,innerHeight);}catch(e){}
+  flash("A tentar novamente o 3D…");
+};
+
+/* ============================================================
+   PERCURSO DE ARRANQUE — pequenas vitórias que se marcam sozinhas
+============================================================ */
+const QUEST_KEY="of.quest.v1";
+const QUEST_STEPS=[
+  {k:"node",  t:"Criar uma unidade"},
+  {k:"agent", t:"Adicionar um agente"},
+  {k:"resp",  t:"Definir um responsável"},
+  {k:"task",  t:"Desenhar um procedimento"},
+  {k:"export",t:"Exportar o resultado"}
+];
+let questDone={},questMini=true;
+try{questDone=JSON.parse(storageGet(QUEST_KEY)||"{}")||{};}catch(e){questDone={};}
+function questSave(){try{storageSet(QUEST_KEY,JSON.stringify(questDone));}catch(e){}}
+function questMark(k){
+  if(!k||questDone[k])return;
+  questDone[k]=true;
+  questSave();
+  renderQuest();
+  if(QUEST_STEPS.every(s=>questDone[s.k])){
+    flash("Percurso concluído — já domina o essencial.");
+    // Cumprida a missão, o cartão retira-se sozinho em vez de ficar para sempre
+    setTimeout(()=>{questDone.dismissed=true;questSave();renderQuest();},4200);
+  }
+}
+function questDismiss(){
+  questDone.dismissed=true;
+  questSave();
+  renderQuest();
+}
+function renderQuest(){
+  const host=document.getElementById("quest");
+  if(!host)return;
+  const done=QUEST_STEPS.filter(s=>questDone[s.k]).length;
+  if(questDone.dismissed){host.classList.remove("on");host.innerHTML="";return;}
+  host.classList.add("on");
+  host.innerHTML="";
+  const pct=Math.round(done/QUEST_STEPS.length*100);
+  if(questMini){
+    host.classList.add("mini");
+    host.innerHTML="";
+    const ring=el("div","qring glass",done+"/"+QUEST_STEPS.length);
+    ring.style.border="2px solid "+(done===QUEST_STEPS.length?"#5CC46A":hex(GOLD3D));
+    host.append(ring,el("span","qm","Percurso de arranque"),el("span","qmore","▸"));
+    host.title="Ver os passos que faltam";
+    host.onclick=()=>{questMini=false;renderQuest();};
+    return;
+  }
+  host.classList.remove("mini");
+  host.onclick=null;
+  const h=el("div","qh");
+  const ring=el("div","qring glass",pct+"%");
+  ring.style.border="2px solid "+(done===QUEST_STEPS.length?"#5CC46A":hex(GOLD3D));
+  const x=el("button","qx","–");
+  x.title="Encolher";
+  x.setAttribute("aria-label","Encolher o percurso de arranque");
+  x.onclick=ev=>{ev.stopPropagation();questMini=true;renderQuest();};
+  const close=el("button","qx","✕");
+  close.title="Não voltar a mostrar";
+  close.setAttribute("aria-label","Esconder o percurso de arranque para sempre");
+  close.onclick=ev=>{ev.stopPropagation();questDismiss();};
+  h.append(ring,el("span","qt","Percurso de arranque"),x,close);
+  host.append(h);
+  const ul=el("ul");
+  QUEST_STEPS.forEach(s=>{
+    const li=el("li",questDone[s.k]?"done":"");
+    li.append(el("span","qc",questDone[s.k]?"✓":""),el("span",null,s.t));
+    ul.append(li);
+  });
+  host.append(ul);
+}
+
+/* ============================================================
+   HUD — morada, barra "onde estou", radar, chave de codificação
+============================================================ */
+function tierPrefix(i){
+  const lbl=String((TIER[i]&&TIER[i].label)||("T"+i)).trim();
+  const w=lbl.split(/\s+/).filter(Boolean);
+  return (w.length>=2?(w[0][0]+w[1][0]):lbl.slice(0,2)).toUpperCase();
+}
+/* Morada curta e estável: dá algo que se possa dizer em voz alta numa reunião */
+function nodeAddress(n){
+  if(!n)return "";
+  if(n.tier===0)return tierPrefix(0);
+  const sibs=nodes.filter(m=>m.tier===n.tier).sort((a,b)=>a.angle-b.angle);
+  const i=sibs.indexOf(n);
+  return tierPrefix(n.tier)+(i>=0?(i+1):"?");
+}
+function nodeAddressPath(n){
+  const chain=[];let cur=n,g=0;
+  while(cur&&g++<12){chain.unshift(nodeAddress(cur));cur=cur.parent?byId(cur.parent):null;}
+  return chain.join("·");
+}
+function nodeByAddress(addr){
+  if(!addr)return null;
+  const last=String(addr).split("·").filter(Boolean).pop();
+  return nodes.find(n=>nodeAddress(n)===last)||null;
+}
+/* Sinalizador: pisca a unidade e traz a câmara, para toda a gente a encontrar */
+function locateNode(n){
+  if(!n)return;
+  selectNode(n);
+  kbFocus=n;
+  n._flare={t:0};
+  if(typeof pingAt==="function")pingAt(n.pos,Math.max(1.5,(n._rad||0.3)*5));
+  flash("Localizado: "+n.name+"  ("+nodeAddress(n)+")");
+}
+
+/* ---- Barra "Onde estou" + Trilho ---- */
+const whereBar=document.getElementById("whereBar"),
+      wbPath=document.getElementById("wbPath"),wbAddr=document.getElementById("wbAddr"),
+      wbBack=document.getElementById("wbBack"),wbFwd=document.getElementById("wbFwd"),
+      wbTrail=document.getElementById("wbTrail"),trailMenu=document.getElementById("trailMenu");
+const trail=[];
+function pushTrail(n){
+  if(!n)return;
+  if(trail.length&&trail[trail.length-1]===n)return;
+  trail.push(n);
+  if(trail.length>12)trail.shift();
+}
+function updateWhereBar(){
+  if(!whereBar)return;
+  const sel=(selected&&selected.type==="node")?selected.node:null;
+  if(wbBack)wbBack.disabled=!navStack.length;
+  if(wbFwd)wbFwd.disabled=!fwdStack.length;
+  if(!sel){
+    wbPath.textContent="Rede completa · "+nodes.length+" unidades";
+    wbAddr.textContent="";
+    return;
+  }
+  const chain=[];let cur=sel,g=0;
+  while(cur&&g++<12){chain.unshift(cur);cur=cur.parent?byId(cur.parent):null;}
+  wbPath.innerHTML="";
+  chain.forEach((m,i)=>{
+    if(i)wbPath.append(document.createTextNode(" › "));
+    if(m===sel)wbPath.append(el("b",null,abbrev(m.name)));
+    else wbPath.append(document.createTextNode(abbrev(m.name)));
+  });
+  wbAddr.textContent=nodeAddressPath(sel);
+  pushTrail(sel);
+}
+if(wbBack)wbBack.onclick=()=>goBack();
+if(wbFwd)wbFwd.onclick=()=>goForward();
+if(wbAddr){
+  const copyAddr=()=>{
+    const sel=(selected&&selected.type==="node")?selected.node:null;
+    if(!sel)return;
+    const link=location.origin+location.pathname+"#"+nodeAddress(sel);
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(link).then(()=>flash("Ligação copiada."),()=>flash("Morada: "+nodeAddress(sel)));
+      }else flash("Morada: "+nodeAddress(sel));
+    }catch(e){flash("Morada: "+nodeAddress(sel));}
+    try{location.hash=nodeAddress(sel);}catch(e){}
+  };
+  wbAddr.onclick=copyAddr;
+  wbAddr.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();copyAddr();}};
+}
+if(wbTrail)wbTrail.onclick=()=>{
+  if(!trailMenu)return;
+  if(trailMenu.classList.contains("open")){trailMenu.classList.remove("open");return;}
+  trailMenu.innerHTML="";
+  const seen=new Set();
+  const list=trail.slice().reverse().filter(n=>{
+    if(!nodes.includes(n)||seen.has(n.id))return false;
+    seen.add(n.id);return true;
+  }).slice(0,10);
+  if(!list.length)trailMenu.append(el("div","empty-note","Ainda não visitou nenhuma unidade."));
+  list.forEach(n=>{
+    const b=el("button",null,nodeAddress(n)+"  ·  "+n.name);
+    b.onclick=()=>{trailMenu.classList.remove("open");locateNode(n);};
+    trailMenu.append(b);
+  });
+  trailMenu.classList.add("open");
+};
+addEventListener("pointerdown",e=>{
+  if(!trailMenu||!trailMenu.classList.contains("open"))return;
+  if(e.target===wbTrail||trailMenu.contains(e.target))return;
+  trailMenu.classList.remove("open");
+});
+
+/* ---- Bússola-Radar: onde estou e para onde estou virado ---- */
+const radarCv=document.getElementById("radar");
+const radarCtx=radarCv?radarCv.getContext("2d"):null;
+function radarGeom(){
+  const R=Math.max.apply(null,TIER.map(t=>t.r).concat([1]))||1;
+  return {R:R,cx:(radarCv?radarCv.width:132)/2,cy:(radarCv?radarCv.height:132)/2,
+    rad:((radarCv?radarCv.width:132)/2)-9};
+}
+function drawRadar(){
+  if(!radarCtx||!radarCv||!radarCv.width)return;
+  const g=radarGeom(),x=radarCtx;
+  const cs=getComputedStyle(document.documentElement);
+  const dim=(cs.getPropertyValue("--ink-dim")||"#889").trim();
+  const gold=(cs.getPropertyValue("--gold")||"#E8B44C").trim();
+  x.clearRect(0,0,radarCv.width,radarCv.height);
+  // anéis de tier
+  x.strokeStyle=dim;x.globalAlpha=0.22;x.lineWidth=1;
+  TIER.forEach(t=>{
+    if(!t.r)return;
+    x.beginPath();x.arc(g.cx,g.cy,(t.r/g.R)*g.rad,0,Math.PI*2);x.stroke();
+  });
+  // cunha da câmara
+  x.globalAlpha=0.16;x.fillStyle=gold;
+  x.beginPath();x.moveTo(g.cx,g.cy);
+  x.arc(g.cx,g.cy,g.rad,rig.theta-0.42,rig.theta+0.42);
+  x.closePath();x.fill();
+  // nodes
+  const sel=(selected&&selected.type==="node")?selected.node:null;
+  nodes.forEach(n=>{
+    const t=TIER[n.tier];if(!t)return;
+    const rr=(t.r/g.R)*g.rad;
+    const px=g.cx+Math.cos(n.angle)*rr,py=g.cy+Math.sin(n.angle)*rr;
+    if(!isFinite(px)||!isFinite(py))return;
+    x.globalAlpha=(n===sel)?1:0.8;
+    x.fillStyle=hex(n.color);
+    x.beginPath();x.arc(px,py,(n===sel)?3.6:2.1,0,Math.PI*2);x.fill();
+    if(n===sel){
+      x.globalAlpha=0.9;x.strokeStyle=gold;x.lineWidth=1.4;
+      x.beginPath();x.arc(px,py,6,0,Math.PI*2);x.stroke();
+    }
+  });
+  x.globalAlpha=1;
+}
+function radarPick(ev){
+  if(!radarCv)return;
+  const r=radarCv.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  const g=radarGeom();
+  const mx=(ev.clientX-r.left)*(radarCv.width/r.width);
+  const my=(ev.clientY-r.top)*(radarCv.height/r.height);
+  let best=null,bd=1e9;
+  nodes.forEach(n=>{
+    const t=TIER[n.tier];if(!t)return;
+    const rr=(t.r/g.R)*g.rad;
+    const px=g.cx+Math.cos(n.angle)*rr,py=g.cy+Math.sin(n.angle)*rr;
+    const d=Math.hypot(px-mx,py-my);
+    if(d<bd){bd=d;best=n;}
+  });
+  if(best&&bd<16)locateNode(best);
+}
+if(radarCv)radarCv.addEventListener("click",radarPick);
+
+/* ---- Chave de codificação viva: a legenda que ensina a gramática ---- */
+let keyHighlight=null;
+function renderCodeKey(){
+  const host=document.getElementById("codeKey");
+  if(!host)return;
+  host.innerHTML="";
+  // 1. tamanho = pessoas
+  const counts=nodes.map(n=>agentsOf(n.id).length);
+  const mx=Math.max.apply(null,counts.concat([1]));
+  const row1=el("div","ck-row");
+  const sizes=el("div","ck-sizes");
+  [1,Math.max(2,Math.round(mx/2)),mx].forEach(v=>{
+    const cell=el("div");
+    const d=Math.round(7+Math.min(15,Math.log(1+v)*7));
+    const dot=el("i");
+    dot.style.width=d+"px";dot.style.height=d+"px";
+    cell.append(dot,el("span",null,String(v)));
+    sizes.append(cell);
+  });
+  row1.append(sizes,el("span",null,"pessoas → tamanho"));
+  host.append(row1);
+  // 2. ramos (modo estrutura) ou rampa (modos de calor)
+  if(colorMode==="struct"){
+    const brs=nodes.filter(n=>n.tier===1);
+    if(brs.length){
+      const wrap=el("div","ck-branches");
+      brs.forEach(b=>{
+        const cnt=nodes.filter(n=>{
+          let cur=n,g=0;
+          while(cur&&g++<12){if(cur===b)return true;cur=cur.parent?byId(cur.parent):null;}
+          return false;
+        }).length;
+        const btn=el("button","ck-br");
+        btn.style.color=hex(b.color);
+        btn.append(el("i"),el("span",null,abbrev(b.name)+" ("+cnt+")"));
+        btn.title="Realçar "+b.name;
+        const ids=new Set(nodes.filter(n=>{
+          let cur=n,g=0;
+          while(cur&&g++<12){if(cur===b)return true;cur=cur.parent?byId(cur.parent):null;}
+          return false;
+        }).map(n=>n.id));
+        btn.addEventListener("mouseenter",()=>{keyHighlight=ids;});
+        btn.addEventListener("mouseleave",()=>{keyHighlight=null;});
+        btn.addEventListener("focus",()=>{keyHighlight=ids;});
+        btn.addEventListener("blur",()=>{keyHighlight=null;});
+        btn.onclick=()=>locateNode(b);
+        wrap.append(btn);
+      });
+      host.append(wrap);
+    }
+  }else{
+    const vals=nodes.map(nodeMetric).sort((a,b)=>a-b);
+    const med=vals.length?vals[Math.floor(vals.length/2)]:0;
+    const hi=vals.length?vals[vals.length-1]:0;
+    const row=el("div","ck-row");
+    row.append(el("span",null,"0"));
+    const ramp=el("span","ck-ramp");
+    ramp.style.background="linear-gradient(90deg,"+hex(heatRamp(0))+","+hex(heatRamp(.5))+","+hex(heatRamp(1))+")";
+    row.append(ramp,el("span",null,String(hi)));
+    host.append(row);
+    host.append(el("div","ck-row",
+      (colorMode==="team"?"agentes":"tarefas")+" · mediana "+med+" · máximo "+hi));
+  }
+  // 3. o dourado
+  host.append(el("div","ck-row","★ dourado = responsável da unidade"));
+}
+
+/* ============================================================
+   ATMOSFERA — vida ambiente, Sol de Lisboa, maquete, color-wipe
+============================================================ */
+let ambientOn=!reduceMotion;
+let sunOn=false,sunHour=14;
+let maqueteOn=false,maqueteBase=null,maqueteDome=null;
+let pointerNX=0,pointerNY=0,paraX=0,paraY=0,sparkTimer=0;
+
+addEventListener("pointermove",e=>{
+  pointerNX=(e.clientX/Math.max(1,innerWidth))*2-1;
+  pointerNY=(e.clientY/Math.max(1,innerHeight))*2-1;
+},{passive:true});
+
+/* Poeira suspensa — dá profundidade e vida sem pedir atenção */
+const moteMat=new THREE.PointsMaterial({color:0xC9D6E8,size:0.055,transparent:true,
+  opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+const motes=(function(){
+  const N=90,arr=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    arr[i*3]=(Math.random()-0.5)*34;
+    arr[i*3+1]=Math.random()*17-3;
+    arr[i*3+2]=(Math.random()-0.5)*34;
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.BufferAttribute(arr,3));
+  const p=new THREE.Points(g,moteMat);
+  scene.add(p);
+  return p;
+})();
+
+/* Quantos procedimentos tocam este node — quem tem mais, respira mais depressa */
+function nodeBusy(n){
+  let k=0;
+  processes.forEach(p=>{
+    if(!p._visible)return;
+    if(p.tasks.some(t=>t.a===n.id||t.b===n.id))k++;
+  });
+  return k;
+}
+
+/* ---- Maquete: o organograma como objeto sobre plinto, sob redoma ---- */
+function setMaquete(on){
+  maqueteOn=!!on;
+  if(maqueteOn&&!maqueteBase){
+    const rMax=Math.max.apply(null,TIER.map(t=>t.r).concat([6]))+3.4;
+    const yMin=Math.min.apply(null,TIER.map(t=>t.y).concat([0]))-2.7;
+    maqueteBase=new THREE.Mesh(
+      new THREE.CylinderGeometry(rMax,rMax*1.05,0.5,64),
+      new THREE.MeshPhongMaterial({color:0x11203a,shininess:95,transparent:true,opacity:0.92})
+    );
+    maqueteBase.position.y=yMin;
+    scene.add(maqueteBase);
+    maqueteDome=new THREE.Mesh(
+      new THREE.SphereGeometry(rMax*1.28,40,26),
+      new THREE.MeshPhongMaterial({color:0xBFD4EE,transparent:true,opacity:0.055,
+        side:THREE.BackSide,shininess:130,depthWrite:false})
+    );
+    maqueteDome.position.y=yMin;
+    scene.add(maqueteDome);
+  }
+  if(maqueteBase)maqueteBase.visible=maqueteOn;
+  if(maqueteDome)maqueteDome.visible=maqueteOn;
+  if(maqueteOn){
+    rig.goal.radius=THREE.MathUtils.clamp(rig.goal.radius*1.12+4,12,56);
+    rig.goal.phi=1.06;
+    flash("Maquete — arraste para rodar o modelo.");
+  }
+}
+
+/* ---- Sol de Lisboa: a luz conta a hora do dia ---- */
+function sunColorFor(h){
+  const t=THREE.MathUtils.clamp((h-6)/16,0,1);
+  const dawn=new THREE.Color(0xFFB36A),noon=new THREE.Color(0xFFFFFF),
+        dusk=new THREE.Color(0xC98BE0),night=new THREE.Color(0x6E86B8);
+  if(t<0.18)return dawn.clone().lerp(noon,t/0.18);
+  if(t<0.62)return noon.clone();
+  if(t<0.85)return noon.clone().lerp(dusk,(t-0.62)/0.23);
+  return dusk.clone().lerp(night,(t-0.85)/0.15);
+}
+function applySun(){
+  const out=document.getElementById("sunVal"),rng=document.getElementById("sunRange");
+  const hh=Math.floor(sunHour),mm=Math.round((sunHour-hh)*60);
+  if(out)out.textContent=(hh<10?"0":"")+hh+":"+(mm<10?"0":"")+mm;
+  if(rng)rng.style.display=sunOn?"":"none";
+  if(!sunOn){applyTheme(themeId,{silent:true});return;}   // devolve a luz ao tema
+  const t=THREE.MathUtils.clamp((sunHour-6)/16,0,1);
+  const ang=Math.PI*t;                       // nasce a nascente, põe-se a poente
+  key.position.set(Math.cos(ang)*26,Math.max(2.5,Math.sin(ang)*23),8);
+  key.intensity=0.55+Math.sin(ang)*0.5;
+  const c=sunColorFor(sunHour);
+  mood.keyT.copy(c);
+  mood.ambT.copy(c).lerp(new THREE.Color(0x8FA2BC),0.55);
+}
+
+/* ---- Color-wipe: a nova codificação escorre do topo para fora ---- */
+let colorWipe=false;
+function applyNodeColorFast(n){
+  if(!n._mesh)return;
+  n._mesh.material.color.setHex(n.color);
+  n._mesh.material.emissive.setHex(n.color);
+  if(n._rowDot)n._rowDot.style.background=hex(n.color);
+}
+function startColorWipe(recolor){
+  if(reduceMotion||!nodes.length){recolor();nodes.forEach(applyNodeColor);return;}
+  const from={};
+  nodes.forEach(n=>{from[n.id]=n.color;});
+  recolor();
+  nodes.forEach(n=>{
+    n._cFrom=(from[n.id]!==undefined)?from[n.id]:n.color;
+    n._cTo=n.color;
+    n._cT=-(n.tier*0.09);          // cada anel arranca 90ms depois do anterior
+    n.color=n._cFrom;
+    applyNodeColorFast(n);
+  });
+  colorWipe=true;
+}
+function stepColorWipe(dt){
+  if(!colorWipe)return;
+  let any=false;
+  nodes.forEach(n=>{
+    if(n._cTo===undefined)return;
+    n._cT+=dt;
+    if(n._cT<0){any=true;return;}
+    const u=Math.min(1,n._cT/0.28);
+    if(u<1){
+      // Só cor do material durante a transição: glowTexture faz cache por cor
+      // e interpolar criaria centenas de texturas.
+      n.color=lerpColor(n._cFrom,n._cTo,u);
+      applyNodeColorFast(n);
+      any=true;
+    }else{
+      n.color=n._cTo;n._cTo=undefined;
+      applyNodeColor(n);            // aqui sim, com o glow definitivo
+    }
+  });
+  colorWipe=any;
+}
+
+/* ---- Controlos ---- */
+const ambientChk=document.getElementById("ambientChk"),
+      maqueteChk=document.getElementById("maqueteChk"),
+      sunChk=document.getElementById("sunChk"),
+      sunRange=document.getElementById("sunRange");
+if(ambientChk){
+  ambientChk.checked=ambientOn;
+  ambientChk.onchange=()=>{ambientOn=ambientChk.checked;};
+}
+if(maqueteChk)maqueteChk.onchange=()=>setMaquete(maqueteChk.checked);
+if(sunChk)sunChk.onchange=()=>{sunOn=sunChk.checked;applySun();};
+if(sunRange)sunRange.oninput=()=>{sunHour=parseFloat(sunRange.value)||14;applySun();};
+
 /* Recentrar — after free orbiting there is no "home", so give one back.
    The orbit angle is deliberately kept: only framing, height and zoom reset. */
 function resetView(){
@@ -2510,6 +3606,7 @@ function snapshotPNG(){
     a.href=url;
     a.download=(String(orgName||"organizacao").replace(/[^\w\-]+/g,"_").slice(0,40)||"organizacao")+"-vista-3d.png";
     a.click();
+    questMark("export");
     flash("Imagem guardada.");
   }catch(e){
     flash("Não foi possível guardar a imagem.",{type:"err"});
@@ -2539,22 +3636,41 @@ stage.addEventListener("pointerdown",e=>{
     stage.classList.remove("dragging");
     return;
   }
+  // Modo ligar: um arrasto que começa numa unidade desenha a ligação, não roda a câmara
+  if(linkMode){
+    const hit=raycast(e);
+    if(hit&&hit.type==="node"){
+      cometFrom=hit.node;cometHover=null;
+      updateComet(e);
+      dragging=false;
+      return;
+    }
+  }
   dragging=true;moved=false;
+  spinVel=0;snapTheta=null;          // grabbing kills any coasting
   px=downX=e.clientX;py=downY=e.clientY;
   stage.classList.add("dragging");
 });
 addEventListener("pointerup",e=>{
   touchPts.delete(e.pointerId);
   if(touchPts.size<2)pinchDist=0;
+  if(cometFrom){finishComet();return;}
   if(dragging&&!moved&&e.target===renderer.domElement)handleClick(e);
+  if(dragging&&moved){
+    // Let the throw coast, and hold off the ambient auto-spin while it settles
+    if(reduceMotion)spinVel=0;
+    autoPauseUntil=Date.now()+2600;
+  }
   dragging=false;stage.classList.remove("dragging");
 });
 addEventListener("pointercancel",e=>{
   touchPts.delete(e.pointerId);
   if(touchPts.size<2)pinchDist=0;
+  cancelComet();
   dragging=false;stage.classList.remove("dragging");
 });
 addEventListener("pointermove",e=>{
+  if(cometFrom){updateComet(e);return;}
   if(touchPts.has(e.pointerId))touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(touchPts.size===2&&pinchDist>0){
     const [p1,p2]=[...touchPts.values()];
@@ -2564,7 +3680,10 @@ addEventListener("pointermove",e=>{
   }
   if(!dragging)return;
   if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>5)moved=true;
-  rig.theta-=(e.clientX-px)*0.005;
+  const dTheta=-(e.clientX-px)*0.005;
+  rig.theta+=dTheta;
+  // Smoothed throw velocity, so a flick coasts instead of stopping dead
+  spinVel=spinVel*0.6+dTheta*0.4;
   rig.goal.phi=rig.phi=THREE.MathUtils.clamp(rig.phi-(e.clientY-py)*0.004,0.25,1.48);
   px=e.clientX;py=e.clientY;
 });
@@ -2671,6 +3790,8 @@ function updateDirtyUI(){
 }
 function markDirty(){
   recordHistory();          // snapshots the state as it was before this change
+  // `booted` primeiro: markDirty corre durante a semente, antes de `noGL` existir (TDZ)
+  if(booted&&noGL)renderFallbackSVG();   // Plano B: manter o SVG a par dos dados
   if(!booted||dirty)return;
   dirty=true;
   updateDirtyUI();
@@ -3192,6 +4313,11 @@ function viewsEqual(a,b){
   if(a.type==="orgchart")return true;
   if(a.type==="flowindex")return true;
   if(a.type==="health")return true;
+  if(a.type==="views")return true;
+  if(a.type==="view")return a.view===b.view;
+  if(a.type==="continuity")return true;
+  if(a.type==="scenario")return true;
+  if(a.type==="paste")return true;
   return false;
 }
 function viewValid(v){
@@ -3204,6 +4330,11 @@ function viewValid(v){
   if(v.type==="orgchart")return true;
   if(v.type==="flowindex")return true;
   if(v.type==="health")return true;
+  if(v.type==="views")return true;
+  if(v.type==="view")return VIEWS.some(x=>x.id===v.view);
+  if(v.type==="continuity")return true;
+  if(v.type==="scenario")return true;
+  if(v.type==="paste")return true;
   return false;
 }
 function closeModalSilent(){
@@ -3212,6 +4343,11 @@ function closeModalSilent(){
   modalView=null;
 }
 function applySelection(sel){
+  // Uma selecção sem alvo (node apagado, id inválido) é tratada como "nada seleccionado"
+  if(sel&&((sel.type==="node"&&(!sel.node||!sel.node.pos))||
+           (sel.type==="task"&&!sel.task)||
+           (sel.type==="agent"&&!sel.agent)||
+           (sel.type==="group"&&!sel.group)))sel=null;
   selected=sel;
   if(sel&&sel.type==="node"){
     pendingTarget=null;searchQuery="";newLayerMode=false;
@@ -3246,6 +4382,11 @@ function applyView(v){
   else if(v&&v.type==="orgchart"){modalView=v;modal.classList.remove("from-3d");renderOrgChart();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="flowindex"){modalView=v;modal.classList.remove("from-3d");renderFlowIndex();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="health"){modalView=v;modal.classList.remove("from-3d");renderHealth();modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="views"){modalView=v;modal.classList.remove("from-3d");renderViewGallery();modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="view"){modalView=v;modal.classList.remove("from-3d");renderView(v.view);modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="continuity"){modalView=v;modal.classList.remove("from-3d");renderContinuity();modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="scenario"){modalView=v;modal.classList.remove("from-3d");renderScenario();modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="paste"){modalView=v;modal.classList.remove("from-3d");renderPaste();modal.classList.add("open");renderDetail();}
   else{closeModalSilent();applySelection(v||null);}
   updateModalNav();
 }
@@ -3273,7 +4414,7 @@ function goForward(){
   if(cur)navStack.push(cur);
   applyView(nxt);
 }
-function selectNode(n){navigateTo({type:"node",node:n});}
+function selectNode(n){if(!n){clearSelection();return;}navigateTo({type:"node",node:n});}
 function selectTask(t){navigateTo({type:"task",task:t});}
 function selectAgent(a){navigateTo({type:"agent",agent:a});}
 function selectGroup(g){groupPanelSearch="";groupAddSearch="";navigateTo({type:"group",group:g});}
@@ -3886,12 +5027,13 @@ function renderNodeDetail(head,closeBtn){
       agentsOf(n.id).forEach(x=>x.primary=false);
       a.primary=true;
       markDirty();
+      questMark("resp");
       refreshNodeVisual(n);renderAgentsTab();renderDetail();
     };
-    const name=el("button","row-name",a.name);
+    const name=el("button","row-name"+(a.absent?" absent":""),a.name);
     name.style.background="none";name.style.border="none";
     name.style.font="inherit";name.style.cursor="pointer";name.style.padding="0";
-    name.title="Abrir painel do agente";
+    name.title=a.absent?(a.name+" está ausente — abrir painel"):"Abrir painel do agente";
     name.setAttribute("aria-label","Open agent "+a.name);
     name.onclick=()=>selectAgent(a);
     const cat=el("span","count",a.category);
@@ -4085,7 +5227,37 @@ function renderAgentDetail(head,closeBtn){
   head.append(titleIn,closeBtn);
   detail.append(head);
 
-  detail.append(el("div","d-sub",a.primary&&n?("Responsável — "+n.name):"Agente de apoio"));
+  const subLine=el("div","d-sub",a.primary&&n?("Responsável — "+n.name):"Agente de apoio");
+  if(a.absent){
+    const cover=actingFor(a)||(continuityOn?null:(a.subst?agentById(a.subst):null));
+    subLine.append(el("span","cont-tag"+(cover?" cover":""),
+      cover?("ausente · assegura "+cover.name):"ausente · sem cobertura"));
+  }
+  detail.append(subLine);
+
+  /* ---- Continuidade: ausência e quem assegura ---- */
+  detail.append(el("h4",null,"Continuidade"));
+  const contRow=el("div","field-grid");
+  const abs=el("button","btn tiny"+(a.absent?" active":""),
+    a.absent?"Marcar como presente":"Marcar como ausente");
+  abs.type="button";
+  abs.onclick=()=>{setAbsent(a,!a.absent,null);renderDetail();};
+  contRow.append(abs);
+  if(a.absent){
+    const opts=substituteOptions(a);
+    contRow.append(el("label",null,"Quem assegura"));
+    if(!opts.length){
+      contRow.append(el("div","empty-note","Sem ninguém disponível nas unidades vizinhas."));
+    }else{
+      const sel=mkSelect([{label:"— ninguém —",value:""}].concat(opts.map(o=>{
+        const on=byId(o.nodeId);
+        return {label:o.name+" — "+(on?abbrev(on.name):"?"),value:o.id};
+      })),a.subst||"",v=>{setAbsent(a,true,v||null);renderDetail();});
+      sel.style.width="100%";
+      contRow.append(sel);
+    }
+  }
+  detail.append(contRow);
 
   detail.append(el("h4",null,"Category"));
   const cat=mkSelect(CATEGORIES.map(c=>({label:c,value:c})),a.category,v=>{
@@ -4435,7 +5607,7 @@ function isolateProcedureOf(t){
 function handleClick(e){
   const hit=raycast(e);
   if(!hit){clearSelection();return;}
-  if(hit.type==="node")selectNode(hit.node);
+  if(hit.type==="node"){kbFocus=hit.node;nodePunch(hit.node);selectNode(hit.node);}
   else if(e.shiftKey)isolateProcedureOf(hit.task);
   else selectTask(hit.task);
 }
@@ -5049,6 +6221,8 @@ function renderFlowchart(p){
     empty.style.padding="20px";
     canvas.append(empty);
   }
+  // Âncora espacial: nunca se perde de vista onde no organograma isto acontece
+  if(g.ids.length)canvas.append(anchorMap(p,fcSel?{a:fcSel.a,b:fcSel.b}:null));
 
   /* ---- side editor: edits happen here, the diagram never closes ---- */
   const side=el("div","fc-side");
@@ -5368,6 +6542,7 @@ function exportProcSVG(p){
     a.download=procFileBase(p)+".svg";
     a.click();
     URL.revokeObjectURL(a.href);
+    questMark("export");
     flash("SVG exportado.");
   }catch(e){flash("Não foi possível exportar o SVG.",{type:"err"});}
 }
@@ -5397,6 +6572,7 @@ async function exportProcPDF(p){
     const sc=Math.min((PW-M*2)/iw,(PH-M*2)/ih);
     doc.addImage(png,"PNG",M,M,iw*sc,ih*sc);
     doc.save(procFileBase(p)+".pdf");
+    questMark("export");
     flash("PDF exportado.",{key:"fcpdf"});
   }catch(e){
     flash("Ocorreu um erro ao gerar o PDF.",{type:"err",key:"fcpdf"});
@@ -5666,7 +6842,8 @@ document.getElementById("exportBtn").onclick=()=>{
     orgName,
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
-    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,primary:!!a.primary})),
+    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
+      primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
@@ -5739,8 +6916,10 @@ importFile.onchange=()=>{
           agents.push({id:ca.id||("a"+(++agentCounter)),
             name:String(ca.name||"Agente").slice(0,30),
             category:CATEGORIES.includes(ca.category)?ca.category:"Técnico Superior",
-            nodeId:ca.nodeId,primary:!!ca.primary});
+            nodeId:ca.nodeId,primary:!!ca.primary,absent:!!ca.absent,
+            subst:typeof ca.subst==="string"?ca.subst:null});
         });
+        agents.forEach(a=>{if(a.subst&&(a.subst===a.id||!agents.some(x=>x.id===a.subst)))a.subst=null;});
         nodes.forEach(n=>{ // enforce single primary
           const prim=agentsOf(n.id).filter(a=>a.primary);
           prim.slice(1).forEach(a=>a.primary=false);
@@ -6181,6 +7360,7 @@ async function exportPDF(){
       doc.text(i+" / "+total,W-M,H-30,{align:"right"});
     }
     doc.save("organograma-fluxogramas.pdf");
+    questMark("export");
     flash("PDF exportado.",{key:"pdf"});
   }catch(err){
     flash("Ocorreu um erro ao gerar o PDF.",{type:"err",key:"pdf"});
@@ -6409,6 +7589,7 @@ async function exportPPTX(){
       new Promise(r=>setTimeout(()=>r(false),90000))
     ]);
     if(!wrote)throw new Error("timeout ao empacotar o .pptx");
+    questMark("export");
     flash("Apresentação exportada.",{key:"pptx"});
   }catch(err){
     flash("Ocorreu um erro ao gerar a apresentação.",{type:"err",key:"pptx"});
@@ -6457,25 +7638,64 @@ function animate(){
   // Cheap poll keeps the empty-state prompt correct without hooking every mutation
   if((uxTick++&31)===0)updateEmptyHint();
   if((uxTick&3)===0)updateDeclutter();
+  if((uxTick&1)===0)updateChevrons();
+  if((uxTick&63)===0)nodes.forEach(n=>{n._busy=nodeBusy(n);});
+  if((uxTick&15)===0){updateWhereBar();drawRadar();}
   tierRingGroup.children.forEach(r=>{
     const on=(hoverTierIdx!==null&&r.userData.tier===hoverTierIdx);
     const target=on?(0.34+(reduceMotion?0:Math.sin(t*3.2)*0.08)):0.09;
     r.material.opacity+=(target-r.material.opacity)*0.14;
   });
 
-  rig.theta+=rig.auto*dt;
+  if(Date.now()>autoPauseUntil)rig.theta+=rig.auto*dt;
+  // Um lançamento continua a rodar e trava com atrito
+  if(!dragging&&spinVel!==0){
+    rig.theta+=spinVel;
+    spinVel*=0.92;
+    if(Math.abs(spinVel)<0.0004){spinVel=0;maybeCardinalSnap();}
+  }
+  if(snapTheta!==null){
+    rig.theta+=(snapTheta-rig.theta)*0.12;
+    if(Math.abs(snapTheta-rig.theta)<0.0015){rig.theta=snapTheta;snapTheta=null;}
+  }
   rig.phi+=(rig.goal.phi-rig.phi)*0.04;
   const breathe=(focusActive&&!reduceMotion)?(1+Math.sin(t*0.9)*0.012):1;
   rig.radius+=(rig.goal.radius*breathe-rig.radius)*0.04;
   rig.target.lerp(rig.goal.target,0.05);
   const bob=rig.bob*Math.sin(t*0.25)*0.06;
   const phi=THREE.MathUtils.clamp(rig.phi+bob,0.22,1.52);
+  // Parallax do ponteiro: a cena inclina-se ligeiramente para onde olhamos
+  if(ambientOn&&!reduceMotion){
+    paraX+=((pointerNX*0.045)-paraX)*0.06;
+    paraY+=((pointerNY*0.030)-paraY)*0.06;
+  }else{paraX+=(0-paraX)*0.08;paraY+=(0-paraY)*0.08;}
+  const phiP=THREE.MathUtils.clamp(phi+paraY,0.20,1.54),thetaP=rig.theta+paraX;
   camera.position.set(
-    rig.target.x+rig.radius*Math.sin(phi)*Math.cos(rig.theta),
-    rig.target.y+rig.radius*Math.cos(phi),
-    rig.target.z+rig.radius*Math.sin(phi)*Math.sin(rig.theta)
+    rig.target.x+rig.radius*Math.sin(phiP)*Math.cos(thetaP),
+    rig.target.y+rig.radius*Math.cos(phiP),
+    rig.target.z+rig.radius*Math.sin(phiP)*Math.sin(thetaP)
   );
   camera.lookAt(rig.target);
+
+  stepColorWipe(dt);
+  // Poeira e faísca ocasional de um node ocupado
+  {
+    const mt=(ambientOn&&!reduceMotion)?0.5:0;
+    moteMat.opacity+=(mt-moteMat.opacity)*0.05;
+    if(moteMat.opacity>0.01){
+      motes.rotation.y+=0.05*dt;
+      motes.position.y=Math.sin(t*0.12)*0.5;
+    }
+  }
+  if(ambientOn&&!reduceMotion){
+    sparkTimer+=dt;
+    if(sparkTimer>7){
+      sparkTimer=0;
+      const cands=nodes.filter(n=>(n._busy||0)>0&&n._presence>0.5);
+      if(cands.length)cands[Math.floor(Math.random()*cands.length)]._spark={t:0};
+    }
+  }
+  if(maqueteOn&&maqueteBase)maqueteBase.material.color.copy(scene.background).offsetHSL(0,0,0.05);
 
   if(autoplay){
     autoTimer+=dt;
@@ -6639,9 +7859,36 @@ function animate(){
     let presT=keep?1:0.06;
     // Hovering dims unrelated nodes so the neighbourhood reads at a glance
     if(kinOn&&!hoverKin.has(n.id))presT=Math.min(presT,0.16);
+    // Passar o rato num ramo da chave de codificação isola-o
+    if(keyHighlight&&!keyHighlight.has(n.id))presT=Math.min(presT,0.14);
     // Density: tiers past the chosen depth fade out (and stop being pickable)
     if(n.tier>densityMax)presT=0;
     n._presence+=(presT-n._presence)*0.08;
+    // Respiração ambiente + peso ao clicar, combinados numa só escala
+    if(n._mesh){
+      let sc=1;
+      if(ambientOn&&!reduceMotion){
+        if(n._breath===undefined)n._breath=Math.random()*Math.PI*2;
+        sc*=1+Math.sin(t*(0.62+Math.min(0.7,(n._busy||0)*0.10))+n._breath)*0.02;
+      }
+      if(n._punch){
+        n._punch.t+=dt;
+        const u=Math.min(1,n._punch.t/n._punch.dur);
+        sc*=1-n._punch.depth*Math.sin(u*Math.PI);
+        if(u>=1)n._punch=null;
+      }
+      // Morph de cenários: uma unidade que só existe na proposta cresce a
+      // partir do nada em vez de aparecer de repente a meio do arrasto.
+      if(n._morphScale!==undefined&&n._morphScale<1)sc*=Math.max(0,n._morphScale);
+      n._mesh.scale.setScalar(sc);
+    }
+    if(n._ripple&&n._socket){
+      n._ripple.t+=dt;
+      const u=Math.min(1,n._ripple.t/n._ripple.dur);
+      n._socket.scale.setScalar(1+u*1.8);
+      n._socket.material.opacity=0.15*(1-u);
+      if(u>=1){n._ripple=null;n._socket.scale.setScalar(1);n._socket.material.opacity=0.15;}
+    }
     n._mesh.material.opacity=n._presence;
     sys.agents.forEach(a=>{
       a.mesh.material.opacity=(a.mesh.material.userData.base||0.9)*n._presence;
@@ -6649,7 +7896,19 @@ function animate(){
     const emT=isSel?0.85:0.28;
     n._mesh.material.emissiveIntensity+=(emT-n._mesh.material.emissiveIntensity)*0.1;
     const glowBase=isSel?0.62:0.30;
-    n._glow.material.opacity=(glowBase+Math.sin(t*1.4+n.pos.x)*0.07)*n._presence;
+    let sparkBoost=0;
+    if(n._spark){
+      n._spark.t+=dt;
+      const u=n._spark.t/1.1;
+      if(u>=1)n._spark=null;else sparkBoost=Math.sin(u*Math.PI)*0.35;
+    }
+    if(n._flare){                       // sinalizador: três piscadelas
+      n._flare.t+=dt;
+      const u=n._flare.t/1.7;
+      if(u>=1)n._flare=null;
+      else sparkBoost=Math.max(sparkBoost,Math.abs(Math.sin(u*Math.PI*3))*0.55);
+    }
+    n._glow.material.opacity=(glowBase+Math.sin(t*1.4+n.pos.x)*0.07+sparkBoost)*n._presence;
     // Labels: tiers 0–1 always on; outer tiers fade in as the camera approaches
     if(n._label){
       let lt;
@@ -6661,7 +7920,9 @@ function animate(){
         const near=n.tier===2?21:14;
         lt=THREE.MathUtils.clamp(0.95-Math.max(0,d-near)*0.10,0,0.95);
       }
-      const dc=(isSel||n===hoverNode)?1:(n._declutter===undefined?1:n._declutter);
+      // A espreitar: todas as etiquetas aparecem, sem corte por distância nem colisão
+      if(peek)lt=Math.max(lt,0.92);
+      const dc=(isSel||n===hoverNode||peek)?1:(n._declutter===undefined?1:n._declutter);
       n._label.material.opacity+=(lt*n._presence*dc-n._label.material.opacity)*0.08;
     }
   });
@@ -6672,6 +7933,7 @@ addEventListener("resize",()=>{
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
+  if(noGL)renderFallbackSVG();
 });
 
 /* ============================================================
@@ -6771,12 +8033,39 @@ addEventListener("keydown",e=>{
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
+  // Com o palco 3D em foco, as setas percorrem a hierarquia em vez do tour
+  if(document.activeElement===stage&&e.key.indexOf("Arrow")===0){
+    e.preventDefault();
+    kbMove(e.key==="ArrowUp"?"up":e.key==="ArrowDown"?"down":e.key==="ArrowRight"?"right":"left");
+    return;
+  }
   if(e.key==="ArrowRight"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx+1);}
   else if(e.key==="ArrowLeft"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx-1);}
-  else if(e.key===" "){e.preventDefault();autoplay=!autoplay;autoTimer=0;syncPlay();}
+  else if(e.key===" "){
+    // Toque = play/pausa do tour; manter = espreitar o todo. Decide-se no keyup.
+    e.preventDefault();
+    if(e.repeat)return;
+    spacePeeked=false;
+    clearTimeout(spaceTimer);
+    spaceTimer=setTimeout(()=>{spacePeeked=true;startPeek();},240);
+  }
   else if(e.key==="r"||e.key==="R"){e.preventDefault();resetView();}
   else if(e.key==="p"||e.key==="P"){e.preventDefault();togglePresent();}
+  else if(e.key==="v"||e.key==="V"){e.preventDefault();showViewGallery();}
+  else if(e.key==="l"||e.key==="L"){e.preventDefault();setLinkMode(!linkMode);}
   else if(e.key==="?"||(e.key==="/"&&e.shiftKey)){e.preventDefault();openHelp();}
+});
+addEventListener("keyup",e=>{
+  if(e.key!==" ")return;
+  clearTimeout(spaceTimer);
+  if(spacePeeked){spacePeeked=false;endPeek();return;}
+  const tag=((e.target&&e.target.tagName)||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||(e.target&&e.target.isContentEditable))return;
+  if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
+  if(reassignEl&&reassignEl.classList.contains("open"))return;
+  if(paletteEl&&paletteEl.classList.contains("open"))return;
+  if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
+  autoplay=!autoplay;autoTimer=0;syncPlay();
 });
 /* Modifier shortcuts live in their own listener so the plain-key handler above
    can keep ignoring anything with Ctrl/Cmd held. */
@@ -6985,6 +8274,1154 @@ function renderHealth(){
 document.getElementById("healthBtn").onclick=showHealth;
 
 /* ============================================================
+   VISTAS — a mesma informação lida de seis maneiras diferentes
+   Todas partilham o modal e o motor de layout já existentes: nada aqui
+   duplica dados, só os reorganiza para uma pergunta diferente.
+============================================================ */
+const VIEWS=[
+  {id:"matrix",  ico:"▦", t:"Matriz Nó × Procedimento",
+   d:"Que unidades entram em que procedimentos, e quanto pesam."},
+  {id:"sankey",  ico:"⇉", t:"Mapa de fluxo (Sankey)",
+   d:"Para onde corre o trabalho entre unidades, com a espessura do caudal."},
+  {id:"mural",   ico:"▤", t:"Mural de procedimentos",
+   d:"Todos os fluxogramas lado a lado, em miniatura."},
+  {id:"metro",   ico:"⊕", t:"Mapa de metro",
+   d:"Cada procedimento é uma linha; as unidades partilhadas são interfaces."},
+  {id:"oficial", ico:"▣", t:"Organograma oficial",
+   d:"Versão documento, pronta a imprimir ou anexar a uma deliberação."},
+  {id:"municipe",ico:"☺", t:"Vista do munícipe",
+   d:"O que a autarquia faz, em linguagem de quem bate à porta."}
+];
+function showViewGallery(){navigateTo({type:"views"});}
+function showView(id){navigateTo({type:"view",view:id});}
+function renderViewGallery(){
+  modalTitle.textContent="Vistas";
+  modalBody.innerHTML="";
+  const grid=el("div","vg-grid");
+  VIEWS.forEach(v=>{
+    const b=el("button","vg-card");
+    b.type="button";
+    b.append(el("span","vg-ico",v.ico),el("span","vg-t",v.t),el("span","vg-d",v.d));
+    b.onclick=()=>showView(v.id);
+    grid.append(b);
+  });
+  modalBody.append(grid);
+  modal.classList.add("open");
+}
+/* Barra comum: voltar à galeria + nota de contexto */
+function viewBar(note,extra){
+  const bar=el("div","vw-bar");
+  const back=el("button","btn tiny","← Vistas");
+  back.type="button";
+  back.onclick=showViewGallery;
+  bar.append(back);
+  if(note)bar.append(el("span","vw-note",note));
+  (extra||[]).forEach(e=>bar.append(e));
+  return bar;
+}
+function renderView(id){
+  const fn={matrix:renderMatrix,sankey:renderSankey,mural:renderMural,
+            metro:renderMetro,oficial:renderOficial,municipe:renderMunicipe}[id];
+  if(!fn){renderViewGallery();return;}
+  fn();
+}
+
+/* ---------- 1. Matriz Nó × Procedimento ---------- */
+function matrixData(){
+  const procs=processes.filter(p=>p.tasks.length);
+  const count={},rowT={},colT={};
+  const involved=[];
+  procs.forEach((p,pi)=>{
+    colT[pi]=0;
+    p.tasks.forEach(t=>{
+      [t.a,t.b].forEach(id=>{
+        if(!byId(id))return;
+        const k=id+"|"+pi;
+        count[k]=(count[k]||0)+1;
+        rowT[id]=(rowT[id]||0)+1;
+        colT[pi]=colT[pi]+1;
+        if(involved.indexOf(id)<0)involved.push(id);
+      });
+    });
+  });
+  // ordenar por tier, depois por total decrescente
+  involved.sort((x,y)=>{
+    const nx=byId(x),ny=byId(y);
+    return (nx.tier-ny.tier)||((rowT[y]||0)-(rowT[x]||0));
+  });
+  const max=Math.max(1,...Object.keys(count).map(k=>count[k]));
+  return {procs,involved,count,rowT,colT,max};
+}
+function renderMatrix(){
+  modalTitle.textContent="Matriz Nó × Procedimento";
+  modalBody.innerHTML="";
+  const D=matrixData();
+  modalBody.append(viewBar(
+    D.involved.length+" unidade(s) × "+D.procs.length+" procedimento(s) — o número é quantas vezes a unidade aparece numa tarefa."));
+  if(!D.procs.length||!D.involved.length){
+    modalBody.append(el("div","empty-note","Ainda não há tarefas para cruzar. Crie um procedimento primeiro."));
+    modal.classList.add("open");
+    return;
+  }
+  const wrap=el("div","vw-scroll");
+  const tb=document.createElement("table");
+  tb.className="mx";
+  const thead=document.createElement("thead");
+  const hr=document.createElement("tr");
+  hr.append(el("th","mxrow","Unidade"));
+  D.procs.forEach((p,pi)=>{
+    const th=el("th","mxcol");
+    const s=el("span",null,p.name);
+    s.style.color=hex(p.color);
+    s.title="Abrir o fluxograma de "+p.name;
+    s.onclick=()=>showFlowchart(p);
+    th.append(s);
+    hr.append(th);
+  });
+  hr.append(el("th",null,"Σ"));
+  thead.append(hr);
+  tb.append(thead);
+  const tbody=document.createElement("tbody");
+  D.involved.forEach(id=>{
+    const n=byId(id);
+    const tr=document.createElement("tr");
+    const th=el("th","mxrow",abbrev(n.name));
+    th.title=n.name+" — abrir o painel desta unidade";
+    th.style.cursor="pointer";
+    th.onclick=()=>{closeModalSilent();selectNode(n);};
+    tr.append(th);
+    D.procs.forEach((p,pi)=>{
+      const c=D.count[id+"|"+pi]||0;
+      const td=el("td","cell"+(c?"":" zero"),c?String(c):"·");
+      if(c){
+        const u=c/D.max;
+        td.style.background=`rgba(232,180,76,${(0.10+u*0.55).toFixed(3)})`;
+        td.title=n.name+" · "+p.name+" — "+c+" ocorrência(s). Abrir o fluxograma.";
+        td.onclick=()=>showFlowchart(p);
+      }
+      tr.append(td);
+    });
+    tr.append(el("td","tot",String(D.rowT[id]||0)));
+    tbody.append(tr);
+  });
+  const tot=document.createElement("tr");
+  tot.className="tot";
+  tot.append(el("th","mxrow","Σ"));
+  D.procs.forEach((p,pi)=>tot.append(el("td",null,String(D.colT[pi]||0))));
+  tot.append(el("td",null,String(D.involved.reduce((s,id)=>s+(D.rowT[id]||0),0))));
+  tbody.append(tot);
+  tb.append(tbody);
+  wrap.append(tb);
+  modalBody.append(wrap);
+  modal.classList.add("open");
+}
+
+/* ---------- 2. Mapa de fluxo (Sankey) ---------- */
+function sankeyData(){
+  // Agrega as tarefas visíveis em caudais unidade→unidade
+  const flows={};
+  processes.filter(p=>p._visible!==false).forEach(p=>{
+    p.tasks.forEach(t=>{
+      if(!byId(t.a)||!byId(t.b)||t.a===t.b)return;
+      const k=t.a+"→"+t.b;
+      if(!flows[k])flows[k]={a:t.a,b:t.b,n:0,procs:new Set()};
+      flows[k].n++;
+      flows[k].procs.add(p);
+    });
+  });
+  const links=Object.keys(flows).map(k=>flows[k]).sort((x,y)=>y.n-x.n);
+  const out={},inn={};
+  links.forEach(l=>{out[l.a]=(out[l.a]||0)+l.n;inn[l.b]=(inn[l.b]||0)+l.n;});
+  const sources=Object.keys(out).sort((x,y)=>out[y]-out[x]);
+  const targets=Object.keys(inn).sort((x,y)=>inn[y]-inn[x]);
+  return {links,out,inn,sources,targets};
+}
+function renderSankey(){
+  modalTitle.textContent="Mapa de fluxo";
+  modalBody.innerHTML="";
+  const D=sankeyData();
+  modalBody.append(viewBar(
+    "Quem entrega a quem, somando todos os procedimentos visíveis. A espessura é o número de tarefas."));
+  if(!D.links.length){
+    modalBody.append(el("div","empty-note","Nenhuma tarefa entre unidades distintas nos procedimentos visíveis."));
+    modal.classList.add("open");
+    return;
+  }
+  const NS="http://www.w3.org/2000/svg";
+  const mk=(t,a)=>{const e=document.createElementNS(NS,t);
+    Object.keys(a||{}).forEach(k=>e.setAttribute(k,a[k]));return e;};
+  const cs=getComputedStyle(document.documentElement);
+  const pick=(v,d)=>{const s=(cs.getPropertyValue(v)||"").trim();return s||d;};
+  const ink=pick("--ink","#111"),dim=pick("--ink-dim","#777"),hair=pick("--hairline","#999");
+  const LW=190,RW=190,GAP=250,PADT=18;
+  const W=LW+GAP+RW, BAR=13;
+  const scale=Math.max(2.2,Math.min(11,320/Math.max(1,D.links.reduce((s,l)=>s+l.n,0))*2));
+  const hOf=n=>Math.max(4,n*scale);
+  const place=(ids,tot)=>{
+    const y={};let cur=PADT;
+    ids.forEach(id=>{y[id]=cur;cur+=hOf(tot[id])+9;});
+    return {y,end:cur};
+  };
+  const L=place(D.sources,D.out), R=place(D.targets,D.inn);
+  const H=Math.max(L.end,R.end)+PADT;
+  const svg=mk("svg",{viewBox:"0 0 "+W+" "+H,width:W,height:H});
+  // fitas
+  const offL={},offR={};
+  D.links.forEach(l=>{
+    const y1=L.y[l.a]+(offL[l.a]=(offL[l.a]||0))+0;
+    const y2=R.y[l.b]+(offR[l.b]=(offR[l.b]||0))+0;
+    const th=hOf(l.n);
+    offL[l.a]+=th;offR[l.b]+=th;
+    const x1=LW,x2=LW+GAP;
+    const cx=(x1+x2)/2;
+    const p=mk("path",{
+      d:"M"+x1+","+y1+" C"+cx+","+y1+" "+cx+","+y2+" "+x2+","+y2+
+        " L"+x2+","+(y2+th)+" C"+cx+","+(y2+th)+" "+cx+","+(y1+th)+" "+x1+","+(y1+th)+" Z",
+      fill:hex([...l.procs][0]?[...l.procs][0].color:GOLD3D),"fill-opacity":"0.34",
+      class:"sk-link"});
+    const ttl=mk("title",{});
+    ttl.textContent=byId(l.a).name+" → "+byId(l.b).name+" · "+l.n+" tarefa(s) · "+
+      [...l.procs].map(x=>x.name).join(", ");
+    p.append(ttl);
+    p.addEventListener("click",()=>{const f=[...l.procs][0];if(f)showFlowchart(f);});
+    svg.append(p);
+  });
+  // barras + etiquetas
+  const side=(ids,tot,pos,x,anchor)=>ids.forEach(id=>{
+    const n=byId(id);if(!n)return;
+    const h=hOf(tot[id]);
+    const g=mk("g",{style:"cursor:pointer"});
+    g.append(mk("rect",{x:anchor==="end"?x-BAR:x,y:pos.y[id],width:BAR,height:h,rx:2.5,fill:hex(n.color)}));
+    g.append((()=>{const t=mk("text",{x:anchor==="end"?x-BAR-7:x+BAR+7,y:pos.y[id]+h/2+3.5,
+      "text-anchor":anchor==="end"?"end":"start",fill:n.tier<=1?ink:dim,
+      "font-family":"Segoe UI,Helvetica,sans-serif","font-size":"10.5"});
+      t.textContent=abbrev(n.name)+"  ("+tot[id]+")";return t;})());
+    const ttl=mk("title",{});ttl.textContent=n.name+" — "+tot[id]+" tarefa(s)";
+    g.append(ttl);
+    g.addEventListener("click",()=>{closeModalSilent();selectNode(n);});
+    svg.append(g);
+  });
+  side(D.sources,D.out,L,LW,"end");
+  side(D.targets,D.inn,R,LW+GAP,"start");
+  const hdr=(s,x,a)=>{const t=mk("text",{x,y:11,"text-anchor":a,fill:hair,
+    "font-family":"Segoe UI,Helvetica,sans-serif","font-size":"9","letter-spacing":"1.6"});
+    t.textContent=s;svg.append(t);};
+  hdr("ENTREGA",LW,"end");hdr("RECEBE",LW+GAP,"start");
+  const wrap=el("div","sk-wrap vw-scroll");
+  wrap.append(svg);
+  modalBody.append(wrap);
+  modal.classList.add("open");
+}
+
+/* ---------- 3. Mural de procedimentos ---------- */
+function renderMural(){
+  modalTitle.textContent="Mural de procedimentos";
+  modalBody.innerHTML="";
+  modalBody.append(viewBar(processes.length+" procedimento(s). Clique numa miniatura para abrir o fluxograma."));
+  if(!processes.length){
+    modalBody.append(el("div","empty-note","Ainda não há procedimentos."));
+    const nb=el("button","btn primary","+ Novo procedimento");
+    nb.onclick=()=>{const np=createLayer();showFlowchart(np);};
+    modalBody.append(nb);
+    modal.classList.add("open");
+    return;
+  }
+  const grid=el("div","mu-grid");
+  processes.forEach(p=>{
+    const st=procStats(p);
+    const card=el("button","mu-card");
+    card.type="button";
+    card.style.color=hex(p.color);
+    const th=el("div","mu-thumb");
+    try{
+      // O mesmo motor de layout do fluxograma, encolhido — nunca uma segunda verdade
+      const raw=procSVG(p,"flow");
+      const holder=document.createElement("div");
+      holder.innerHTML=raw;                       // procSVG escapa tudo o que vem do utilizador
+      const svg=holder.querySelector("svg");
+      if(svg){
+        svg.removeAttribute("width");svg.removeAttribute("height");
+        svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+        th.append(svg);
+      }else th.append(el("span","empty-note","sem passos"));
+    }catch(e){ th.append(el("span","empty-note","pré-visualização indisponível")); }
+    const meta=el("div","mu-meta");
+    meta.append(el("div","mu-n",p.name));
+    meta.append(el("div","mu-s",p.tasks.length+" tarefa(s) · "+fmtDays(st.total)+
+      (st.unknown?" (estimativa parcial)":"")));
+    const tags=el("div","mu-tags");
+    if(st.forks)tags.append(el("span","mu-tag fork",st.forks+" ramificação(ões)"));
+    if(st.joins)tags.append(el("span","mu-tag",st.joins+" junção(ões)"));
+    if(st.graph.cyclic)tags.append(el("span","mu-tag warn","ciclo"));
+    if(p._visible===false)tags.append(el("span","mu-tag","oculto no 3D"));
+    if(tags.children.length)meta.append(tags);
+    card.append(th,meta);
+    card.title="Abrir "+p.name;
+    card.onclick=()=>showFlowchart(p);
+    grid.append(card);
+  });
+  modalBody.append(grid);
+  modal.classList.add("open");
+}
+
+/* ---------- 4. Mapa de metro ---------- */
+function metroData(){
+  const lines=processes.filter(p=>p.tasks.length).map(p=>{
+    const g=procGraph(p);
+    // ordem topológica estável: camada, depois ordem de aparecimento
+    const seq=g.ids.slice().sort((x,y)=>(g.layer[x]-g.layer[y])||(g.ids.indexOf(x)-g.ids.indexOf(y)));
+    return {proc:p,stations:seq.filter(byId)};
+  }).filter(l=>l.stations.length);
+  const uses={};
+  lines.forEach(l=>l.stations.forEach(id=>{uses[id]=(uses[id]||0)+1;}));
+  return {lines,uses};
+}
+function renderMetro(){
+  modalTitle.textContent="Mapa de metro";
+  modalBody.innerHTML="";
+  const D=metroData();
+  modalBody.append(viewBar(
+    "Cada procedimento é uma linha. As paragens a dourado servem mais do que uma linha — são as interfaces."));
+  if(!D.lines.length){
+    modalBody.append(el("div","empty-note","Ainda não há procedimentos com tarefas."));
+    modal.classList.add("open");
+    return;
+  }
+  const NS="http://www.w3.org/2000/svg";
+  const mk=(t,a)=>{const e=document.createElementNS(NS,t);
+    Object.keys(a||{}).forEach(k=>e.setAttribute(k,a[k]));return e;};
+  const cs=getComputedStyle(document.documentElement);
+  const pick=(v,d)=>{const s=(cs.getPropertyValue(v)||"").trim();return s||d;};
+  const ink=pick("--ink","#111"),dim=pick("--ink-dim","#777");
+  const gold=pick("--gold","#E8B44C");
+  const SX=150,X0=120,LY=64,PADT=30;
+  const maxLen=Math.max.apply(null,D.lines.map(l=>l.stations.length));
+  const W=X0+Math.max(1,maxLen-1)*SX+150;
+  const H=PADT+D.lines.length*LY+24;
+  const svg=mk("svg",{viewBox:"0 0 "+W+" "+H,width:W,height:H});
+  D.lines.forEach((l,li)=>{
+    const y=PADT+li*LY;
+    const col=hex(l.proc.color);
+    const x=(i)=>X0+i*SX;
+    // traço da linha
+    svg.append(mk("path",{d:"M"+x(0)+","+y+" L"+x(l.stations.length-1)+","+y,
+      stroke:col,"stroke-width":"6","stroke-linecap":"round",fill:"none","stroke-opacity":"0.85"}));
+    // nome da linha
+    const nm=mk("text",{x:X0-16,y:y+4,"text-anchor":"end",fill:col,
+      "font-family":"Segoe UI,Helvetica,sans-serif","font-size":"11","font-weight":"600",
+      style:"cursor:pointer"});
+    nm.textContent=l.proc.name.length>16?l.proc.name.slice(0,15)+"…":l.proc.name;
+    const nt=mk("title",{});nt.textContent="Abrir "+l.proc.name;nm.append(nt);
+    nm.addEventListener("click",()=>showFlowchart(l.proc));
+    svg.append(nm);
+    l.stations.forEach((id,i)=>{
+      const n=byId(id);if(!n)return;
+      const inter=D.uses[id]>1;
+      const g=mk("g",{style:"cursor:pointer"});
+      g.append(mk("circle",{cx:x(i),cy:y,r:inter?8:5.5,fill:inter?gold:pick("--bg-mid","#fff"),
+        stroke:inter?gold:col,"stroke-width":inter?2:2.6}));
+      const lbl=mk("text",{x:x(i),y:y-15,"text-anchor":"middle",fill:inter?gold:dim,
+        "font-family":"Segoe UI,Helvetica,sans-serif","font-size":"9.5"});
+      lbl.textContent=abbrev(n.name).length>18?abbrev(n.name).slice(0,17)+"…":abbrev(n.name);
+      const ttl=mk("title",{});
+      ttl.textContent=n.name+(inter?" — interface de "+D.uses[id]+" procedimentos":"");
+      g.append(lbl,ttl);
+      g.addEventListener("click",()=>{closeModalSilent();selectNode(n);});
+      svg.append(g);
+    });
+  });
+  const wrap=el("div","mt-wrap vw-scroll");
+  wrap.append(svg);
+  modalBody.append(wrap);
+  const leg=el("div","mt-legend");
+  D.lines.forEach(l=>{
+    const b=el("button","mt-leg");
+    b.type="button";
+    b.style.color=hex(l.proc.color);
+    b.append(el("i"),el("span",null,l.proc.name+" · "+l.stations.length+" paragens"));
+    b.onclick=()=>showFlowchart(l.proc);
+    leg.append(b);
+  });
+  modalBody.append(leg);
+  modal.classList.add("open");
+}
+
+/* ---------- 5. Organograma oficial (vista documento) ---------- */
+function renderOficial(){
+  modalTitle.textContent="Organograma oficial";
+  modalBody.innerHTML="";
+  const printBtn=el("button","btn tiny","Imprimir / PDF");
+  printBtn.type="button";
+  printBtn.onclick=()=>{try{print();}catch(e){flash("Não foi possível abrir a impressão.",{type:"err"});}};
+  modalBody.append(viewBar("Versão documento, em preto sobre branco, pronta a anexar.",[printBtn]));
+
+  const doc=el("div","doc");
+  doc.append(el("h1",null,orgName));
+  doc.append(el("div","doc-sub","Estrutura orgânica · "+
+    new Date().toLocaleDateString("pt-PT",{day:"2-digit",month:"long",year:"numeric"})));
+  doc.append(el("div","doc-rule"));
+
+  doc.append(el("h2",null,"Organograma"));
+  const tree=el("div","doc-tree");
+  const kidsOf=id=>nodes.filter(n=>n.parent===id).sort((a,b)=>a.angle-b.angle);
+  const draw=(n,host,depth)=>{
+    const box=el("div","doc-box");
+    box.append(el("div","dc",(TIER[n.tier]||{}).label||("Tier "+n.tier)));
+    box.append(el("div","dn",n.name));
+    const pr=primaryOf(n.id);
+    box.append(el("div","dp",pr?(pr.name+" — "+pr.category):"(sem responsável designado)"));
+    const wrap=el("div","doc-node");
+    wrap.append(box);
+    host.append(wrap);
+    const kids=kidsOf(n.id);
+    if(!kids.length||depth>=5)return;
+    const lvl=el("div","doc-lvl");
+    kids.forEach(k=>draw(k,lvl,depth+1));
+    wrap.append(lvl);
+  };
+  const roots=nodes.filter(n=>!n.parent||!byId(n.parent));
+  if(!roots.length)tree.append(el("div","empty-note","Sem unidades."));
+  roots.forEach(r=>draw(r,tree,0));
+  doc.append(tree);
+
+  doc.append(el("h2",null,"Mapa de pessoal"));
+  const tb=document.createElement("table");
+  tb.className="doc-t";
+  const th=document.createElement("thead");
+  const hr=document.createElement("tr");
+  ["Unidade","Nível","Responsável","Efectivos"].forEach(h=>hr.append(el("th",null,h)));
+  th.append(hr);tb.append(th);
+  const tbody=document.createElement("tbody");
+  nodes.slice().sort((a,b)=>(a.tier-b.tier)||a.name.localeCompare(b.name,"pt")).forEach(n=>{
+    const tr=document.createElement("tr");
+    const pr=primaryOf(n.id);
+    tr.append(el("td",null,n.name));
+    tr.append(el("td",null,(TIER[n.tier]||{}).label||("Tier "+n.tier)));
+    tr.append(el("td",null,pr?pr.name:"—"));
+    tr.append(el("td",null,String(agentsOf(n.id).length)));
+    tbody.append(tr);
+  });
+  tb.append(tbody);
+  doc.append(tb);
+
+  if(processes.length){
+    doc.append(el("h2",null,"Procedimentos"));
+    const pt=document.createElement("table");
+    pt.className="doc-t";
+    const pth=document.createElement("thead"),phr=document.createElement("tr");
+    ["Procedimento","Tarefas","Unidades","Duração estimada"].forEach(h=>phr.append(el("th",null,h)));
+    pth.append(phr);pt.append(pth);
+    const ptb=document.createElement("tbody");
+    processes.forEach(p=>{
+      const st=procStats(p);
+      const tr=document.createElement("tr");
+      tr.append(el("td",null,p.name));
+      tr.append(el("td",null,String(p.tasks.length)));
+      tr.append(el("td",null,String(st.graph.ids.filter(byId).length)));
+      tr.append(el("td",null,fmtDays(st.total)+(st.unknown?" (parcial)":"")));
+      ptb.append(tr);
+    });
+    pt.append(ptb);
+    doc.append(pt);
+  }
+  doc.append(el("div","doc-foot",nodes.length+" unidades · "+agents.length+" agentes · "+
+    processes.length+" procedimentos · documento gerado automaticamente a partir do modelo."));
+  modalBody.append(doc);
+  modal.classList.add("open");
+}
+
+/* ---------- 6. Vista do munícipe ---------- */
+let municipeQuery="";
+function municipeCards(){
+  return processes.filter(p=>p.tasks.length).map(p=>{
+    const st=procStats(p);
+    const g=st.graph;
+    const order=g.ids.slice().sort((x,y)=>(g.layer[x]-g.layer[y])||(g.ids.indexOf(x)-g.ids.indexOf(y)));
+    const chain=order.filter(byId).map(byId);
+    const first=chain[0]||null;
+    const who=first?primaryOf(first.id):null;
+    return {p,st,chain,first,who};
+  });
+}
+function renderMunicipe(){
+  modalTitle.textContent="Vista do munícipe";
+  modalBody.innerHTML="";
+  modalBody.append(viewBar("O que a autarquia faz, por onde se começa e quantos passos leva."));
+  const search=el("input","mc-search");
+  search.type="search";
+  search.placeholder="Procurar um assunto…";
+  search.value=municipeQuery;
+  search.setAttribute("aria-label","Procurar um assunto");
+  modalBody.append(search);
+  const list=el("div","mc-list");
+  modalBody.append(list);
+
+  const paint=()=>{
+    list.innerHTML="";
+    const q=municipeQuery.trim().toLowerCase();
+    const cards=municipeCards().filter(c=>
+      !q||c.p.name.toLowerCase().indexOf(q)>=0||
+      c.chain.some(n=>n.name.toLowerCase().indexOf(q)>=0)||
+      c.p.tasks.some(t=>String(t.desc||"").toLowerCase().indexOf(q)>=0));
+    if(!cards.length){
+      list.append(el("div","empty-note",q?"Nada corresponde a “"+q+"”.":"Ainda não há procedimentos."));
+      return;
+    }
+    cards.forEach(c=>{
+      const card=el("div","mc-card");
+      card.append(el("h4",null,c.p.name));
+      const lead=el("div","mc-lead");
+      if(c.first){
+        lead.append(document.createTextNode("Comece por "));
+        const b=el("b",null,c.first.name);
+        lead.append(b);
+        lead.append(document.createTextNode(c.who?(", com "+c.who.name+" ("+c.who.category+")."):"."));
+      }else{
+        lead.append(document.createTextNode("Este assunto ainda não tem ponto de entrada definido."));
+      }
+      card.append(lead);
+      const steps=el("div","mc-steps");
+      c.chain.slice(0,7).forEach((n,i)=>{
+        if(i)steps.append(el("span","mc-ar","→"));
+        const b=el("button","mc-st",abbrev(n.name));
+        b.type="button";
+        b.title=n.name+" — ver no organograma";
+        b.onclick=()=>{closeModalSilent();locateNode(n);};
+        steps.append(b);
+      });
+      if(c.chain.length>7)steps.append(el("span","mc-ar","+"+(c.chain.length-7)));
+      card.append(steps);
+      const facts=el("div","mc-facts");
+      const f=(k,v)=>{const d=el("span");d.append(document.createTextNode(k+" "),el("b",null,v));return d;};
+      facts.append(f("Passos:",String(c.p.tasks.length)));
+      facts.append(f("Serviços envolvidos:",String(c.chain.length)));
+      facts.append(f("Tempo estimado:",fmtDays(c.st.total)+(c.st.unknown?" (parcial)":"")));
+      const det=el("button","mc-st","Ver o percurso completo");
+      det.type="button";
+      det.onclick=()=>showFlowchart(c.p);
+      facts.append(det);
+      card.append(facts);
+      list.append(card);
+    });
+  };
+  search.oninput=()=>{municipeQuery=search.value;paint();};
+  paint();
+  modal.classList.add("open");
+}
+
+/* ============================================================
+   COMET — ligar dois nodes arrastando, com um rasto que mostra o gesto
+   Ligar A a B era: seleccionar A, abrir o painel, escolher B numa lista.
+   Aqui é o que a mão já quer fazer — arrastar de um para o outro.
+============================================================ */
+let linkMode=false,cometFrom=null,cometHover=null;
+const cometMat=new THREE.LineBasicMaterial({color:GOLD3D,transparent:true,opacity:0.9});
+const cometGeo=new THREE.BufferGeometry();
+cometGeo.setAttribute("position",new THREE.BufferAttribute(new Float32Array(3*24),3));
+const cometLine=new THREE.Line(cometGeo,cometMat);
+cometLine.visible=false;
+cometLine.frustumCulled=false;
+scene.add(cometLine);
+function setLinkMode(on){
+  linkMode=!!on;
+  cancelComet();
+  document.body.classList.toggle("linking",linkMode);
+  const b=document.getElementById("linkBtn");
+  if(b){b.classList.toggle("active",linkMode);b.setAttribute("aria-pressed",linkMode?"true":"false");}
+  flash(linkMode
+    ? "Modo ligar: arraste de uma unidade para outra para criar uma tarefa."
+    : "Modo ligar desligado.",{key:"link"});
+}
+function cancelComet(){
+  cometFrom=null;cometHover=null;
+  cometLine.visible=false;
+}
+/* Ponto sob o cursor no plano horizontal do node de partida — é aí que a
+   cauda tem de acabar para o gesto parecer preso à mão. */
+function cometTarget(e){
+  if(!cometFrom)return null;
+  const r=stage.getBoundingClientRect();
+  const nx=((e.clientX-r.left)/r.width)*2-1, ny=-((e.clientY-r.top)/r.height)*2+1;
+  const v=new THREE.Vector3(nx,ny,0.5).unproject(camera);
+  const dir=v.sub(camera.position).normalize();
+  const denom=dir.y;
+  if(Math.abs(denom)<1e-4)return cometFrom.pos.clone();
+  const t=(cometFrom.pos.y-camera.position.y)/denom;
+  if(!isFinite(t)||t<0)return cometFrom.pos.clone();
+  return camera.position.clone().add(dir.multiplyScalar(t));
+}
+function updateComet(e){
+  if(!cometFrom)return;
+  const hit=raycast(e);
+  cometHover=(hit&&hit.type==="node"&&hit.node!==cometFrom)?hit.node:null;
+  const end=cometHover?cometHover.pos.clone():cometTarget(e);
+  if(!end)return;
+  const arr=cometGeo.attributes.position.array;
+  const N=arr.length/3;
+  const lift=Math.max(0.9,cometFrom.pos.distanceTo(end)*0.22);
+  const mid=cometFrom.pos.clone().lerp(end,0.5);
+  mid.y+=lift;
+  for(let i=0;i<N;i++){
+    const u=i/(N-1);
+    // quadrática de Bézier: um arco, não uma corda esticada
+    const a=cometFrom.pos, b=mid, c=end, iu=1-u;
+    arr[i*3]  =iu*iu*a.x+2*iu*u*b.x+u*u*c.x;
+    arr[i*3+1]=iu*iu*a.y+2*iu*u*b.y+u*u*c.y;
+    arr[i*3+2]=iu*iu*a.z+2*iu*u*b.z+u*u*c.z;
+  }
+  cometGeo.attributes.position.needsUpdate=true;
+  cometMat.color.setHex(cometHover?0x5CC46A:GOLD3D);
+  cometLine.visible=true;
+}
+function finishComet(){
+  if(!cometFrom){cancelComet();return;}
+  const from=cometFrom,to=cometHover;
+  cancelComet();
+  if(!to||to===from)return;
+  const p=processes[pendingLayer]||processes[0];
+  if(!p){flash("Crie um procedimento primeiro.",{type:"err"});return;}
+  const t=createTask(processes.indexOf(p),from.id,to.id,"Nova tarefa",null,"1 dia");
+  if(!t){flash("Não foi possível criar a tarefa.",{type:"err"});return;}
+  nodePunch(to);
+  flash("Tarefa criada em “"+p.name+"”: "+abbrev(from.name)+" → "+abbrev(to.name));
+  selectTask(t);
+}
+
+/* ============================================================
+   ÂNCORA ESPACIAL — o fluxograma nunca esquece onde fica no organograma
+   Um mini-mapa dentro da janela do procedimento: os mesmos anéis do 3D,
+   com as unidades deste procedimento acesas e a tarefa escolhida em destaque.
+============================================================ */
+function anchorMap(p,hi){
+  const NS="http://www.w3.org/2000/svg";
+  const mk=(t,a)=>{const e=document.createElementNS(NS,t);
+    Object.keys(a||{}).forEach(k=>e.setAttribute(k,a[k]));return e;};
+  const cs=getComputedStyle(document.documentElement);
+  const pick=(v,d)=>{const s=(cs.getPropertyValue(v)||"").trim();return s||d;};
+  const hair=pick("--hairline","#999"),gold=pick("--gold","#E8B44C");
+  const S=150,c=S/2,rad=S/2-9;
+  const R=Math.max.apply(null,TIER.map(t=>t.r).concat([1]))||1;
+  const svg=mk("svg",{viewBox:"0 0 "+S+" "+S,width:S,height:S,class:"fc-anchor-svg"});
+  TIER.forEach(t=>{
+    if(!t.r)return;
+    svg.append(mk("circle",{cx:c,cy:c,r:((t.r/R)*rad).toFixed(1),fill:"none",
+      stroke:hair,"stroke-opacity":"0.4"}));
+  });
+  const inProc=new Set();
+  p.tasks.forEach(t=>{inProc.add(t.a);inProc.add(t.b);});
+  const at=n=>{
+    const t=TIER[n.tier];
+    if(!t)return null;
+    const x=c+Math.cos(n.angle)*(t.r/R)*rad, y=c+Math.sin(n.angle)*(t.r/R)*rad;
+    return (isFinite(x)&&isFinite(y))?{x,y}:null;
+  };
+  // ligações do procedimento, para se ver a forma do percurso no território
+  p.tasks.forEach(t=>{
+    const A=byId(t.a),B=byId(t.b);
+    if(!A||!B)return;
+    const pa=at(A),pb=at(B);
+    if(!pa||!pb)return;
+    svg.append(mk("line",{x1:pa.x.toFixed(1),y1:pa.y.toFixed(1),
+      x2:pb.x.toFixed(1),y2:pb.y.toFixed(1),
+      stroke:hex(p.color),"stroke-opacity":(hi&&(hi.a===t.a&&hi.b===t.b))?"0.95":"0.35",
+      "stroke-width":(hi&&hi.a===t.a&&hi.b===t.b)?"2.2":"1.2"}));
+  });
+  nodes.forEach(n=>{
+    const q=at(n);
+    if(!q)return;
+    const inside=inProc.has(n.id);
+    const isHi=!!(hi&&(hi.a===n.id||hi.b===n.id));
+    const g=mk("g",{style:inside?"cursor:pointer":""});
+    g.append(mk("circle",{cx:q.x.toFixed(1),cy:q.y.toFixed(1),
+      r:isHi?4.6:(inside?3.2:1.5),
+      fill:isHi?gold:(inside?hex(n.color):hair),
+      "fill-opacity":inside?"1":"0.32"}));
+    const ttl=mk("title",{});
+    ttl.textContent=n.name+(inside?" — participa neste procedimento":"");
+    g.append(ttl);
+    if(inside)g.addEventListener("click",()=>{closeModalSilent();locateNode(n);});
+    svg.append(g);
+  });
+  const wrap=el("div","fc-anchor");
+  wrap.append(el("div","fc-anchor-t","Onde acontece"));
+  wrap.append(svg);
+  const legend=el("div","fc-anchor-l",
+    inProc.size+" de "+nodes.length+" unidades · clique num ponto para ir lá");
+  wrap.append(legend);
+  return wrap;
+}
+document.getElementById("viewsBtn").onclick=showViewGallery;
+document.getElementById("contBtn").onclick=showContinuity;
+document.getElementById("linkBtn").onclick=()=>setLinkMode(!linkMode);
+
+/* ============================================================
+   MODO CONTINUIDADE — quem assegura o quê quando alguém falta
+   Uma ausência não é apagar a pessoa: é dizer quem responde por ela.
+   Com o modo ligado, o organograma mostra quem está *em funções hoje*.
+============================================================ */
+/* (continuityOn está declarado no topo — ver a nota lá.) */
+/* Quem responde por este agente hoje. Segue a cadeia de substituições, com
+   guarda contra ciclos (A substitui B, B substitui A). */
+function actingFor(a,seen){
+  if(!a)return null;
+  if(!continuityOn||!a.absent)return a;
+  seen=seen||new Set();
+  if(seen.has(a.id))return null;
+  seen.add(a.id);
+  const s=a.subst?agentById(a.subst):null;
+  if(!s)return null;
+  return actingFor(s,seen);
+}
+/* O responsável em funções de um node: o titular se estiver, senão o seu
+   substituto, senão o primeiro agente presente do próprio node. */
+function actingPrimary(nodeId){
+  const t=primaryOf(nodeId);
+  if(!continuityOn)return t;
+  if(t&&!t.absent)return t;
+  const s=t?actingFor(t):null;
+  if(s)return s;
+  return agentsOf(nodeId).find(a=>!a.absent)||null;
+}
+/* Unidades que, com as ausências actuais, ficam sem ninguém em funções. */
+function uncoveredNodes(){
+  return nodes.filter(n=>{
+    const all=agentsOf(n.id);
+    if(!all.length)return false;
+    return !actingPrimary(n.id);
+  });
+}
+function absentAgents(){return agents.filter(a=>a.absent);}
+function setContinuity(on){
+  continuityOn=!!on;
+  document.body.classList.toggle("continuity",continuityOn);
+  nodes.forEach(refreshNodeVisual);
+  renderAgentsTab();renderNodeList();renderDetail();
+  const btn=document.getElementById("contBtn");
+  if(btn){
+    btn.classList.toggle("active",continuityOn);
+    btn.setAttribute("aria-pressed",continuityOn?"true":"false");
+  }
+  if(continuityOn){
+    const un=uncoveredNodes();
+    flash(absentAgents().length+" ausência(s)"+
+      (un.length?(" · "+un.length+" unidade(s) sem cobertura"):" · tudo coberto"),
+      {key:"cont",type:un.length?"err":undefined});
+  }else flash("Modo continuidade desligado.",{key:"cont"});
+}
+/* Um agente pode substituir outro se estiver presente e pertencer ao mesmo
+   node, ao node-pai ou a um node-filho — a cobertura real de uma autarquia. */
+function substituteOptions(a){
+  if(!a)return [];
+  const n=byId(a.nodeId);
+  if(!n)return agents.filter(x=>x!==a&&!x.absent);
+  const ok=new Set([n.id]);
+  if(n.parent)ok.add(n.parent);
+  nodes.forEach(m=>{if(m.parent===n.id)ok.add(m.id);});
+  return agents.filter(x=>x!==a&&!x.absent&&ok.has(x.nodeId));
+}
+function setAbsent(a,on,substId){
+  if(!a)return;
+  a.absent=!!on;
+  if(!a.absent)a.subst=null;
+  else if(substId!==undefined)a.subst=(substId&&substId!==a.id&&agentById(substId))?substId:null;
+  markDirty();
+  const n=byId(a.nodeId);
+  if(n)refreshNodeVisual(n);
+  renderAgentsTab();renderDetail();
+  if(continuityOn)setContinuity(true);
+}
+function showContinuity(){navigateTo({type:"continuity"});}
+function renderContinuity(){
+  modalTitle.textContent="Modo continuidade";
+  modalBody.innerHTML="";
+  const toggle=el("button","btn tiny"+(continuityOn?" active":""),
+    continuityOn?"Modo ligado":"Ligar o modo");
+  toggle.type="button";
+  toggle.onclick=()=>{setContinuity(!continuityOn);renderContinuity();};
+  modalBody.append(viewBar(
+    "Marque quem está ausente e quem assegura. Com o modo ligado, o organograma mostra quem está em funções hoje.",
+    [toggle]));
+
+  const un=uncoveredNodes();
+  if(un.length){
+    const w=el("div","fc-warns");
+    un.slice(0,8).forEach(n=>{
+      const b=el("div","fc-warn");
+      b.append(el("span","wi","⚠"),el("span",null,n.name+" fica sem ninguém em funções."));
+      const go=el("button",null,"ver");
+      go.type="button";
+      go.onclick=()=>{closeModalSilent();locateNode(n);};
+      b.append(go);
+      w.append(b);
+    });
+    if(un.length>8)w.append(el("div","empty-note","+ "+(un.length-8)+" não mostradas."));
+    modalBody.append(w);
+  }
+
+  const abs=absentAgents();
+  modalBody.append(el("h4",null,"Ausências ("+abs.length+")"));
+  if(!abs.length){
+    modalBody.append(el("div","empty-note","Ninguém marcado como ausente."));
+  }else{
+    abs.forEach(a=>{
+      const n=byId(a.nodeId);
+      const row=el("div","agent-row");
+      const who=el("div");
+      who.append(el("div","row-name",(a.primary?"★ ":"")+a.name));
+      who.append(el("div","count",(n?abbrev(n.name):"?")+" · "+a.category));
+      row.append(who);
+      const cover=actingFor(a);
+      const tag=el("span","count",cover?("assegura: "+cover.name):"sem cobertura");
+      if(!cover)tag.style.color="#E0554F";
+      row.append(tag);
+      const back=el("button","btn tiny","Regressou");
+      back.type="button";
+      back.onclick=()=>{setAbsent(a,false);renderContinuity();};
+      row.append(back);
+      modalBody.append(row);
+    });
+  }
+
+  modalBody.append(el("h4",null,"Marcar uma ausência"));
+  const pick=el("div","field-grid");
+  const present=agents.filter(a=>!a.absent);
+  if(!present.length){
+    modalBody.append(el("div","empty-note","Não há mais ninguém para marcar."));
+  }else{
+    let chosen=present[0];
+    const who=mkSelect(present.map(a=>{
+      const n=byId(a.nodeId);
+      return {label:a.name+" — "+(n?abbrev(n.name):"?"),value:a.id};
+    }),chosen.id,v=>{chosen=agentById(v)||chosen;paintSubs();});
+    pick.append(el("label",null,"Quem falta"),who);
+    const subWrap=el("div","field-grid");
+    pick.append(subWrap);
+    const paintSubs=()=>{
+      subWrap.innerHTML="";
+      const opts=substituteOptions(chosen);
+      subWrap.append(el("label",null,"Quem assegura"));
+      if(!opts.length){
+        subWrap.append(el("div","empty-note","Sem ninguém disponível nas unidades vizinhas."));
+        subWrap.dataset.val="";
+        return;
+      }
+      const sel=mkSelect([{label:"— ninguém —",value:""}].concat(
+        opts.map(o=>{
+          const n=byId(o.nodeId);
+          return {label:o.name+" — "+(n?abbrev(n.name):"?"),value:o.id};
+        })),"",v=>{subWrap.dataset.val=v||"";});
+      subWrap.dataset.val="";
+      subWrap.append(sel);
+    };
+    paintSubs();
+    const go=el("button","btn primary","Marcar ausência");
+    go.type="button";
+    go.onclick=()=>{setAbsent(chosen,true,subWrap.dataset.val||null);renderContinuity();};
+    pick.append(go);
+    modalBody.append(pick);
+  }
+  modal.classList.add("open");
+}
+
+/* ============================================================
+   COMPARAR CENÁRIOS — o que muda entre o que existe e o que se propõe
+   Guarda-se um retrato ("Actual"); a partir daí toda a edição é a "Proposta".
+   O morph interpola as posições no 3D para se ver a reorganização a acontecer.
+============================================================ */
+let baseline=null;          // {json, label, at}
+let morphT=0;
+function saveBaseline(label){
+  baseline={json:snapshotState(),label:label||"Actual",at:new Date().toISOString()};
+  try{storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
+  flash("Cenário “"+baseline.label+"” guardado. As alterações a partir de agora são a proposta.");
+  if(scenarioOpen())renderScenario();
+}
+function clearBaseline(){
+  baseline=null;morphT=0;
+  try{storageSet("of.baseline.v1","");}catch(e){}
+  endMorph();
+  if(scenarioOpen())renderScenario();
+}
+(function(){
+  try{
+    const raw=storageGet("of.baseline.v1");
+    if(raw){
+      const b=JSON.parse(raw);
+      if(b&&typeof b.json==="string")baseline=b;
+    }
+  }catch(e){baseline=null;}
+})();
+/* Diferenças estruturais entre o retrato e o estado actual. */
+function scenarioDiff(){
+  const out={nodesAdded:[],nodesRemoved:[],nodesRenamed:[],nodesMoved:[],
+             agentsAdded:[],agentsRemoved:[],agentsMoved:[],
+             procsAdded:[],procsRemoved:[],procsChanged:[]};
+  if(!baseline)return out;
+  let A=null;
+  try{A=JSON.parse(baseline.json);}catch(e){return out;}
+  const an={},aa={},ap={};
+  (A.nodes||[]).forEach(n=>{an[n.id]=n;});
+  (A.agents||[]).forEach(a=>{aa[a.id]=a;});
+  (A.layers||[]).forEach(p=>{ap[p.id]=p;});
+  nodes.forEach(n=>{
+    const o=an[n.id];
+    if(!o){out.nodesAdded.push(n);return;}
+    if(o.name!==n.name)out.nodesRenamed.push({node:n,from:o.name});
+    if(o.tier!==n.tier||(o.parent||null)!==(n.parent||null))
+      out.nodesMoved.push({node:n,fromTier:o.tier,fromParent:o.parent||null});
+  });
+  Object.keys(an).forEach(id=>{if(!byId(id))out.nodesRemoved.push(an[id]);});
+  agents.forEach(a=>{
+    const o=aa[a.id];
+    if(!o){out.agentsAdded.push(a);return;}
+    if(o.nodeId!==a.nodeId)out.agentsMoved.push({agent:a,from:o.nodeId});
+  });
+  Object.keys(aa).forEach(id=>{if(!agentById(id))out.agentsRemoved.push(aa[id]);});
+  processes.forEach(p=>{
+    const o=ap[p.id];
+    if(!o){out.procsAdded.push(p);return;}
+    const before=(o.tasks||[]).length;
+    if(before!==p.tasks.length)out.procsChanged.push({proc:p,from:before,to:p.tasks.length});
+  });
+  Object.keys(ap).forEach(id=>{if(!processes.some(p=>p.id===id))out.procsRemoved.push(ap[id]);});
+  return out;
+}
+function diffCount(d){
+  return d.nodesAdded.length+d.nodesRemoved.length+d.nodesRenamed.length+d.nodesMoved.length+
+         d.agentsAdded.length+d.agentsRemoved.length+d.agentsMoved.length+
+         d.procsAdded.length+d.procsRemoved.length+d.procsChanged.length;
+}
+/* Morph: t=0 mostra as posições do retrato, t=1 as actuais. Os nodes que só
+   existem num dos cenários encolhem/crescem em vez de saltarem. */
+function applyMorph(t){
+  morphT=Math.max(0,Math.min(1,t));
+  let A=null;
+  if(baseline){try{A=JSON.parse(baseline.json);}catch(e){A=null;}}
+  const old={};
+  if(A)(A.nodes||[]).forEach(n=>{old[n.id]=n;});
+  nodes.forEach(n=>{
+    const o=old[n.id];
+    if(!o||!A){
+      n._morphScale=1;
+      if(n._morphPos){n._morphPos=null;n.pos=nodePos(n);}
+      return;
+    }
+    const from=nodePos({tier:THREE.MathUtils.clamp(o.tier,0,TIER.length-1),angle:o.angle});
+    const to=nodePos(n);
+    n.pos=from.clone().lerp(to,morphT);
+    n._morphPos=true;
+    n._morphScale=1;
+  });
+  // presente só num cenário → aparece/desaparece suavemente
+  nodes.forEach(n=>{if(A&&!old[n.id])n._morphScale=morphT;});
+  nodes.forEach(n=>{
+    if(!n._mesh)return;
+    n._mesh.position.copy(n.pos);
+    if(n._socket)n._socket.position.set(n.pos.x,n.pos.y-(n._rad||0.3)*0.9,n.pos.z);
+    if(n._label)n._label.position.set(n.pos.x,n.pos.y+(n._rad||0.3)+0.42,n.pos.z);
+  });
+  rebuildHierLinks();
+  processes.forEach(p=>p.tasks.slice().forEach(rebuildTaskVisual));
+}
+function endMorph(){
+  nodes.forEach(n=>{n._morphPos=null;n._morphScale=1;n.pos=nodePos(n);});
+  applyMorph(1);
+  morphT=1;
+}
+function showScenario(){navigateTo({type:"scenario"});}
+function scenarioOpen(){return !!(modalView&&modalView.type==="scenario");}
+function renderScenario(){
+  modalTitle.textContent="Comparar cenários";
+  modalBody.innerHTML="";
+  const saveBtn=el("button","btn tiny",baseline?"Regravar “Actual”":"Guardar o estado como “Actual”");
+  saveBtn.type="button";
+  saveBtn.onclick=()=>saveBaseline(baseline?baseline.label:"Actual");
+  const extra=[saveBtn];
+  if(baseline){
+    const clr=el("button","btn tiny","Esquecer o cenário");
+    clr.type="button";
+    clr.onclick=clearBaseline;
+    extra.push(clr);
+  }
+  modalBody.append(viewBar(
+    baseline
+      ? "Retrato guardado a "+new Date(baseline.at).toLocaleString("pt-PT")+". Tudo o que editou desde então é a proposta."
+      : "Guarde um retrato do estado actual; depois edite à vontade e volte aqui para ver o que mudou.",
+    extra));
+  if(!baseline){
+    modalBody.append(el("div","empty-note",
+      "Sem cenário de referência. Guarde o estado actual para começar a comparar."));
+    modal.classList.add("open");
+    return;
+  }
+  const d=scenarioDiff();
+  const n=diffCount(d);
+  const slide=el("div","sc-morph");
+  slide.append(el("span","sc-end","Actual"));
+  const rng=el("input");
+  rng.type="range";rng.min="0";rng.max="100";rng.step="1";
+  rng.value=String(Math.round(morphT*100));
+  rng.setAttribute("aria-label","Transição entre o cenário actual e a proposta");
+  rng.oninput=()=>applyMorph(+rng.value/100);
+  slide.append(rng,el("span","sc-end","Proposta"));
+  const reset=el("button","btn tiny","Repor");
+  reset.type="button";
+  reset.onclick=()=>{rng.value="100";endMorph();};
+  slide.append(reset);
+  modalBody.append(slide);
+  modalBody.append(el("div","vw-note",
+    "Arraste para ver a reorganização a acontecer no 3D por trás desta janela."));
+
+  if(!n){
+    modalBody.append(el("div","hx-ok","Nada mudou desde o retrato."));
+    modal.classList.add("open");
+    return;
+  }
+  modalBody.append(el("h4",null,n+" alteração(ões)"));
+  const sec=(title,items,fmt,go)=>{
+    if(!items.length)return;
+    const g=el("div","hx-group");
+    g.append(el("h4",null,title+" ("+items.length+")"));
+    items.slice(0,40).forEach(it=>{
+      const b=el("button","hx-item");
+      b.type="button";
+      b.append(el("span","sev info"),el("span",null,fmt(it)));
+      if(go)b.onclick=()=>go(it);
+      g.append(b);
+    });
+    if(items.length>40)g.append(el("div","empty-note","+ "+(items.length-40)+" não mostradas."));
+    modalBody.append(g);
+  };
+  sec("Unidades criadas",d.nodesAdded,x=>x.name,x=>{closeModalSilent();locateNode(x);});
+  sec("Unidades removidas",d.nodesRemoved,x=>x.name);
+  sec("Unidades renomeadas",d.nodesRenamed,x=>x.from+" → "+x.node.name,x=>{closeModalSilent();locateNode(x.node);});
+  sec("Unidades reposicionadas",d.nodesMoved,x=>{
+    const p=x.fromParent?byId(x.fromParent):null;
+    return x.node.name+" (nível "+x.fromTier+" → "+x.node.tier+
+      (p?(", antes sob "+p.name):"")+")";
+  },x=>{closeModalSilent();locateNode(x.node);});
+  sec("Pessoas admitidas",d.agentsAdded,x=>x.name+" — "+((byId(x.nodeId)||{}).name||"?"),x=>{closeModalSilent();selectAgent(x);});
+  sec("Pessoas removidas",d.agentsRemoved,x=>x.name);
+  sec("Pessoas transferidas",d.agentsMoved,x=>{
+    const f=byId(x.from),t=byId(x.agent.nodeId);
+    return x.agent.name+": "+(f?abbrev(f.name):"?")+" → "+(t?abbrev(t.name):"?");
+  },x=>{closeModalSilent();selectAgent(x.agent);});
+  sec("Procedimentos criados",d.procsAdded,x=>x.name,x=>showFlowchart(x));
+  sec("Procedimentos removidos",d.procsRemoved,x=>x.name);
+  sec("Procedimentos alterados",d.procsChanged,
+    x=>x.proc.name+" ("+x.from+" → "+x.to+" tarefas)",x=>showFlowchart(x.proc));
+  modal.classList.add("open");
+}
+
+/* ============================================================
+   COLAR DO EXCEL — a estrutura chega quase sempre numa folha de cálculo
+   Colar as colunas Unidade / Nível / Responsável / Categoria e ver a
+   pré-visualização antes de escrever seja o que for.
+============================================================ */
+function parsePasted(text){
+  // Partir a linha ANTES de aparar: `\t1\tMaria` tem uma primeira coluna vazia
+  // e um trim à linha inteira comê-la-ia, deslocando todas as colunas.
+  const rows=String(text||"").replace(/\r/g,"").split("\n")
+    .filter(l=>l.trim()!=="")
+    .map(l=>(l.indexOf("\t")>=0?l.split("\t"):l.split(/[;,]/)).map(c=>String(c).trim()));
+  if(!rows.length)return {rows:[],skipped:0};
+  // Uma primeira linha com cabeçalhos reconhecíveis não é dados
+  const head=rows[0].map(c=>String(c||"").toLowerCase());
+  if(head.some(c=>/unidade|nome|servi|n[ií]vel|tier|respons/.test(c)))rows.shift();
+  let skipped=0;
+  const out=[];
+  rows.slice(0,400).forEach(r=>{
+    const name=String(r[0]||"").slice(0,40);
+    if(!name){skipped++;return;}
+    let tier=parseInt(String(r[1]||"").replace(/[^\d]/g,""),10);
+    if(!isFinite(tier))tier=2;
+    tier=Math.max(1,Math.min(TIER.length-1,tier));
+    const resp=String(r[2]||"").slice(0,30);
+    let cat=String(r[3]||"");
+    if(!CATEGORIES.includes(cat))cat=null;
+    out.push({name,tier,resp,cat});
+  });
+  return {rows:out,skipped};
+}
+function showPaste(){navigateTo({type:"paste"});}
+let pasteText="";
+function renderPaste(){
+  modalTitle.textContent="Colar do Excel";
+  modalBody.innerHTML="";
+  modalBody.append(viewBar(
+    "Cole as colunas: Unidade · Nível (1–"+(TIER.length-1)+") · Responsável · Categoria. Uma linha por unidade."));
+  const ta=document.createElement("textarea");
+  ta.className="paste-area";
+  ta.rows=8;
+  ta.value=pasteText;
+  ta.placeholder="Divisão de Obras\t1\tMaria Silva\tChefe de Divisão\nSector de Águas\t2\tJoão Costa\tCoordenador Técnico";
+  ta.setAttribute("aria-label","Dados colados");
+  modalBody.append(ta);
+  const preview=el("div");
+  modalBody.append(preview);
+  const bar=el("div","vw-bar");
+  const applyBtn=el("button","btn primary","Criar as unidades");
+  applyBtn.type="button";
+  applyBtn.disabled=true;
+  bar.append(applyBtn);
+  modalBody.append(bar);
+
+  let parsed={rows:[],skipped:0};
+  const paint=()=>{
+    pasteText=ta.value;
+    parsed=parsePasted(pasteText);
+    preview.innerHTML="";
+    applyBtn.disabled=!parsed.rows.length;
+    if(!parsed.rows.length){
+      preview.append(el("div","empty-note","Nada reconhecido ainda — cole as linhas acima."));
+      return;
+    }
+    preview.append(el("h4",null,parsed.rows.length+" unidade(s) a criar"+
+      (parsed.skipped?(" · "+parsed.skipped+" linha(s) ignorada(s)"):"")));
+    const tb=document.createElement("table");
+    tb.className="doc-t paste-t";
+    const th=document.createElement("thead"),hr=document.createElement("tr");
+    ["Unidade","Nível","Responsável","Categoria"].forEach(h=>hr.append(el("th",null,h)));
+    th.append(hr);tb.append(th);
+    const tbody=document.createElement("tbody");
+    parsed.rows.slice(0,50).forEach(r=>{
+      const tr=document.createElement("tr");
+      tr.append(el("td",null,r.name));
+      tr.append(el("td",null,String(r.tier)+" · "+((TIER[r.tier]||{}).label||"")));
+      tr.append(el("td",null,r.resp||"—"));
+      tr.append(el("td",null,r.cat||"(por omissão)"));
+      tbody.append(tr);
+    });
+    tb.append(tbody);
+    preview.append(tb);
+    if(parsed.rows.length>50)preview.append(el("div","empty-note","+ "+(parsed.rows.length-50)+" não mostradas."));
+  };
+  ta.oninput=paint;
+  ta.onpaste=()=>setTimeout(paint,0);
+  paint();
+  applyBtn.onclick=()=>{
+    if(!parsed.rows.length)return;
+    let made=0;
+    parsed.rows.forEach(r=>{
+      // Com um nome na folha, o responsável é esse — suprimimos o agente
+      // automático de createNode para não ficarem dois titulares.
+      const n=createNode({name:r.name,tier:r.tier,noAgent:!!r.resp});
+      if(!n)return;
+      made++;
+      if(r.resp){
+        addAgent(n.id,true,r.cat||PRIMARY_CAT_BY_TIER[Math.min(r.tier,PRIMARY_CAT_BY_TIER.length-1)],r.resp);
+        refreshNodeVisual(n);
+      }
+    });
+    pasteText="";
+    renderNodeList();renderAgentsTab();renderDetail();
+    flash(made+" unidade(s) criada(s) a partir da folha.");
+    closeModalSilent();
+  };
+  modal.classList.add("open");
+}
+
+/* ============================================================
    COMMAND PALETTE — one search across everything, plus actions
 ============================================================ */
 const paletteEl=document.getElementById("palette");
@@ -6997,6 +9434,17 @@ function paletteActions(){
     {kind:"Acção",label:"Organograma 2D",run:showOrgChart},
     {kind:"Acção",label:"Fluxogramas",run:showFlowIndex},
     {kind:"Acção",label:"Estado da rede",run:showHealth},
+    {kind:"Acção",label:"Vistas — galeria",run:showViewGallery},
+    {kind:"Acção",label:"Vista: Matriz Nó × Procedimento",run:()=>showView("matrix")},
+    {kind:"Acção",label:"Vista: Mapa de fluxo (Sankey)",run:()=>showView("sankey")},
+    {kind:"Acção",label:"Vista: Mural de procedimentos",run:()=>showView("mural")},
+    {kind:"Acção",label:"Vista: Mapa de metro",run:()=>showView("metro")},
+    {kind:"Acção",label:"Vista: Organograma oficial",run:()=>showView("oficial")},
+    {kind:"Acção",label:"Vista: Vista do munícipe",run:()=>showView("municipe")},
+    {kind:"Acção",label:"Modo continuidade — ausências e substituições",run:showContinuity},
+    {kind:"Acção",label:"Comparar cenários (actual → proposta)",run:showScenario},
+    {kind:"Acção",label:"Colar do Excel — criar unidades em massa",run:showPaste},
+    {kind:"Acção",label:"Modo ligar (arrastar para criar tarefas)",run:()=>setLinkMode(!linkMode)},
     {kind:"Acção",label:"Modo apresentação",run:()=>togglePresent(true)},
     {kind:"Acção",label:"Um dia na Junta — reproduzir tudo",
       run:()=>startPlayback(processes.filter(p=>p._visible),{label:"Um dia na Junta"})},
@@ -7207,7 +9655,8 @@ function snapshotState(){
     orgName,
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
-    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,primary:!!a.primary})),
+    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
+      primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
@@ -7270,8 +9719,11 @@ function restoreState(json){
       if(!a||!byId(a.nodeId))return;
       agents.push({id:a.id,name:String(a.name||"Agente").slice(0,30),
         category:CATEGORIES.includes(a.category)?a.category:"Técnico Superior",
-        nodeId:a.nodeId,primary:!!a.primary});
+        nodeId:a.nodeId,primary:!!a.primary,absent:!!a.absent,
+        subst:typeof a.subst==="string"?a.subst:null});
     });
+    // Uma substituição só vale se o substituto existir e não for a própria pessoa
+    agents.forEach(a=>{if(a.subst&&(a.subst===a.id||!agents.some(x=>x.id===a.subst)))a.subst=null;});
     nodes.forEach(n=>{agentsOf(n.id).filter(a=>a.primary).slice(1).forEach(a=>{a.primary=false;});});
     (s.layers||[]).forEach(cl=>{
       if(!cl)return;
@@ -7393,6 +9845,9 @@ updateDirtyUI();
 syncDensityRange();
 updateEmptyHint();
 renderBookmarks();
+renderCodeKey();
+renderQuest();
+if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
 lastSnap=snapshotState();      // history baseline
 updateHistoryUI();
@@ -7400,6 +9855,14 @@ animate();
 // First visit: teach the three gestures that unlock the whole tool
 if(!storageGet(COACH_KEY))setTimeout(openCoach,850);
 setTimeout(offerSessionRestore,1500);
+// Ligação profunda: …#CS4 abre já focado nessa unidade
+(function(){
+  let h="";
+  try{h=decodeURIComponent((location.hash||"").replace(/^#/,""));}catch(e){h="";}
+  if(!h)return;
+  const n=nodeByAddress(h);
+  if(n)setTimeout(()=>locateNode(n),1250);
+})();
 })();
 
 </script>
