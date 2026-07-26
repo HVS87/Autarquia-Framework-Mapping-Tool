@@ -61,7 +61,9 @@
   #orgName:hover{border-bottom-color:var(--hairline)}
   #orgName:focus{outline:none;border-bottom-color:var(--gold)}
   .brand p{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-dim);margin-top:5px}
-  .brand .head-actions{margin-top:10px;display:flex;gap:8px}
+  /* As restantes propriedades vêm da regra mais abaixo, que envolve os botões
+     em várias linhas; aqui só sobra o afastamento do bloco do título. */
+  .brand .head-actions{margin-top:10px}
   .hint{
     font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
     text-align:right;line-height:1.7;
@@ -140,7 +142,7 @@
     background:transparent;border:1px solid var(--hairline);border-radius:7px;
     color:var(--ink);font-size:.8rem;
     padding:6px 8px;margin:4px 0;
-    transition:background .2s,border-color .2s,opacity .2s;
+    transition:background .2s,border-color .2s,opacity .2s,transform .18s ease;
   }
   .row:hover{background:rgba(201,214,232,0.05)}
   button.row{cursor:pointer;font:inherit;text-align:left}
@@ -188,7 +190,8 @@
   }
   .switch::after{
     content:"";position:absolute;top:1.5px;left:2px;width:10px;height:10px;border-radius:50%;
-    background:var(--ink-dim);transition:transform .2s,background .2s;
+    background:var(--ink-dim);
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1),background .2s;
   }
   .switch.on{background:currentColor}
   .switch.on::after{transform:translateX(12px);background:#0A1424}
@@ -450,7 +453,6 @@
   .dots{display:flex;gap:6px;margin-top:9px;justify-content:center}
   .dots span{width:26px;height:3px;border-radius:2px;background:rgba(201,214,232,0.18);transition:background .3s}
   .dots span.on{background:var(--gold);box-shadow:0 0 9px rgba(232,180,76,0.55)}
-  .switch::after{transition:left .28s cubic-bezier(.34,1.56,.64,1),background .2s}
   .btn{position:relative}
   .btn::after{
     content:"";position:absolute;left:12%;right:88%;bottom:2px;height:1px;
@@ -459,7 +461,6 @@
   .btn:hover:not(:disabled)::after{right:12%;opacity:0.8}
   #confirm.open #confirmCard{animation:confirmIn .18s ease}
   @keyframes confirmIn{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
-  .row{transition:transform .18s ease}
   .row:hover{transform:translateX(2px)}
   .row:hover .swatch{box-shadow:0 0 7px currentColor}
   .swatch{transition:box-shadow .2s}
@@ -1322,7 +1323,7 @@
 <button id="menuBtn" class="glass" aria-label="Abrir painel de controlo">☰ Painel</button>
 <div id="focusBlur" aria-hidden="true"></div>
 <div id="toasts" role="status" aria-live="polite"></div>
-<div id="chevrons" aria-hidden="true"></div>
+<div id="chevrons"></div>
 <div id="peekHint" class="glass" aria-hidden="true">Solte para voltar à vista anterior</div>
 <div id="kbStatus" class="glass" role="status" aria-live="polite"></div>
 
@@ -1346,7 +1347,7 @@
 <div id="radarWrap" class="glass">
   <canvas id="radar" width="132" height="132" role="img"
     aria-label="Radar da estrutura — clique para ir a uma unidade"></canvas>
-  <span class="rlbl" id="radarLbl">RADAR</span>
+  <span class="rlbl">RADAR</span>
 </div>
 
 <div id="emptyHint" class="glass" aria-hidden="true">
@@ -1654,8 +1655,42 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+/* Numa autarquia atrás de uma firewall, o CDN pode simplesmente não chegar.
+   Sem esta guarda, o script seguinte rebentava no primeiro `new THREE.*` e a
+   página ficava preta e muda — pior do que dizer o que se passou. */
+(function(){
+  if(typeof THREE!=="undefined")return;
+  const box=document.createElement("div");
+  box.setAttribute("role","alert");
+  box.style.cssText="position:fixed;inset:0;z-index:999;display:grid;place-items:center;"+
+    "padding:28px;background:#0A1424;color:#E7ECF4;"+
+    "font-family:'Avenir Next','Segoe UI',system-ui,sans-serif;text-align:center;line-height:1.6";
+  const inner=document.createElement("div");
+  inner.style.cssText="max-width:520px";
+  const h=document.createElement("h1");
+  h.textContent="Falta uma biblioteca para desenhar o 3D";
+  h.style.cssText="font-size:1.1rem;font-weight:600;margin:0 0 10px";
+  const p=document.createElement("p");
+  p.textContent="A ferramenta precisa da biblioteca Three.js, que é obtida da Internet no "+
+    "primeiro carregamento. Verifique a ligação — ou, se estiver numa rede fechada, "+
+    "peça que o endereço cdnjs.cloudflare.com seja autorizado.";
+  p.style.cssText="font-size:.85rem;color:#A8B4C8;margin:0 0 16px";
+  const b=document.createElement("button");
+  b.type="button";
+  b.textContent="Tentar novamente";
+  b.style.cssText="font:inherit;font-size:.8rem;padding:7px 16px;border-radius:8px;cursor:pointer;"+
+    "border:1px solid rgba(232,180,76,.5);background:none;color:#E8B44C";
+  b.onclick=function(){location.reload();};
+  inner.appendChild(h);inner.appendChild(p);inner.appendChild(b);
+  box.appendChild(inner);
+  (document.body||document.documentElement).appendChild(box);
+  window.__noThree=true;
+})();
+</script>
+<script>
 (function(){
 "use strict";
+if(window.__noThree)return;   // a guarda acima já explicou o que falta
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ============================================================
@@ -2562,14 +2597,20 @@ function rebuildHierLinks(){
 /* ============================================================
    LAYER & TASK VISUALS
 ============================================================ */
-const RGUIDE=TIER[3].r;
+/* O anel-guia de cada procedimento acompanha o tier mais exterior. Ler isto
+   uma vez no arranque congelava-o: acrescentar, apagar ou importar tiers
+   deixava os discos dos procedimentos a flutuar fora da organização. */
+const rGuide=()=>{
+  const r=TIER.length?TIER[TIER.length-1].r:12.2;
+  return Number.isFinite(r)&&r>0?r:12.2;
+};
 const taskPickables=[];
 
 function buildLayerVisual(p){
   const grp=new THREE.Group();scene.add(grp);
   p._group=grp;
   const guide=new THREE.Mesh(
-    new THREE.RingGeometry(RGUIDE-0.02,RGUIDE+0.02,96),
+    new THREE.RingGeometry(rGuide()-0.02,rGuide()+0.02,96),
     new THREE.MeshBasicMaterial({color:p.color,transparent:true,opacity:0.12,side:THREE.DoubleSide})
   );
   guide.rotation.x=-Math.PI/2;guide.position.y=p.height;
@@ -2580,7 +2621,7 @@ function buildLayerVisual(p){
     if(p._label){grp.remove(p._label);disposeSprite(p._label);}
     p._label=textSprite(abbrev(p.name),null,hex(p.color));
     p._label.material.opacity=0.9;
-    p._label.position.set(RGUIDE+1.15+p._label.scale.x/2,p.height+0.12,0);
+    p._label.position.set(rGuide()+1.15+p._label.scale.x/2,p.height+0.12,0);
     grp.add(p._label);
   };
   p.refreshLabel();
@@ -2978,8 +3019,12 @@ function rebuildChevrons(){
   });
   rel.slice(0,10).forEach(r=>{
     const b=el("button","chev "+r.kind);
+    b.type="button";
     b.append(el("span","ar","➤"),el("span","nm",abbrev(r.n.name)));
     b.title=r.kind+" · "+r.n.name;
+    // O contentor era aria-hidden com botões focáveis lá dentro: o Tab parava
+    // em alvos que nenhum leitor de ecrã anunciava. Agora cada um diz o que é.
+    b.setAttribute("aria-label","Ir para "+r.n.name+" ("+r.kind+")");
     b.onclick=()=>selectNode(r.n);
     b.style.display="none";
     chevHost.append(b);
@@ -3809,7 +3854,7 @@ function clickable(node,label,onActivate){
   });
   return node;
 }
-function mkSelect(options,value,onChange){
+function mkSelect(options,value,onChange,label){
   const s=el("select","dark");
   options.forEach(o=>{
     const op=el("option",null,o.label);
@@ -3817,8 +3862,33 @@ function mkSelect(options,value,onChange){
     s.append(op);
   });
   s.value=value;
+  if(label)s.setAttribute("aria-label",label);
   s.onchange=()=>onChange(s.value);
   return s;
+}
+/* Os <label> dos .field-grid não estão ligados a nada — são só texto acima do
+   controlo. Em vez de inventar ids por todo o lado, o rótulo mais próximo passa
+   a dar o nome ao controlo que se lhe segue. */
+function labelFields(root){
+  if(!root)return root;
+  // <label> solto ou <h4> de secção: nos dois casos o texto imediatamente
+  // acima é o nome que o controlo devia estar a anunciar.
+  root.querySelectorAll("label,h4").forEach(lb=>{
+    const txt=(lb.textContent||"").trim();
+    if(!txt)return;
+    let sib=lb.nextElementSibling;
+    while(sib&&!/^(INPUT|SELECT|TEXTAREA)$/.test(sib.tagName))sib=sib.nextElementSibling;
+    if(sib&&!sib.getAttribute("aria-label")&&!sib.id)sib.setAttribute("aria-label",txt);
+  });
+  // Rede de segurança: qualquer controlo que continue anónimo herda o texto
+  // do bloco onde vive, em vez de ser anunciado como "caixa combinada".
+  root.querySelectorAll("input,select,textarea").forEach(c=>{
+    if(c.getAttribute("aria-label")||c.id||c.closest("label"))return;
+    const own=(c.parentElement&&c.parentElement.textContent||"").trim();
+    const lead=own.split(/[:·\n]/)[0].trim();
+    if(lead&&lead.length<=40)c.setAttribute("aria-label",lead);
+  });
+  return root;
 }
 function updateDirtyUI(){
   const b=document.getElementById("exportBtn");
@@ -4426,6 +4496,7 @@ function applyView(v){
   else if(v&&v.type==="scenario"){modalView=v;modal.classList.remove("from-3d");renderScenario();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="paste"){modalView=v;modal.classList.remove("from-3d");renderPaste();modal.classList.add("open");renderDetail();}
   else{closeModalSilent();applySelection(v||null);}
+  if(modal.classList.contains("open"))labelFields(modalBody);
   updateModalNav();
 }
 function navigateTo(v){
@@ -4994,6 +5065,7 @@ function renderDetail(){
   else if(selected.type==="agent")renderAgentDetail(head,closeBtn);
   else if(selected.type==="group")renderGroupDetail(head,closeBtn);
   else renderTaskDetail(head,closeBtn);
+  labelFields(detail);
 }
 
 /* Ancestry trail — keeping your bearings in a deep hierarchy is hard in free 3D
@@ -5119,7 +5191,12 @@ function renderNodeDetail(head,closeBtn){
       const other=byId(out?t.b:t.a);
       const row=el("div","conn-row");
       row.style.color=hex(p.color);
-      const top=el("div","conn-top");
+      // Um <button> a sério: esta linha abre uma tarefa e tinha de ser
+      // alcançável pelo Tab como qualquer outra da lista.
+      const top=el("button","conn-top");
+      top.type="button";
+      top.setAttribute("aria-label",
+        (out?"Tarefa para ":"Tarefa de ")+(other?other.name:"?")+", em "+p.name);
       top.innerHTML=`<span class="swatch" style="background:currentColor"></span>
         <span class="conn-name" style="color:var(--ink)">${out?"→":"←"} ${other?esc(other.name):"?"}</span>
         <span class="layer-tag">${esc(p.name)}</span>`;
@@ -6687,7 +6764,16 @@ function renderOrgChart(){
     tWrap.append(row);
   });
   const addT=el("button","btn tiny","+ Novo tier");
+  // O snapshot e a importação truncam a 8 tiers; deixar criar o nono seria
+  // prometer uma estrutura que o primeiro "anular" apagava sem aviso.
+  const TIER_MAX=8;
+  addT.disabled=TIER.length>=TIER_MAX;
+  if(addT.disabled)addT.title="Máximo de "+TIER_MAX+" níveis";
   addT.onclick=()=>{
+    if(TIER.length>=TIER_MAX){
+      flash("Máximo de "+TIER_MAX+" níveis.",{type:"err"});
+      return;
+    }
     const last=TIER[TIER.length-1];
     TIER.push({label:"Tier "+TIER.length,y:lowestTierY()-3,r:last.r+2.4,size:0.24});
     markDirty();
@@ -6916,7 +7002,7 @@ document.getElementById("exportBtn").onclick=()=>{
   URL.revokeObjectURL(a.href);
   clearDirty();
   sparkBurst(document.getElementById("exportBtn"));
-  flash("Dataset exported.");
+  flash("Dataset exportado.");
 };
 
 const importFile=document.getElementById("importFile");
@@ -6954,16 +7040,19 @@ importFile.onchange=()=>{
         rebuildTierRings();
       }
       // 1) Nodes: update matches, create missing
-      (cfg.nodes||[]).forEach(cn=>{
+      (Array.isArray(cfg.nodes)?cfg.nodes:[]).forEach(cn=>{
+        // Uma entrada sem id (ou que nem é um objecto) criaria um node
+        // fantasma que nada mais consegue referenciar.
+        if(!cn||typeof cn!=="object"||typeof cn.id!=="string"||!cn.id)return;
         let n=byId(cn.id);
         if(!n){
           n={id:cn.id,name:"?",tier:2,angle:0,parent:null,custom:true};
           nodes.push(n);
         }
         if(cn.name)n.name=String(cn.name).slice(0,40);
-        if(typeof cn.tier==="number")n.tier=THREE.MathUtils.clamp(cn.tier,0,TIER.length-1);
-        if(typeof cn.angle==="number")n.angle=cn.angle;
-        n.parent=cn.parent||null;
+        if(Number.isFinite(cn.tier))n.tier=THREE.MathUtils.clamp(cn.tier,0,TIER.length-1);
+        if(Number.isFinite(cn.angle))n.angle=cn.angle;
+        n.parent=(typeof cn.parent==="string"&&cn.parent)?cn.parent:null;
       });
       // Tiers are replaced wholesale, but nodes NOT listed in the file keep their old
       // tier — which may no longer exist (importing a 2-tier dataset over a 4-tier one
@@ -7007,8 +7096,10 @@ importFile.onchange=()=>{
         groups.forEach(g=>{const j=g.layers.indexOf(p.id);if(j>=0)g.layers.splice(j,1);});
       });
       processes.length=Math.min(processes.length,impLayers.length);
+      // Os índices deslizaram: t.proc tem de voltar a apontar para a posição real
+      processes.forEach((pp,i)=>pp.tasks.forEach(t=>{t.proc=i;}));
       impLayers.forEach((cl,i)=>{
-        if(!cl)return;
+        if(!cl||typeof cl!=="object")return;
         let p=processes[i];
         if(!p)p=createLayer(cl.name,typeof cl.color==="number"?cl.color:undefined);
         // O id tem de vir do ficheiro, senão as referências dos grupos apontam
@@ -9423,9 +9514,18 @@ function parsePasted(text){
     .filter(l=>l.trim()!=="")
     .map(l=>(l.indexOf("\t")>=0?l.split("\t"):l.split(/[;,]/)).map(c=>String(c).trim()));
   if(!rows.length)return {rows:[],skipped:0};
-  // Uma primeira linha com cabeçalhos reconhecíveis não é dados
-  const head=rows[0].map(c=>String(c||"").toLowerCase());
-  if(head.some(c=>/unidade|nome|servi|n[ií]vel|tier|respons/.test(c)))rows.shift();
+  /* Detectar o cabeçalho sem comer dados. A regra anterior procurava
+     "servi" em qualquer célula — e "Divisão de Serviços Urbanos", que é
+     precisamente o tipo de unidade que se cola aqui, era engolida como se
+     fosse um cabeçalho. Agora exige-se igualdade exacta em duas colunas e
+     que a coluna do nível não seja um número (se for, é uma linha de dados). */
+  const norm=s=>String(s==null?"":s).toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+  const FIRST=["unidade","nome","servico","servicos","divisao","designacao","orgao","estrutura"];
+  const OTHER=["nivel","tier","escalao","grau","responsavel","chefe","categoria","cargo","funcao"];
+  const head=rows[0].map(norm);
+  const looksNumeric=head.length>1&&/^\d+$/.test(head[1]);
+  if(!looksNumeric&&FIRST.indexOf(head[0])>=0&&head.slice(1).some(c=>OTHER.indexOf(c)>=0))rows.shift();
   let skipped=0;
   const out=[];
   rows.slice(0,400).forEach(r=>{
@@ -9793,22 +9893,28 @@ function restoreState(json){
     pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";
     newLayerMode=false;hoverNode=null;hoverKin=null;lastHoverNode=null;
     TIER.length=0;
-    (s.tiers||[]).slice(0,8).forEach((t,i)=>TIER.push({
-      label:String(t.label||("Tier "+i)).slice(0,28),
-      y:typeof t.y==="number"?t.y:9-i*3,
-      r:typeof t.r==="number"?t.r:i*2.5,
-      size:typeof t.size==="number"?t.size:0.28}));
+    // Mesmas guardas da importação: Infinity passaria num teste `typeof`
+    // e envenenaria a câmara de forma irrecuperável.
+    (Array.isArray(s.tiers)?s.tiers:[]).slice(0,8).forEach((t,i)=>{
+      if(!t||typeof t!=="object")return;
+      const num=(v,d,lo,hi)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):d;
+      TIER.push({
+        label:String(t.label||("Tier "+i)).slice(0,28),
+        y:num(t.y,9-i*3,-200,200),
+        r:num(t.r,i*2.5,0,400),
+        size:num(t.size,0.28,0.02,4)});
+    });
     if(!TIER.length)DEFAULT_TIERS.forEach(t=>TIER.push({...t}));
     rebuildTierRings();
     if(typeof s.orgName==="string"&&s.orgName.trim()){
       orgName=s.orgName.slice(0,48);orgNameInput.value=orgName;
     }
     s.nodes.forEach(cn=>{
-      if(!cn||!cn.id)return;
+      if(!cn||typeof cn!=="object"||typeof cn.id!=="string"||!cn.id)return;
       nodes.push({id:cn.id,name:String(cn.name||"?").slice(0,40),
-        tier:THREE.MathUtils.clamp(typeof cn.tier==="number"?cn.tier:2,0,TIER.length-1),
-        angle:typeof cn.angle==="number"?cn.angle:0,
-        parent:cn.parent||null,custom:!!cn.custom});
+        tier:THREE.MathUtils.clamp(Number.isFinite(cn.tier)?cn.tier:2,0,TIER.length-1),
+        angle:Number.isFinite(cn.angle)?cn.angle:0,
+        parent:(typeof cn.parent==="string"&&cn.parent)?cn.parent:null,custom:!!cn.custom});
     });
     nodes.forEach(n=>{
       if(n.parent&&(!byId(n.parent)||byId(n.parent).tier>=n.tier)){
