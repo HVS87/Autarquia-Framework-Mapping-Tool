@@ -610,7 +610,6 @@
   /* ---- Deitado e de altura curta: a altura é o recurso escasso ---- */
   body.vp-squat header{padding-top:8px;padding-bottom:8px}
   body.vp-squat .brand p{display:none}
-  body.vp-squat .brand .head-actions{margin-top:6px}
   body.vp-squat #orgName{font-size:.86rem}
   body.vp-squat #menuBtn{top:8px}
   body.vp-squat #stepper{
@@ -623,6 +622,7 @@
   /* Treze botões a partir em várias linhas comiam metade dos 390px de altura;
      numa só linha que desliza, o cabeçalho fica baixo e nada se perde. */
   body.vp-squat .brand .head-actions{
+    margin-top:6px;
     flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
     padding-bottom:2px;max-width:calc(100vw - 130px);
   }
@@ -647,7 +647,11 @@
   body.vp-squat #modalCard{max-height:calc(100vh - 16px)}
   body.vp-squat #modalHead{padding:9px 14px}
   body.vp-squat #modalBody{padding:12px 14px}
-  body.vp-squat #coach .coach-card,body.vp-squat #help .help-card{max-height:calc(100vh - 24px)}
+  /* Os cartões chamam-se #coachCard e #helpCard — com os nomes errados, esta
+     regra não pegava e os dois diálogos passavam dos 390px de altura. */
+  body.vp-squat #coachCard,body.vp-squat #helpCard{
+    max-height:calc(100vh - 20px);overflow-y:auto;
+  }
 
   /* ---- Telemóvel ao alto: largura escassa, altura de sobra ---- */
   body.vp-phone.vp-portrait #detail{max-height:46vh}
@@ -655,15 +659,17 @@
   body.vp-phone.vp-portrait #stepper .caption{max-height:2.6em}
 
   /* ---- Tablet deitado: há espaço para o HUD completo ---- */
-  body.vp-tablet.vp-landscape #whereBar{display:flex!important}
-  body.vp-tablet.vp-landscape #radarWrap{display:flex!important}
-  body.vp-tablet.vp-landscape #quest{display:flex!important}
+  /* :not(.vp-squat) diz o que se quer mesmo — "tablet deitado com espaço" — e
+     evita a briga de especificidade: sem isto, um tablet pequeno ao baixo
+     (900x500) é ao mesmo tempo vp-tablet, vp-landscape e vp-squat, e a regra
+     de três classes ganhava à de uma, mostrando o HUD onde não cabe. */
+  body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #whereBar{display:flex!important}
+  body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #radarWrap{display:flex!important}
+  /* Só o cartão que está mesmo activo: forçar #quest sem .on ressuscitava-o
+     depois de dispensado, como uma caixa vazia a flutuar. */
+  body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #quest.on{display:block!important}
   body.vp-tablet.vp-landscape #whereBar{max-width:min(460px,46vw)}
   body.vp-tablet.vp-landscape #radar{width:104px;height:104px}
-  /* …mas não quando algo está aberto por cima */
-  body.vp-tablet.vp-landscape.presenting #whereBar,
-  body.vp-tablet.vp-landscape.presenting #radarWrap,
-  body.vp-tablet.vp-landscape.presenting #quest{display:none!important}
   body.vp-squat #whereBar,body.vp-squat #radarWrap,body.vp-squat #quest{display:none!important}
 
   /* ---- Tablet ao alto: painéis mais largos, gaveta em baixo ---- */
@@ -2605,11 +2611,26 @@ function disposeNodeVisual(n){
   const pi=nodePickables.indexOf(n._mesh);
   if(pi>=0)nodePickables.splice(pi,1);
   const ai=agentSystems.findIndex(s=>s.node===n);
+  const sys=ai>=0?agentSystems[ai]:null;
   if(ai>=0)agentSystems.splice(ai,1);
   n._mesh.geometry.dispose();n._mesh.material.dispose();
   n._glow.material.dispose();
   if(n._socket){n._socket.geometry.dispose();n._socket.material.dispose();n._socket=null;}
   disposeSprite(n._label);
+  /* As esferas em órbita — uma por pessoa, até oito — também são geometria e
+     material a sério. Tirá-las do grafo não liberta nada na placa gráfica, e
+     esta função corre a cada mudança de tema, de continuidade, de equipa ou de
+     posição: sem isto, cada uma dessas acções deixava lá tudo para trás.
+     O `map` do halo vem do cache partilhado glowTexture e não se toca. */
+  if(sys)sys.agents.forEach(o=>{
+    if(!o||!o.mesh)return;
+    o.mesh.children.slice().forEach(ch=>{
+      o.mesh.remove(ch);
+      if(ch.material)ch.material.dispose();
+    });
+    if(o.mesh.geometry)o.mesh.geometry.dispose();
+    if(o.mesh.material)o.mesh.material.dispose();
+  });
   n._group=null;n._mesh=null;n._glow=null;n._label=null;
 }
 function refreshNodeVisual(n){
@@ -4110,10 +4131,17 @@ function addLayerRow(p){
   name.style.font="inherit";name.style.cursor="pointer";name.style.padding="0";
   name.title="Abrir fluxograma — o nome edita-se lá";
   name.setAttribute("aria-label","Abrir fluxograma de "+p.name);
-  name.onclick=()=>showFlowchart(p);
+  // O primeiro clique de um duplo abria o fluxograma, e o "renomear" acabava a
+  // editar um botão escondido atrás do modal. Espera-se o tempo do duplo clique.
+  let openTimer=null;
+  name.onclick=()=>{
+    clearTimeout(openTimer);
+    openTimer=setTimeout(()=>showFlowchart(p),230);
+  };
   // Double-click renames in place instead of opening the flowchart
   name.addEventListener("dblclick",e=>{
     e.preventDefault();e.stopPropagation();
+    clearTimeout(openTimer);
     inlineRename(name,()=>p.name,v=>{
       p.name=v;markDirty();
       name.textContent=v;
@@ -5570,12 +5598,12 @@ function renderGroupDetail(head,closeBtn){
   sw.setAttribute("aria-label","Alternar todos os procedimentos do grupo");
   sw.onclick=()=>{
     const target=!allOn;
-    markDirty();
     members.forEach(p=>{
       p._visible=target;
       const i=processes.indexOf(p);
       if(!target&&isolateProc===i)isolateProc=null;
     });
+    markDirty();          // depois de mudar: o histórico grava o estado anterior
     syncLayerRows();
     renderDetail();
   };
@@ -6240,6 +6268,7 @@ function duplicateProcedure(p){
   const ni=processes.indexOf(np);
   p.tasks.forEach(t=>createTask(ni,t.a,t.b,t.desc,t.agent,t.duration));
   groups.forEach(g=>{if(g.layers.includes(p.id)&&!g.layers.includes(np.id))g.layers.push(np.id);});
+  markDirty();          // a herança do grupo também tem de entrar no histórico
   renderGroups();syncLayerRows();updateLayerCounts();
   flash("Procedimento duplicado.");
   showFlowchart(np);
@@ -7148,12 +7177,17 @@ importFile.onchange=()=>{
         // passaria no teste e depois entra na câmara — e um lerp com Infinity
         // vira NaN à segunda frame, deixando a vista 3D morta até recarregar.
         cfg.tiers.slice(0,8).forEach((t,i)=>{
+          // Uma entrada nula rebentava aqui em t.label, com TIER já esvaziado —
+          // e a app ficava sem um único nível, que é um estado do qual não sai.
+          if(!t||typeof t!=="object")return;
           const num=(v,d,lo,hi)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):d;
           TIER.push({label:String(t.label||("Tier "+i)).slice(0,28),
             y:num(t.y,9-i*3,-200,200),
             r:num(t.r,i*2.5,0,400),
             size:num(t.size,0.28,0.02,4)});
         });
+        // Se o ficheiro só trouxe lixo, ficar sem níveis nenhuns não é opção
+        if(!TIER.length)DEFAULT_TIERS.forEach(t=>TIER.push({...t}));
         rebuildTierRings();
       }
       // 1) Nodes: update matches, create missing
@@ -7287,6 +7321,13 @@ importFile.onchange=()=>{
     }catch(err){
       flash("Não foi possível ler esse ficheiro — exporte primeiro um dataset daqui.",{type:"err"});
     }
+    importFile.value="";
+  };
+  // Sem isto, uma leitura falhada (pen removida a meio, ficheiro sem permissões)
+  // não dizia nada — e o input ficava com o mesmo ficheiro, por isso escolhê-lo
+  // outra vez nem sequer disparava um novo "change".
+  r.onerror=()=>{
+    flash("Não foi possível abrir o ficheiro. Verifique se ainda está acessível.",{type:"err"});
     importFile.value="";
   };
   r.readAsText(f);
@@ -8306,7 +8347,13 @@ function applyViewport(force){
   camera.updateProjectionMatrix();
   renderer.setSize(vp.w,vp.h);
 
-  if(rotated){
+  if(rotated&&focusActive){
+    // Com uma unidade em foco, o raio actual é o do foco e não o da vista geral.
+    // Guardá-lo envenenaria a memória do formato, e repor o da memória
+    // arrancaria a câmara de cima do que o utilizador estava a ver.
+    camera.updateProjectionMatrix();
+  }
+  else if(rotated){
     // Guardar como se estava neste formato antes de sair dele
     vpMemo[prevOri]={radius:rig.goal.radius,phi:rig.goal.phi};
     const back=vpMemo[vp.ori];
@@ -8480,6 +8527,42 @@ function syncDensityRange(){
 }
 densityRange.addEventListener("input",applyDensity);
 
+/* aria-modal="true" é uma promessa: enquanto o diálogo está aberto, o resto da
+   página não existe. Sem prender o Tab, ele saía para os botões do painel e do
+   HUD por trás do scrim — visíveis para o teclado, invisíveis para quem lá está. */
+function topDialog(){
+  const layers=[modal,coachEl,helpEl,reassignEl,confirmEl,paletteEl]
+    .filter(l=>l&&l.classList.contains("open"));
+  if(!layers.length)return null;
+  // O que estiver por cima é o que manda
+  return layers.reduce((a,b)=>
+    (parseInt(getComputedStyle(b).zIndex,10)||0)>=(parseInt(getComputedStyle(a).zIndex,10)||0)?b:a);
+}
+addEventListener("keydown",e=>{
+  if(e.key!=="Tab")return;
+  const top=topDialog();
+  if(!top)return;
+  const f=[...top.querySelectorAll(
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),'+
+    'textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(x=>x.offsetWidth>0||x.offsetHeight>0||x===document.activeElement);
+  if(!f.length)return;
+  const first=f[0],last=f[f.length-1],a=document.activeElement;
+  const inside=top.contains(a);
+  if(e.shiftKey&&(a===first||!inside)){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&(a===last||!inside)){e.preventDefault();first.focus();}
+},true);
+
+/* O elemento em foco já usa o Espaço? Botões, ligações, <summary> e tudo o que
+   se anuncia como botão ou interruptor activam-se com ele. */
+function spaceTaken(){
+  const a=document.activeElement;
+  if(!a||a===document.body||a===stage)return false;
+  const t=a.tagName;
+  if(t==="BUTTON"||t==="SUMMARY"||(t==="A"&&a.hasAttribute("href")))return true;
+  const r=a.getAttribute("role");
+  return r==="button"||r==="switch"||r==="checkbox"||r==="tab"||r==="menuitem";
+}
 /* Global keyboard shortcuts. The tour keys were documented in the README but
    never actually bound — this is where they live now. */
 addEventListener("keydown",e=>{
@@ -8489,6 +8572,7 @@ addEventListener("keydown",e=>{
   if(e.metaKey||e.ctrlKey||e.altKey)return;
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
   if(reassignEl&&reassignEl.classList.contains("open"))return;
+  if(paletteEl&&paletteEl.classList.contains("open"))return;
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
   // Com o palco 3D em foco, as setas percorrem a hierarquia em vez do tour
   if(document.activeElement===stage&&e.key.indexOf("Arrow")===0){
@@ -8500,6 +8584,10 @@ addEventListener("keydown",e=>{
   else if(e.key==="ArrowLeft"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx-1);}
   else if(e.key===" "){
     // Toque = play/pausa do tour; manter = espreitar o todo. Decide-se no keyup.
+    // Mas só quando o Espaço não pertence a mais ninguém: um <button> em foco
+    // activa-se com Espaço, e roubá-lo aqui deixava quase todos os comandos
+    // da aplicação inalcançáveis por teclado.
+    if(spaceTaken())return;
     e.preventDefault();
     if(e.repeat)return;
     spacePeeked=false;
@@ -8516,6 +8604,7 @@ addEventListener("keyup",e=>{
   if(e.key!==" ")return;
   clearTimeout(spaceTimer);
   if(spacePeeked){spacePeeked=false;endPeek();return;}
+  if(spaceTaken())return;   // o Espaço era do botão em foco, não do tour
   const tag=((e.target&&e.target.tagName)||"").toLowerCase();
   if(tag==="input"||tag==="textarea"||tag==="select"||(e.target&&e.target.isContentEditable))return;
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
@@ -10069,6 +10158,8 @@ function applyFontScale(v){
   const out=document.getElementById("fsVal");
   if(out)out.textContent=fontScale+"%";
   try{storageSet(FS_KEY,String(fontScale));}catch(e){}
+  // Texto maior faz o cabeçalho crescer, e as gavetas encostam-se à altura dele
+  if(booted)applyViewport(true);
 }
 const fsUp=document.getElementById("fsUp"),fsDown=document.getElementById("fsDown");
 if(fsUp)fsUp.onclick=()=>applyFontScale(fontScale+10);
