@@ -297,7 +297,12 @@
   .agent-row{
     display:flex;align-items:center;gap:6px;border:1px solid var(--hairline);
     border-radius:7px;padding:5px 7px;margin:4px 0;font-size:.76rem;
+    /* Nome + cobertura + botão não cabem lado a lado num telemóvel: em vez de
+       empurrarem o painel para fora do ecrã, passam para a linha seguinte. */
+    flex-wrap:wrap;min-width:0;
   }
+  .agent-row>div:first-child{min-width:0;flex:1 1 auto}
+  .agent-row .row-name,.agent-row .count{overflow-wrap:anywhere}
   .star{
     background:none;border:none;cursor:pointer;font-size:.85rem;line-height:1;
     color:var(--ink-dim);padding:1px;flex:none;
@@ -305,8 +310,15 @@
   .star.on{color:var(--gold)}
   .star:focus-visible{outline:2px solid var(--steel);outline-offset:1px;border-radius:3px}
 
-  .field-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:.74rem}
-  .field-grid label{color:var(--ink-dim)}
+  /* minmax(0,…): sem isto, um <select> cresce até caber a opção mais comprida
+     ("Divisão Serviços Urbanos (T1)") e arrasta o painel inteiro para fora do
+     ecrã num telemóvel. As colunas passam a poder encolher. */
+  .field-grid{
+    display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
+    gap:6px 10px;align-items:center;font-size:.74rem;min-width:0;
+  }
+  .field-grid label{color:var(--ink-dim);overflow-wrap:anywhere}
+  .field-grid select,.field-grid input,.field-grid textarea{max-width:100%;min-width:0}
   .field-grid input[type=text]{
     background:rgba(255,255,255,0.04);border:1px solid var(--hairline);border-radius:6px;
     color:var(--ink);font:inherit;font-size:.74rem;padding:4px 7px;width:100%;
@@ -579,6 +591,99 @@
     /* 16px form controls stop iOS Safari's focus auto-zoom */
     input,select,textarea{font-size:16px!important}
     .glass{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+    /* Duas colunas não cabem em 390px — e um destes formulários tem outro lá
+       dentro, o que empurrava a coluna dos rótulos até 330px e deixava o
+       controlo com doze. Numa coluna, o rótulo fica por cima do seu campo. */
+    .field-grid{grid-template-columns:minmax(0,1fr)}
+    .field-grid label{margin-top:3px}
+    .field-grid .field-grid{margin:0}
+  }
+
+  /* ============================================================
+     ORIENTAÇÃO — as medidas por largura não chegam
+
+     Um telemóvel deitado mede ~850×390: pela largura passa por tablet, mas
+     tem menos altura do que ao alto. As regras abaixo olham para o formato,
+     não só para a largura, e são aplicadas pelas classes vp-* no <body>.
+  ============================================================ */
+
+  /* ---- Deitado e de altura curta: a altura é o recurso escasso ---- */
+  body.vp-squat header{padding-top:8px;padding-bottom:8px}
+  body.vp-squat .brand p{display:none}
+  body.vp-squat .brand .head-actions{margin-top:6px}
+  body.vp-squat #orgName{font-size:.86rem}
+  body.vp-squat #menuBtn{top:8px}
+  body.vp-squat #stepper{
+    bottom:8px;padding:7px 12px 8px;
+    left:50%;transform:translateX(-50%);width:min(660px,calc(100vw - 20px));
+  }
+  body.vp-squat #stepper .caption{display:none}
+  body.vp-squat #stepper h3{font-size:.76rem}
+  body.vp-squat .dots{margin-top:5px}
+  /* Treze botões a partir em várias linhas comiam metade dos 390px de altura;
+     numa só linha que desliza, o cabeçalho fica baixo e nada se perde. */
+  body.vp-squat .brand .head-actions{
+    flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+    padding-bottom:2px;max-width:calc(100vw - 130px);
+  }
+  body.vp-squat .brand .head-actions::-webkit-scrollbar{display:none}
+  body.vp-squat .brand .head-actions .btn{flex:none}
+  /* A altura real do cabeçalho é medida em applyViewport — nunca adivinhada */
+  body.vp-squat #panel.open{
+    top:calc(var(--hdr-h,46px) + 6px);
+    max-height:calc(100vh - var(--hdr-h,46px) - 16px);
+  }
+  /* Ao baixo, uma gaveta em baixo comeria o ecrã todo — vai para o lado */
+  body.vp-squat #detail{
+    left:auto;right:8px;top:calc(var(--hdr-h,46px) + 6px);bottom:8px;
+    width:min(320px,44vw);max-height:none;
+  }
+  /* Com a gaveta à direita, o rodapé encosta à esquerda em vez de ficar por baixo */
+  body.vp-squat.detail-open #stepper{
+    display:flex;left:12px;transform:none;
+    width:min(430px,calc(100vw - 360px));
+  }
+  body.vp-squat #modal{padding:8px}
+  body.vp-squat #modalCard{max-height:calc(100vh - 16px)}
+  body.vp-squat #modalHead{padding:9px 14px}
+  body.vp-squat #modalBody{padding:12px 14px}
+  body.vp-squat #coach .coach-card,body.vp-squat #help .help-card{max-height:calc(100vh - 24px)}
+
+  /* ---- Telemóvel ao alto: largura escassa, altura de sobra ---- */
+  body.vp-phone.vp-portrait #detail{max-height:46vh}
+  body.vp-phone.vp-portrait #panel.open{width:calc(100vw - 20px);left:10px}
+  body.vp-phone.vp-portrait #stepper .caption{max-height:2.6em}
+
+  /* ---- Tablet deitado: há espaço para o HUD completo ---- */
+  body.vp-tablet.vp-landscape #whereBar{display:flex!important}
+  body.vp-tablet.vp-landscape #radarWrap{display:flex!important}
+  body.vp-tablet.vp-landscape #quest{display:flex!important}
+  body.vp-tablet.vp-landscape #whereBar{max-width:min(460px,46vw)}
+  body.vp-tablet.vp-landscape #radar{width:104px;height:104px}
+  /* …mas não quando algo está aberto por cima */
+  body.vp-tablet.vp-landscape.presenting #whereBar,
+  body.vp-tablet.vp-landscape.presenting #radarWrap,
+  body.vp-tablet.vp-landscape.presenting #quest{display:none!important}
+  body.vp-squat #whereBar,body.vp-squat #radarWrap,body.vp-squat #quest{display:none!important}
+
+  /* ---- Tablet ao alto: painéis mais largos, gaveta em baixo ---- */
+  body.vp-tablet.vp-portrait #panel.open{width:min(400px,calc(100vw - 24px))}
+  body.vp-tablet.vp-portrait #detail{
+    left:16px;right:16px;top:auto;bottom:16px;width:auto;max-height:44vh;
+  }
+  body.vp-tablet.vp-portrait #modalCard{width:min(720px,100%)}
+
+  /* ---- Alvos de toque maiores em qualquer aparelho táctil ---- */
+  body.vp-touch .btn.tiny{padding:6px 11px}
+  body.vp-touch .icon-btn{min-width:30px;min-height:30px}
+  body.vp-touch .row{padding:9px 10px}
+  body.vp-touch .switch{width:30px;height:17px}
+  body.vp-touch .switch::after{width:12px;height:12px;top:1.5px}
+  body.vp-touch .switch.on::after{transform:translateX(13px)}
+
+  /* A rotação não deve ser uma animação: o que muda, muda já */
+  body.vp-rotating *,body.vp-rotating *::before,body.vp-rotating *::after{
+    transition:none!important;animation:none!important;
   }
 
   /* ============================================================
@@ -1105,6 +1210,18 @@
   table.doc-t th,table.doc-t td{border:1px solid #c8ccd2;padding:4px 8px;text-align:left}
   table.doc-t th{background:#eef0f3;font-weight:600;font-size:.64rem;letter-spacing:.06em;text-transform:uppercase}
   .doc-foot{margin-top:22px;font-size:.62rem;color:#7a808a;border-top:1px solid #c8ccd2;padding-top:8px}
+  /* Num telemóvel, a margem do documento e a indentação por nível somavam-se
+     até empurrar a página para o lado. O documento encolhe; o que não encolhe
+     desliza dentro do seu próprio contentor. */
+  @media (max-width:640px){
+    .doc{padding:16px 14px}
+    .doc h1{font-size:1rem}
+    .doc-lvl{margin-left:8px;padding-left:9px}
+    .doc-box{min-width:0;max-width:100%;padding:5px 8px}
+    .doc-box .dn{font-size:.72rem}
+    table.doc-t{font-size:.62rem}
+    table.doc-t th,table.doc-t td{padding:3px 5px;word-break:break-word}
+  }
   @media print{
     body>*{display:none!important}
     #modal,#modal.open{display:block!important;position:static!important;background:none!important;padding:0!important}
@@ -5596,27 +5713,27 @@ function renderTaskDetail(head,closeBtn){
 
   const grid=el("div","field-grid");
 
-  grid.append(el("label",null,"From"));
+  grid.append(el("label",null,"Origem"));
   grid.append(mkSelect(nodes.map(m=>({label:m.name+" (T"+m.tier+")",value:m.id})),t.a,v=>{
     if(v===t.b)return renderDetail();
     t.a=v;t.agent=null;markDirty();rebuildTaskVisual(t);renderDetail();
   }));
 
-  grid.append(el("label",null,"To"));
+  grid.append(el("label",null,"Destino"));
   grid.append(mkSelect(nodes.map(m=>({label:m.name+" (T"+m.tier+")",value:m.id})),t.b,v=>{
     if(v===t.a)return renderDetail();
     t.b=v;markDirty();rebuildTaskVisual(t);renderDetail();
   }));
 
-  grid.append(el("label",null,"Proc."));
+  grid.append(el("label",null,"Procedimento"));
   grid.append(mkSelect(processes.map((pp,i)=>({label:pp.name,value:String(i)})),String(t.proc),v=>{
     moveTaskToLayer(t,parseInt(v,10));renderDetail();
   }));
 
-  grid.append(el("label",null,"Resp."));
+  grid.append(el("label",null,"Responsável"));
   grid.append(agentSelect(t.a,t.agent,v=>{t.agent=v;markDirty();},true));
 
-  grid.append(el("label",null,"Duration"));
+  grid.append(el("label",null,"Duração"));
   const dur=el("input");dur.type="text";dur.value=t.duration;dur.maxLength=20;
   dur.setAttribute("aria-label","Task duration");
   dur.addEventListener("change",()=>{t.duration=dur.value.trim()||"—";markDirty();});
@@ -7818,6 +7935,13 @@ function animate(){
   const s=scenes[sceneIdx];
   // Cheap poll keeps the empty-state prompt correct without hooking every mutation
   if((uxTick++&31)===0)updateEmptyHint();
+  // Rede final para o formato: há ambientes que mudam o tamanho da janela sem
+  // disparar nada — ecrã dividido, PWA a acordar, WebView embebida. O ciclo de
+  // desenho é a única coisa que corre de certeza, por isso pergunta-se aqui.
+  if((uxTick&15)===0){
+    const sig=innerWidth+"x"+innerHeight;
+    if(sig!==vpSeen&&innerWidth&&innerHeight){vpSeen=sig;settleViewport();}
+  }
   if((uxTick&3)===0)updateDeclutter();
   if((uxTick&1)===0)updateChevrons();
   if((uxTick&63)===0)nodes.forEach(n=>{n._busy=nodeBusy(n);});
@@ -7861,7 +7985,8 @@ function animate(){
   stepColorWipe(dt);
   // Poeira e faísca ocasional de um node ocupado
   {
-    const mt=(ambientOn&&!reduceMotion)?0.5:0;
+    // A poeira é puro enfeite: num telemóvel só custa frames
+    const mt=(ambientOn&&!reduceMotion&&vpCls!=="phone")?0.5:0;
     moteMat.opacity+=(mt-moteMat.opacity)*0.05;
     if(moteMat.opacity>0.01){
       motes.rotation.y+=0.05*dt;
@@ -8110,12 +8235,163 @@ function animate(){
 
   renderer.render(scene,camera);
 }
-addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
+/* ============================================================
+   ORIENTAÇÃO — o mesmo aparelho ao alto e ao baixo é outro ecrã
+
+   Medir só a largura engana: um telemóvel deitado tem 850px de largura,
+   o que pelas medidas antigas o fazia passar por tablet, mas 390px de
+   altura — menos do que um telemóvel ao alto. Por isso classifica-se pelo
+   lado curto (que não muda ao rodar) e trata-se a orientação à parte.
+============================================================ */
+let vpCls="desktop",vpOri="landscape",vpSquat=false,vpTimer=0,vpFuse=0,vpTries=0,vpLast="",vpSeen="";
+const vpMemo={portrait:null,landscape:null};   // como se estava em cada formato
+
+function readViewport(){
+  const w=innerWidth||1,h=innerHeight||1;
+  const short=Math.min(w,h),long=Math.max(w,h);
+  const coarse=(matchMedia&&matchMedia("(pointer: coarse)").matches)||false;
+  const touch=coarse||("ontouchstart" in window)||(navigator.maxTouchPoints||0)>0;
+  let cls;
+  if(!touch&&long>=1000)cls="desktop";
+  else if(short<=460)cls="phone";
+  else if(short<=900)cls="tablet";
+  else cls="desktop";
+  return {w,h,cls,touch,short,long,
+    ori:h>=w?"portrait":"landscape",
+    squat:h<=520&&w>h};      // deitado e de altura curta: o caso apertado
+}
+/* Raio a que a estrutura cabe no ecrã, para este formato.
+   Mede-se a hierarquia, não a pilha de procedimentos: com vinte procedimentos
+   empilhados por baixo, tentar enquadrar tudo mandava a câmara para o limite
+   do afastamento e a organização ficava do tamanho de uma moeda. */
+function fitRadiusFor(aspect){
+  const R=rGuide()+1.6;
+  const ys=TIER.length?TIER.map(t=>t.y):[9,0];
+  const top=Math.max.apply(null,ys),bot=Math.min.apply(null,ys);
+  const halfV=Math.max(5,(top-bot)*0.62);
+  const vFOV=camera.fov*Math.PI/180;
+  const asp=Math.max(0.35,aspect||1);
+  const needV=halfV/Math.tan(vFOV/2);
+  const needH=R/Math.tan(Math.atan(Math.tan(vFOV/2)*asp));
+  const out=Math.max(needV,needH)*1.05;
+  return Number.isFinite(out)?THREE.MathUtils.clamp(out,10,56):28;
+}
+/* Ao alto há altura de sobra e pouca largura: vale a pena olhar mais de lado,
+   para a pilha de níveis ocupar o eixo comprido. Ao baixo é o contrário. */
+const oriPhiBias=o=>o==="portrait"?0.16:-0.08;
+
+function applyViewport(force){
+  // Um ecrã de 0px ainda não é um ecrã: classificá-lo agora daria "telemóvel
+  // ao alto" a um portátil, e nada mais voltaria a corrigir isso.
+  if(!innerWidth||!innerHeight)return;
+  const vp=readViewport();
+  const changed=force||vp.cls!==vpCls||vp.ori!==vpOri||vp.squat!==vpSquat;
+  const rotated=vp.ori!==vpOri;
+  const prevAspect=Math.max(0.35,camera.aspect||1);
+  const prevOri=vpOri;
+  vpCls=vp.cls;vpOri=vp.ori;vpSquat=vp.squat;
+
+  const b=document.body.classList;
+  ["vp-phone","vp-tablet","vp-desktop"].forEach(c=>b.remove(c));
+  b.add("vp-"+vp.cls);
+  b.toggle("vp-portrait",vp.ori==="portrait");
+  b.toggle("vp-landscape",vp.ori==="landscape");
+  b.toggle("vp-squat",vp.squat);
+  b.toggle("vp-touch",vp.touch);
+
+  // Um telemóvel não tem fôlego para 3× de densidade de pixels nem para poeira
+  const cap=vp.cls==="phone"?1.5:(vp.cls==="tablet"?2:2);
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,cap));
+  camera.aspect=vp.w/vp.h;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+  renderer.setSize(vp.w,vp.h);
+
+  if(rotated){
+    // Guardar como se estava neste formato antes de sair dele
+    vpMemo[prevOri]={radius:rig.goal.radius,phi:rig.goal.phi};
+    const back=vpMemo[vp.ori];
+    if(back){
+      // Já cá tínhamos estado: rodar e voltar devolve a mesma vista
+      rig.goal.radius=THREE.MathUtils.clamp(back.radius,4,56);
+      if(!focusActive)rig.goal.phi=THREE.MathUtils.clamp(back.phi,0.25,1.48);
+    }else{
+      // Primeira vez neste formato: corrigir o enquadramento, mas com mão leve —
+      // um salto grande desorienta mais do que o desajuste que corrige.
+      const k=THREE.MathUtils.clamp(
+        fitRadiusFor(camera.aspect)/fitRadiusFor(prevAspect),0.62,1.6);
+      if(Number.isFinite(k)&&k>0)
+        rig.goal.radius=THREE.MathUtils.clamp(rig.goal.radius*k,4,56);
+      if(!focusActive)
+        rig.goal.phi=THREE.MathUtils.clamp(
+          rig.goal.phi+(oriPhiBias(vp.ori)-oriPhiBias(prevOri)),0.25,1.48);
+    }
+  }
   if(noGL)renderFallbackSVG();
-});
+  if(changed){
+    // Quanto mede o cabeçalho depois desta mudança? As gavetas encostam-se ao
+    // valor medido; adivinhá-lo punha-as por baixo dos botões.
+    const hdr=document.querySelector("header");
+    if(hdr)document.documentElement.style.setProperty(
+      "--hdr-h",Math.round(hdr.getBoundingClientRect().height)+"px");
+    // Tudo o que foi desenhado à medida do ecrã antigo tem de ser refeito
+    rebuildChevrons();updateChevrons();
+    updateWhereBar();drawRadar();renderQuest();
+    if(modal.classList.contains("open")&&modalView&&viewValid(modalView))applyView(modalView);
+  }
+}
+/* O iOS ainda devolve as medidas antigas logo a seguir a rodar: aplica-se já,
+   para não parecer travado, e repete-se até as medidas assentarem. */
+function settleViewport(){
+  // Enquanto as medidas dançam, uma transição CSS só arrasta o desenho atrás
+  document.body.classList.add("vp-rotating");
+  applyViewport(false);
+  cancelAnimationFrame(vpTimer);
+  clearTimeout(vpFuse);
+  vpLast="";vpTries=0;
+  const done=()=>{
+    cancelAnimationFrame(vpTimer);
+    clearTimeout(vpFuse);
+    applyViewport(true);
+    document.body.classList.remove("vp-rotating");
+  };
+  const tick=()=>{
+    const w=innerWidth,h=innerHeight,sig=w+"x"+h;
+    // Um ecrã de 0px é um ecrã que ainda não existe — esperar por um a sério
+    if(w&&h&&sig===vpLast){done();return;}
+    if(vpTries++>40){done();return;}
+    vpLast=sig;
+    vpTimer=requestAnimationFrame(tick);
+  };
+  vpTimer=requestAnimationFrame(tick);
+  // Em separador escondido o requestAnimationFrame não corre; sem esta rede
+  // a classe vp-rotating ficava colada e matava todas as transições.
+  vpFuse=setTimeout(done,700);
+}
+addEventListener("resize",settleViewport);
+addEventListener("orientationchange",settleViewport);
+/* O sinal mais fiável de todos: o próprio elemento a mudar de tamanho.
+   Apanha o que os eventos não apanham — arrancar num separador ainda sem
+   dimensões, e o ecrã dividido do iPad, que redimensiona a janela sem
+   nunca disparar um "orientationchange". */
+if(window.ResizeObserver){
+  let roSig="";
+  new ResizeObserver(()=>{
+    const sig=innerWidth+"x"+innerHeight;
+    if(sig===roSig)return;
+    roSig=sig;
+    settleViewport();
+  }).observe(document.documentElement);
+}
+if(window.matchMedia){
+  const mq=matchMedia("(orientation: portrait)");
+  if(mq.addEventListener)mq.addEventListener("change",settleViewport);
+  else if(mq.addListener)mq.addListener(settleViewport);
+}
+if(screen&&screen.orientation&&screen.orientation.addEventListener)
+  screen.orientation.addEventListener("change",settleViewport);
+// Voltar à app depois de rodar com o ecrã bloqueado
+addEventListener("pageshow",()=>applyViewport(true));
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)settleViewport();});
 
 /* ============================================================
    UX LAYER — onboarding, help, keyboard, density, empty state
@@ -8866,7 +9142,11 @@ function renderOficial(){
   const roots=nodes.filter(n=>!n.parent||!byId(n.parent));
   if(!roots.length)tree.append(el("div","empty-note","Sem unidades."));
   roots.forEach(r=>draw(r,tree,0));
-  doc.append(tree);
+  // Uma hierarquia funda é mais larga do que um telemóvel: desliza aqui dentro
+  // em vez de arrastar a página inteira para o lado.
+  const treeWrap=el("div","vw-scroll");
+  treeWrap.append(tree);
+  doc.append(treeWrap);
 
   doc.append(el("h2",null,"Mapa de pessoal"));
   const tb=document.createElement("table");
@@ -10054,6 +10334,7 @@ updateEmptyHint();
 renderBookmarks();
 renderCodeKey();
 renderQuest();
+settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
 lastSnap=snapshotState();      // history baseline
