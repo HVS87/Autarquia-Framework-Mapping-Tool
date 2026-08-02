@@ -48,7 +48,7 @@
   header{
     position:fixed;top:0;left:0;right:0;
     display:flex;justify-content:space-between;align-items:flex-start;
-    padding:20px 28px 34px;pointer-events:none;z-index:10;
+    padding:16px 28px 22px;pointer-events:none;z-index:10;
     background:linear-gradient(180deg,var(--scrim),transparent 78%);
   }
   header .brand,header .hint{pointer-events:auto}
@@ -63,11 +63,13 @@
   .brand p{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-dim);margin-top:5px}
   /* As restantes propriedades vêm da regra mais abaixo, que envolve os botões
      em várias linhas; aqui só sobra o afastamento do bloco do título. */
-  .brand .head-actions{margin-top:10px}
+  /* A dica encolhe primeiro: os comandos é que não podem ficar cortados. */
+  header .brand{flex:1 1 auto;min-width:0}
   .hint{
     font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
-    text-align:right;line-height:1.7;
+    text-align:right;line-height:1.7;flex:0 1 auto;min-width:0;
   }
+  @media (max-width:1500px){ .hint{display:none} }
 
   .glass{
     background-color:var(--panel);
@@ -100,10 +102,17 @@
   body.has-focus #focusBlur{opacity:1}
 
   /* ---------- Left panel ---------- */
+  /* O topo vem da altura MEDIDA do cabeçalho (--hdr-h, escrita em
+     applyViewport). Fixo em 118px, bastava a janela estreitar para os treze
+     botões partirem em linhas, o cabeçalho passar a 170px e o painel abrir-se
+     por baixo dele — o que acontecia em qualquer portátil de 1024px. */
   #panel{
-    position:fixed;left:22px;top:118px;width:296px;z-index:10;
+    position:fixed;left:22px;top:calc(var(--hdr-h,118px) + 8px);width:296px;z-index:10;
     padding:4px 15px 12px;
-    max-height:calc(100vh - 260px);overflow-y:auto;
+    /* Termina acima do rodapé da visita e do cartão de arranque, sejam quais
+       forem as alturas deles — em ecrã largo os três partilham a coluna. */
+    max-height:calc(100vh - var(--hdr-h,118px) - var(--step-h,120px) - var(--quest-h,0px) - 40px);
+    overflow-y:auto;
     scrollbar-width:thin;scrollbar-color:rgba(201,214,232,.25) transparent;
   }
   #panel,#detail,#modalBody{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -257,12 +266,20 @@
 
   /* ---------- Detail panel ---------- */
   #detail{
-    position:fixed;right:22px;top:118px;width:304px;z-index:11;
+    position:fixed;right:22px;top:calc(var(--hdr-h,118px) + 8px);width:304px;z-index:11;
     padding:15px;display:none;
-    max-height:calc(100vh - 260px);overflow-y:auto;
+    max-height:calc(100vh - var(--hdr-h,118px) - var(--step-h,120px) - 40px);overflow-y:auto;
     scrollbar-width:thin;scrollbar-color:rgba(201,214,232,.25) transparent;
   }
   #detail.open{display:block}
+  /* Nomes de unidade portugueses são longos ("Equipa de Manutenção de Espaços
+     Verdes") e empurravam o conteúdo para fora dos 304px do painel. Nada aqui
+     dentro pode ser mais largo do que a caixa que o contém. */
+  #detail .d-title-input{width:100%;min-width:0;box-sizing:border-box}
+  .conn-row,.conn-top,.conn-agent{min-width:0;max-width:100%}
+  .conn-agent select{max-width:100%;min-width:0;flex:1 1 120px}
+  .conn-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
+  #detail .row-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
   .d-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:2px}
   .d-title{font-size:.96rem;font-weight:600;line-height:1.3;flex:1}
   .d-close{
@@ -288,10 +305,11 @@
   button.conn-row{font-family:inherit;font-size:.78rem;background:transparent}
   button.conn-row:hover{background:rgba(201,214,232,0.06)}
   button.conn-row:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
-  .conn-top{display:flex;align-items:center;gap:8px;cursor:pointer}
+  /* flex-wrap: nomes de unidade longos passavam da largura do painel */
+  .conn-top{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap}
   .conn-top:hover .conn-name{text-decoration:underline;text-decoration-color:var(--hairline)}
   .conn-row .layer-tag{font-size:.62rem;color:var(--ink-dim);margin-left:auto;white-space:nowrap}
-  .conn-agent{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:.68rem;color:var(--ink-dim)}
+  .conn-agent{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:.68rem;color:var(--ink-dim);flex-wrap:wrap}
   .empty-note{font-size:.74rem;color:var(--ink-dim);padding:4px 0}
 
   .agent-row{
@@ -419,15 +437,19 @@
   .org-toggle:hover{color:var(--ink)}
   .org-agent{cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px}
   .tier-list{margin-bottom:14px}
-  .tier-row{display:flex;align-items:center;gap:10px;margin:4px 0}
+  .tier-row{display:flex;align-items:center;gap:10px;margin:4px 0;min-width:0}
   .tier-row .tier-num{
     font-size:.62rem;letter-spacing:.12em;color:var(--gold);
     width:24px;flex:none;font-variant-numeric:tabular-nums;
   }
+  /* Largura fixa de 220px + rótulo + contagem + botão passavam dos 338px de
+     um telemóvel de 360, e o organograma empurrava a página para o lado. */
   .tier-row input{
     background:rgba(255,255,255,0.04);border:1px solid var(--hairline);border-radius:6px;
-    color:var(--ink);font:inherit;font-size:.76rem;padding:4px 8px;width:220px;
+    color:var(--ink);font:inherit;font-size:.76rem;padding:4px 8px;
+    width:220px;max-width:100%;min-width:0;flex:1 1 auto;
   }
+  .tier-row .count{flex:none}
   .tier-row input:focus{outline:none;border-color:var(--steel)}
   .org-card[draggable=true]:active{cursor:grabbing}
   .org-agent:hover{color:var(--gold)}
@@ -515,12 +537,17 @@
     header{padding-right:118px}
     #menuBtn{display:block}
     #panel{display:none}
+    /* Encostado à altura MEDIDA do cabeçalho (--hdr-h, escrita em applyViewport).
+       Com um valor fixo, um cabeçalho de treze botões passava a 175px num
+       telemóvel e o painel abria-se por baixo dele, tapando-lhe os comandos. */
     #panel.open{
-      display:block;position:fixed;left:12px;top:60px;z-index:16;
+      display:block;position:fixed;left:12px;z-index:16;
+      top:calc(var(--hdr-h,60px) + 6px);
       width:min(330px,calc(100vw - 24px));
-      max-height:calc(100vh - 210px);
+      /* Termina acima do rodapé da visita, cuja altura também é medida */
+      max-height:calc(100vh - var(--hdr-h,60px) - var(--step-h,120px) - 30px);
     }
-    #detail{right:12px;top:104px;width:min(300px,calc(100vw - 24px))}
+    #detail{right:12px;top:calc(var(--hdr-h,60px) + 6px);width:min(300px,calc(100vw - 24px))}
   }
   @media (max-width:640px){
     header{padding:12px 110px 22px 14px}
@@ -529,9 +556,12 @@
       font-size:.6rem;max-width:calc(100vw - 136px);
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
+    .brand .head-actions{max-width:calc(100vw - 120px)}
     .brand .head-actions .btn{font-size:.62rem;padding:4px 8px}
     #menuBtn{top:10px;right:10px}
-    #panel.open{top:52px;max-height:calc(100vh - 190px)}
+    #panel.open{max-height:calc(100vh - var(--hdr-h,52px) - var(--step-h,110px) - 26px)}
+    /* Com a folha de detalhe aberta em baixo, a gaveta lateral pára antes dela */
+    body.detail-open #panel.open{max-height:calc(100vh - var(--hdr-h,52px) - 54vh)}
     #detail{
       left:10px;right:10px;top:auto;bottom:10px;width:auto;
       max-height:52vh;z-index:15;padding:13px;
@@ -548,6 +578,10 @@
     #modal{padding:10px}
     #modalCard{max-height:calc(100vh - 20px)}
     #modalBody{padding:14px}
+    /* Indentação mais apertada e cartões que encolhem: num ecrã estreito a
+       hierarquia continua legível sem obrigar a deslizar a cada nível. */
+    .org-kids{margin-left:10px;padding-left:10px}
+    .org-card{min-width:0;padding:6px 9px}
     #tip{display:none!important}
   }
   @media (prefers-reduced-motion:reduce){
@@ -563,15 +597,19 @@
   }
 
   /* ---------- Safari / iPhone ---------- */
+  /* Em dvh (o iPhone conta a barra do browser à parte) as mesmas contas, com as
+     alturas medidas — não os números fixos que aqui estavam e que anulavam
+     silenciosamente as regras acima, deixando o painel por cima do rodapé. */
   @supports (height:100dvh){
-    #panel{max-height:calc(100dvh - 260px)}
-    #detail{max-height:calc(100dvh - 260px)}
+    #panel{max-height:calc(100dvh - var(--hdr-h,118px) - var(--step-h,120px) - var(--quest-h,0px) - 40px)}
+    #detail{max-height:calc(100dvh - var(--hdr-h,118px) - var(--step-h,120px) - 40px)}
     #modalCard{max-height:calc(100dvh - 80px)}
     @media (max-width:980px){
-      #panel.open{max-height:calc(100dvh - 210px)}
+      #panel.open{max-height:calc(100dvh - var(--hdr-h,60px) - var(--step-h,120px) - 30px)}
     }
     @media (max-width:640px){
-      #panel.open{max-height:calc(100dvh - 190px)}
+      #panel.open{max-height:calc(100dvh - var(--hdr-h,52px) - var(--step-h,110px) - 26px)}
+      body.detail-open #panel.open{max-height:calc(100dvh - var(--hdr-h,52px) - 54dvh)}
       #detail{max-height:52dvh}
       #modalCard{max-height:calc(100dvh - 20px)}
     }
@@ -621,17 +659,12 @@
   body.vp-squat .dots{margin-top:5px}
   /* Treze botões a partir em várias linhas comiam metade dos 390px de altura;
      numa só linha que desliza, o cabeçalho fica baixo e nada se perde. */
-  body.vp-squat .brand .head-actions{
-    margin-top:6px;
-    flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
-    padding-bottom:2px;max-width:calc(100vw - 130px);
-  }
-  body.vp-squat .brand .head-actions::-webkit-scrollbar{display:none}
-  body.vp-squat .brand .head-actions .btn{flex:none}
+  body.vp-squat .brand .head-actions{margin-top:6px;max-width:calc(100vw - 130px)}
   /* A altura real do cabeçalho é medida em applyViewport — nunca adivinhada */
   body.vp-squat #panel.open{
     top:calc(var(--hdr-h,46px) + 6px);
-    max-height:calc(100vh - var(--hdr-h,46px) - 16px);
+    /* Também aqui pára acima do rodapé, que ao baixo é curto mas existe */
+    max-height:calc(100vh - var(--hdr-h,46px) - var(--step-h,80px) - 16px);
   }
   /* Ao baixo, uma gaveta em baixo comeria o ecrã todo — vai para o lado */
   body.vp-squat #detail{
@@ -671,16 +704,31 @@
   body.vp-tablet.vp-landscape #whereBar{max-width:min(460px,46vw)}
   body.vp-tablet.vp-landscape #radar{width:104px;height:104px}
   body.vp-squat #whereBar,body.vp-squat #radarWrap,body.vp-squat #quest{display:none!important}
+  /* Um alvo de 14px não se acerta com o polegar */
+  body.vp-touch .tree-toggle{
+    width:28px;min-height:28px;display:inline-grid;place-items:center;margin:-7px 0;
+  }
 
   /* ---- Tablet ao alto: painéis mais largos, gaveta em baixo ---- */
   body.vp-tablet.vp-portrait #panel.open{width:min(400px,calc(100vw - 24px))}
   body.vp-tablet.vp-portrait #detail{
     left:16px;right:16px;top:auto;bottom:16px;width:auto;max-height:44vh;
   }
+  /* A gaveta inferior tapava o rodapé da visita e engolia-lhe os cliques. A
+     regra que trata disto existia, mas presa a uma medida de largura que num
+     tablet ao alto não se aplica — passa a depender da situação, não do ecrã. */
+  body.vp-tablet.vp-portrait.detail-open #stepper{display:none}
+  /* …e a gaveta lateral tem de parar onde a de baixo começa */
+  body.vp-tablet.vp-portrait.detail-open #panel.open{
+    max-height:calc(100vh - var(--hdr-h,60px) - 46vh - 30px);
+  }
   body.vp-tablet.vp-portrait #modalCard{width:min(720px,100%)}
 
   /* ---- Alvos de toque maiores em qualquer aparelho táctil ---- */
   body.vp-touch .btn.tiny{padding:6px 11px}
+  /* Num dedo, 25px de altura é pouco — as setas da visita ficavam abaixo do
+     que se acerta com confiança. */
+  body.vp-touch #stepper .controls .btn{min-height:30px;min-width:34px}
   body.vp-touch .icon-btn{min-width:30px;min-height:30px}
   body.vp-touch .row{padding:9px 10px}
   body.vp-touch .switch{width:30px;height:17px}
@@ -730,7 +778,12 @@
   #coach{position:fixed;inset:0;z-index:80;display:none;background:var(--scrim);
     -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:22px}
   #coach.open{display:grid;place-items:center}
-  #coachCard{width:min(470px,100%);padding:22px;border-radius:14px;animation:confirmIn .22s ease}
+  /* Sem limite de altura, o cartão de boas-vindas media 649px num telemóvel de
+     640 e os botões caíam para fora do ecrã — logo no primeiro arranque. */
+  #coachCard{
+    width:min(470px,100%);padding:22px;border-radius:14px;animation:confirmIn .22s ease;
+    max-height:calc(100vh - 44px);overflow-y:auto;
+  }
   #coachCard h3{font-size:1rem;margin:0 0 3px;font-weight:600}
   #coachCard .sub{font-size:.72rem;color:var(--ink-dim);margin-bottom:15px;line-height:1.5}
   .coach-step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--hairline)}
@@ -867,7 +920,26 @@
   .legend-row.jump:hover{background:rgba(127,127,127,.13);transform:translateX(2px)}
 
   /* ---------- Header action row ---------- */
-  .brand .head-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .brand .head-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  /* Abaixo do ecrã largo, treze botões partem em três ou quatro linhas e o
+     cabeçalho passa de 74 para 170px — um quinto de um tablet ao baixo, gasto
+     em cromo. Numa linha que desliza ficam todos alcançáveis e o mapa recupera
+     o espaço. Em ecrã largo mantém-se a grelha, que lá cabe inteira. */
+  .brand .head-actions{
+    flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+    padding-bottom:2px;max-width:calc(100vw - 150px);
+    /* Num ecrã estreito nem todos os botões cabem. O esbatimento à direita diz
+       que há mais para lá da margem — sem ele, ficavam simplesmente perdidos. */
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+  }
+  .brand .head-actions.at-end{-webkit-mask-image:none;mask-image:none}
+  .brand .head-actions::-webkit-scrollbar{display:none}
+  /* Treze botões a 12px de folga pediam 864px e só havia 824 — passavam para
+     uma segunda linha e o cabeçalho engordava até 186px, quase um quarto de um
+     portátil. Quatro píxeis a menos de cada lado chegam para caberem todos. */
+  .brand .head-actions .btn{flex:none;padding:6px 8px;letter-spacing:.03em}
+  .brand .head-actions .btn.icon-round{padding:6px}
   .icon-round{
     width:26px;height:26px;padding:0!important;border-radius:50%;
     display:inline-grid;place-items:center;font-size:.78rem;line-height:1;
@@ -1000,7 +1072,10 @@
   .fc-box.done{opacity:.5}
   #playbar{
     position:fixed;left:50%;transform:translateX(-50%);
-    bottom:calc(20px + env(safe-area-inset-bottom));z-index:64;display:none;
+    /* Acima do rodapé da visita: os dois são barras centradas em baixo e
+       assentavam um em cima do outro sempre que uma reprodução começava. */
+    bottom:calc(var(--step-h,0px) + 30px + env(safe-area-inset-bottom));
+    z-index:64;display:none;
     align-items:center;gap:10px;padding:9px 14px;border-radius:11px;font-size:.75rem;
   }
   #playbar.on{display:flex}
@@ -1082,7 +1157,10 @@
 
   /* ---- Percurso de arranque ---- */
   #quest{
-    position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:15;
+    /* Acima do rodapé da visita, cuja altura é medida em applyViewport: em
+       ecrãs de largura média os dois disputavam o canto inferior esquerdo. */
+    position:fixed;left:14px;z-index:15;
+    bottom:calc(var(--step-h,0px) + 24px + env(safe-area-inset-bottom));
     width:250px;padding:12px 13px;border-radius:12px;display:none;
   }
   #quest.on{display:block}
@@ -1119,6 +1197,63 @@
   #quest li.done .qc{background:var(--gold);border-color:var(--gold);color:var(--bg-deep)}
   @media (max-width:980px){ #quest{display:none!important} }
   body.presenting #quest{display:none!important}
+  /* Com o painel de controlo aberto disputavam o mesmo canto — e nessa altura
+     a atenção está no painel, não no cartão de arranque. */
+  body.panel-open #quest{display:none!important}
+
+  /* ---- Fim da visita guiada ---- */
+  #tourEnd{
+    position:fixed;inset:0;z-index:34;display:none;
+    align-items:center;justify-content:center;padding:22px;
+    background:rgba(4,8,16,0.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  }
+  #tourEnd.open{display:flex}
+  #teCard{
+    width:min(520px,100%);max-height:calc(100vh - 44px);overflow-y:auto;
+    border-radius:14px;padding:22px 24px;
+  }
+  #teCard h3{margin:0 0 6px;font-size:1rem;font-weight:600;color:var(--ink)}
+  #teCard .sub{font-size:.78rem;line-height:1.55;color:var(--ink-dim);margin-bottom:10px}
+  #teCard .sub b{color:var(--ink);font-weight:600}
+  .te-stats{
+    font-size:.68rem;color:var(--gold);letter-spacing:.04em;
+    border:1px solid var(--hairline);border-radius:8px;padding:6px 10px;margin-bottom:14px;
+  }
+  .te-choices{display:flex;flex-direction:column;gap:9px}
+  .te-choices .btn{
+    display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+    gap:1px 11px;align-items:center;text-align:left;padding:11px 14px;
+    width:100%;white-space:normal;
+  }
+  .te-ico{grid-row:1 / span 2;font-size:1.1rem;line-height:1;opacity:.85}
+  .te-lbl{font-size:.82rem;font-weight:600}
+  .te-sub{font-size:.68rem;color:var(--ink-dim);line-height:1.45}
+  .te-choices .btn.primary .te-sub{color:inherit;opacity:.72}
+  .te-how{
+    margin-top:14px;padding-top:11px;border-top:1px solid var(--hairline);
+    font-size:.7rem;line-height:1.6;color:var(--ink-dim);
+  }
+  .te-how b{color:var(--ink);font-weight:600}
+  @media (max-width:640px){
+    #tourEnd{padding:12px}
+    #teCard{padding:16px 16px}
+  }
+  body.vp-squat #teCard{max-height:calc(100vh - 16px);padding:14px 16px}
+  body.vp-squat .te-how{margin-top:10px;padding-top:8px}
+
+  /* Holofote sobre um controlo que se está a indicar ao utilizador */
+  .spotlight{
+    position:relative;z-index:2;
+    outline:2px solid var(--gold);outline-offset:3px;border-radius:8px;
+    animation:spotPulse 1.1s ease-in-out 3;
+  }
+  @keyframes spotPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(232,180,76,0.55)}
+    50%{box-shadow:0 0 0 9px rgba(232,180,76,0)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .spotlight{animation:none}
+  }
 
   /* ---- Galeria de vistas ---- */
   .vg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
@@ -1504,7 +1639,7 @@
 <aside id="panel" class="glass" aria-label="Painel de controlo">
 
   <details>
-    <summary>Network legend</summary>
+    <summary>Legenda da rede</summary>
     <div class="sec-body">
       <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste tier"><span class="swatch" style="background:#FFFFFF"></span>Tier 0 · Executivo<span class="legend-note">apex</span></button>
       <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Tier 1 · Coordenação Geral<span class="legend-note">primary colours</span></button>
@@ -1579,7 +1714,7 @@
   </details>
 
   <details>
-    <summary>Nodes</summary>
+    <summary>Unidades</summary>
     <div class="sec-body">
       <div id="nodeList"></div>
       <button id="addNodeBtn" class="add-btn">
@@ -1597,7 +1732,7 @@
   </details>
 
   <details>
-    <summary>Agents</summary>
+    <summary>Pessoas</summary>
     <div class="sec-body">
       <div id="agentList"></div>
       <div class="foot-note">Click an agent to open their panel — name, category, and assigned tasks live there. Drag an agent onto a node header (or another agent) to move them to that node. ★ marks each node's primary agent.</div>
@@ -1627,15 +1762,15 @@
       <button class="btn tiny" id="addBookmarkBtn" style="margin-bottom:8px">+ Guardar vista actual</button>
 
       <div class="setup-btns">
-        <button class="btn" id="newDatasetBtn">New Dataset</button>
-        <button class="btn" id="exportBtn">Export Dataset</button>
-        <button class="btn" id="importBtn">Import Dataset</button>
-        <button class="btn" id="pdfBtn">Export as .pdf</button>
-        <button class="btn" id="pptxBtn">Export as Presentation</button>
+        <button class="btn" id="newDatasetBtn">Nova rede</button>
+        <button class="btn" id="exportBtn">Guardar dataset</button>
+        <button class="btn" id="importBtn">Abrir dataset</button>
+        <button class="btn" id="pdfBtn">Exportar PDF</button>
+        <button class="btn" id="pptxBtn">Exportar apresentação</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
       <div id="setupMsg" role="status"></div>
-      <div class="foot-note">"New Dataset" começa uma rede nova só com o Executivo (apaga tudo o resto — exporte antes se precisar). Dataset exporta/importa tudo em JSON. "Export as .pdf" gera um documento com o Organograma e todos os Fluxogramas agrupados; "Export as Presentation" gera um .pptx 16:9 pronto a apresentar. Ambos requerem ligação à internet na primeira utilização.</div>
+      <div class="foot-note">"Nova rede" começa do zero, só com o Executivo — apaga tudo o resto, por isso guarde antes se precisar. "Guardar dataset" e "Abrir dataset" levam e trazem tudo num ficheiro JSON. "Exportar PDF" gera um documento com o organograma e todos os fluxogramas; "Exportar apresentação" gera um .pptx 16:9 pronto a mostrar. Estes dois precisam de internet na primeira utilização.</div>
     </div>
   </details>
 
@@ -1753,6 +1888,34 @@
       <button class="d-close" id="modalClose" aria-label="Fechar">✕</button>
     </div>
     <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="tourEnd" role="dialog" aria-modal="true" aria-labelledby="teTitle">
+  <div id="teCard" class="glass">
+    <h3 id="teTitle">Fim da visita</h3>
+    <div class="sub">
+      A rede que acabou de ver é uma <b>demonstração</b> — uma junta de freguesia
+      inventada, para mostrar o que a ferramenta faz.
+    </div>
+    <div class="te-stats" id="teStats"></div>
+    <div class="te-choices">
+      <button class="btn primary" type="button" id="teNew">
+        <span class="te-ico" aria-hidden="true">✦</span>
+        <span class="te-lbl">Começar a minha autarquia</span>
+        <span class="te-sub">Apaga a demonstração e deixa só o Executivo, para construir de raiz.</span>
+      </button>
+      <button class="btn" type="button" id="teStay">
+        <span class="te-ico" aria-hidden="true">☺</span>
+        <span class="te-lbl">Explorar mais um pouco</span>
+        <span class="te-sub">Fica com a demonstração e mostro-lhe onde recomeçar quando quiser.</span>
+      </button>
+    </div>
+    <div class="te-how">
+      <b>Quando quiser recomeçar:</b> abra <b>Painel → Setup</b> e carregue em
+      <b>Nova rede</b>. Exporte antes, em <b>Guardar dataset</b>, se quiser ficar
+      com esta cópia.
+    </div>
   </div>
 </div>
 
@@ -2859,7 +3022,11 @@ function leastLoaded(tier,excludeId){
 let customNodeCounter=0;
 function createNode(opts){
   opts=opts||{};
-  const tier=(typeof opts.tier==="number")?THREE.MathUtils.clamp(opts.tier,1,TIER.length-1):2;
+  // O ramo por omissão também tem de ser limitado: "+ Novo node" não passa
+  // argumentos, e num dataset de um ou dois níveis o 2 fixo apontava para um
+  // TIER[2] inexistente — nodePos devolvia NaN e o node desaparecia do mundo.
+  const tier=Math.max(0,Math.min(TIER.length-1,
+    (typeof opts.tier==="number")?opts.tier:2));
   const parent=opts.parent&&byId(opts.parent)?opts.parent:
     (tier===0?null:(leastLoaded(tier-1)||{}).id||null);
   let angle;
@@ -3329,7 +3496,7 @@ function renderQuest(){
   const host=document.getElementById("quest");
   if(!host)return;
   const done=QUEST_STEPS.filter(s=>questDone[s.k]).length;
-  if(questDone.dismissed){host.classList.remove("on");host.innerHTML="";return;}
+  if(questDone.dismissed){host.classList.remove("on");host.innerHTML="";measureChrome();return;}
   host.classList.add("on");
   host.innerHTML="";
   const pct=Math.round(done/QUEST_STEPS.length*100);
@@ -3370,6 +3537,7 @@ function renderQuest(){
     ul.append(li);
   });
   host.append(ul);
+  measureChrome();   // o cartão mudou de tamanho; o painel tem de saber
 }
 
 /* ============================================================
@@ -3823,11 +3991,16 @@ const touchPts=new Map();
 let pinchDist=0,pinchRadius=0;
 const panelEl=document.getElementById("panel");
 const menuBtn=document.getElementById("menuBtn");
+(function(){
+  const ha=document.querySelector(".brand .head-actions");
+  if(ha)ha.addEventListener("scroll",syncHeadFade,{passive:true});
+})();
 menuBtn.setAttribute("aria-controls","panel");
 menuBtn.setAttribute("aria-expanded","false");
 menuBtn.onclick=()=>{
   const open=panelEl.classList.toggle("open");
   menuBtn.classList.toggle("active",open);
+  document.body.classList.toggle("panel-open",open);
   // O estado tem de chegar a quem não vê o painel abrir
   menuBtn.setAttribute("aria-expanded",open?"true":"false");
   menuBtn.setAttribute("aria-label",(open?"Fechar":"Abrir")+" painel de controlo");
@@ -3836,6 +4009,7 @@ menuBtn.onclick=()=>{
 stage.addEventListener("pointerdown",e=>{
   if(innerWidth<=980&&panelEl.classList.contains("open")){
     panelEl.classList.remove("open");
+    document.body.classList.remove("panel-open");
     menuBtn.classList.remove("active");
   }
   touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -3936,6 +4110,18 @@ const scenes=[
    cam:{phi:1.02,radius:32,targetY:2.0,auto:0.12},show:{hier:true,procs:true,isolate:null}}
 ];
 let sceneIdx=0,isolateProc=null,cycleTimer=0,autoplay=false,autoTimer=0;
+let tourEndSeen=false;   // o convite do fim da visita aparece uma vez por sessão
+
+/* Avançar uma cena. Quando se passa da última, a visita acabou: em vez de
+   recomeçar em silêncio, pergunta-se o que fazer à demonstração. */
+function nextScene(){
+  if(sceneIdx>=scenes.length-1&&!tourEndSeen){
+    autoplay=false;autoTimer=0;syncPlay();
+    showTourEnd();
+    return;
+  }
+  applyScene(sceneIdx+1);
+}
 
 const stepNum=document.getElementById("stepNum");
 const stepTitle=document.getElementById("stepTitle");
@@ -3965,7 +4151,7 @@ function applyScene(i){
   syncLayerRows();
 }
 document.getElementById("prevBtn").onclick=()=>{autoplay=false;syncPlay();applyScene(sceneIdx-1)};
-document.getElementById("nextBtn").onclick=()=>{autoplay=false;syncPlay();applyScene(sceneIdx+1)};
+document.getElementById("nextBtn").onclick=()=>{autoplay=false;syncPlay();nextScene()};
 const playBtn=document.getElementById("playBtn");
 playBtn.onclick=()=>{autoplay=!autoplay;autoTimer=0;syncPlay();};
 function syncPlay(){
@@ -4629,6 +4815,7 @@ function applyView(v){
   // On small screens the control drawer would overlap panels/modals
   if(innerWidth<=980){
     panelEl.classList.remove("open");
+    document.body.classList.remove("panel-open");
     menuBtn.classList.remove("active");
   }
   if(v&&v.type==="flowchart"){
@@ -5075,7 +5262,13 @@ function applyNodeRemoval(n,plan){
   });
   (plan.kids||[]).forEach(x=>{
     const to=x.to?byId(x.to):null;
-    if(to)reparentNode(x.m,to);
+    // Mudar um sub-node de sítio pode aprofundar a subárvore de outro e
+    // invalidar uma escolha que era legal quando o painel foi construído.
+    // Sem esta rede, esse filho ficava agarrado ao node que se está a remover
+    // — e a remoção falhava depois de as tarefas e os agentes já terem mudado.
+    if(to&&reparentNode(x.m,to))return;
+    const alt=nodes.find(o=>o!==n&&o!==x.m&&canReparent(x.m,o));
+    if(alt)reparentNode(x.m,alt);
   });
   // A responsible must belong to their task's origin node
   processes.forEach(p=>p.tasks.forEach(t=>{
@@ -6031,6 +6224,8 @@ addEventListener("keydown",e=>{
   if(coachEl&&coachEl.classList.contains("open")){closeCoach();return;}
   if(helpEl&&helpEl.classList.contains("open")){closeHelp();return;}
   if(confirmEl.classList.contains("open")){settleConfirm(false);return;}
+  // Sair pelo Escape é escolher "explorar mais um pouco" — e leva ao botão
+  if(tourEndEl&&tourEndEl.classList.contains("open")){closeTourEnd();spotlightNewDataset();return;}
   if(document.body.classList.contains("presenting")){togglePresent(false);return;}
   if(play){stopPlayback();return;}
   closeModalSilent();
@@ -7040,11 +7235,23 @@ function renderOrgChart(){
     return wrap;
   }
   const roots=nodes.filter(n=>!n.parent).sort((a,b)=>a.tier-b.tier);
-  if(orgOrient==="v")roots.forEach(root=>modalBody.append(renderV(root)));
+  if(orgOrient==="v"){
+    // Quatro níveis de indentação mais um cartão de largura mínima passam dos
+    // 338px de um telemóvel: a árvore desliza dentro do seu próprio contentor
+    // em vez de arrastar o painel inteiro.
+    const vWrap=el("div","vw-scroll");
+    roots.forEach(root=>vWrap.append(renderV(root)));
+    modalBody.append(vWrap);
+  }
   else{
+    // Uma árvore ao baixo com quarenta unidades tem milhares de píxeis de
+    // largura — inevitável. O que não é inevitável é arrastar a página atrás
+    // dela: desliza dentro do seu próprio contentor.
+    const hScroll=el("div","vw-scroll");
     const hWrap=el("div","orgh-root");
     roots.forEach(root=>hWrap.append(renderH(root)));
-    modalBody.append(hWrap);
+    hScroll.append(hWrap);
+    modalBody.append(hScroll);
   }
   modal.classList.add("open");
 }
@@ -7164,6 +7371,12 @@ importFile.onchange=()=>{
   const r=new FileReader();
   r.onload=()=>{
     const preImport=booted?snapshotState():null;   // so Ctrl+Z can undo the import
+    // Durante a reconstrução o modelo está a meio: grupos ainda os antigos,
+    // ids por reatribuir, contadores por acertar. Cada markDirty() lá dentro
+    // atirava esse estado intermédio para a pilha de anulações, e um Ctrl+Z a
+    // seguir à importação aterrava num dataset meio importado. O histórico é
+    // reconstruído à mão mais abaixo, por isso não se perde nada.
+    historyBusy=true;
     try{
       const cfg=JSON.parse(r.result);
       // O identificador antigo continua a ser aceite: datasets exportados antes
@@ -7325,6 +7538,8 @@ importFile.onchange=()=>{
       flash("Dataset importado.");
     }catch(err){
       flash("Não foi possível ler esse ficheiro — exporte primeiro um dataset daqui.",{type:"err"});
+    }finally{
+      historyBusy=false;
     }
     importFile.value="";
   };
@@ -7381,6 +7596,89 @@ function newDataset(){
   markDirty();
   flash("Nova rede criada — apenas o Executivo.");
 }
+/* ============================================================
+   FIM DA VISITA — o que fazer à demonstração
+
+   Quem chega ao fim das oito cenas ficava sozinho com uma freguesia inventada
+   e sem pista de como pôr lá a sua. Aqui pergunta-se — e, para quem preferir
+   ficar a explorar, aponta-se ao botão que faltava encontrar.
+============================================================ */
+const tourEndEl=document.getElementById("tourEnd");
+function showTourEnd(){
+  if(!tourEndEl||tourEndSeen)return;
+  tourEndSeen=true;
+  // Os números reais, para se perceber ao certo o que está em cima da mesa
+  const st=document.getElementById("teStats");
+  if(st)st.textContent=nodes.length+" unidades · "+agents.length+" pessoas · "+
+    processes.length+" procedimentos";
+  rememberFocus();
+  tourEndEl.classList.add("open");
+  const stay=document.getElementById("teStay");
+  setTimeout(()=>{if(stay)stay.focus();},30);
+}
+function closeTourEnd(){
+  if(!tourEndEl||!tourEndEl.classList.contains("open"))return;
+  tourEndEl.classList.remove("open");
+  restoreFocus();
+}
+/* Abrir o caminho até ao botão e acendê-lo: dizer onde fica não chega,
+   mais vale levar lá. */
+function spotlightNewDataset(){
+  const btn=document.getElementById("newDatasetBtn");
+  if(!btn)return;
+  panelEl.classList.add("open");
+  document.body.classList.add("panel-open");
+  menuBtn.classList.add("active");
+  menuBtn.setAttribute("aria-expanded","true");
+  menuBtn.setAttribute("aria-label","Fechar painel de controlo");
+  const setup=btn.closest("details");
+  if(setup)setup.open=true;
+  setTimeout(()=>{
+    // scrollIntoView não mexe no painel: sendo de posição fixa, o navegador
+    // não o trata como o contentor a deslocar, e num telemóvel o botão ficava
+    // 500px abaixo do ecrã — apontado, mas invisível. Calcula-se à mão.
+    const host=panelEl;
+    if(host&&host.scrollHeight>host.clientHeight){
+      const hr=host.getBoundingClientRect(),br=btn.getBoundingClientRect();
+      const to=host.scrollTop+(br.top-hr.top)-(host.clientHeight-br.height)/2;
+      const top=Math.max(0,Math.min(to,host.scrollHeight-host.clientHeight));
+      // scrollTop directo, e sem scroll-behavior:smooth no painel: há
+      // ambientes onde o deslocamento suave é ignorado em silêncio, e então o
+      // painel nem se mexia — o botão ficava apontado mas fora do ecrã.
+      // Chegar lá de certeza vale mais do que chegar lá com elegância.
+      host.scrollTop=top;
+    }
+    btn.classList.add("spotlight");
+    // Quem navega por teclado tem de aterrar no botão, não no vazio
+    try{btn.focus({preventScroll:true});}catch(e){try{btn.focus();}catch(e2){}}
+    clearTimeout(spotlightNewDataset._t);
+    spotlightNewDataset._t=setTimeout(()=>btn.classList.remove("spotlight"),4600);
+  },140);
+}
+if(tourEndEl){
+  document.getElementById("teStay").onclick=()=>{
+    closeTourEnd();
+    spotlightNewDataset();
+    flash("Fica com a demonstração. É aqui que se recomeça, quando quiser.",{duration:6500});
+  };
+  document.getElementById("teNew").onclick=async()=>{
+    // Fechar o convite só depois de haver resposta: fechá-lo antes deixava o
+    // "Cancelar" a devolver o foco a um botão que já não estava no ecrã.
+    const ok=await askConfirm(
+      "Apagar a demonstração e começar a sua autarquia? Fica só o Executivo — "+
+      "todas as unidades, pessoas, procedimentos e grupos da demonstração são apagados. "+
+      "Se quiser guardar esta cópia, cancele e use “Guardar dataset” primeiro.",
+      {yes:"Apagar e começar",danger:true});
+    closeTourEnd();
+    if(!ok){spotlightNewDataset();return;}
+    newDataset();
+  };
+  // Clicar fora ou Escape é o mesmo que "explorar mais um pouco"
+  tourEndEl.addEventListener("pointerdown",e=>{
+    if(e.target===tourEndEl){closeTourEnd();spotlightNewDataset();}
+  });
+}
+
 document.getElementById("newDatasetBtn").onclick=async()=>{
   const ok=await askConfirm(
     "Criar uma nova rede? Todos os nodes, agentes, procedimentos e grupos atuais serão apagados — só fica o Executivo. Exporte antes se quiser guardar.",
@@ -8049,9 +8347,11 @@ function animate(){
   }
   if(maqueteOn&&maqueteBase)maqueteBase.material.color.copy(scene.background).offsetHSL(0,0,0.05);
 
-  if(autoplay){
+  // A visita pausa enquanto houver um diálogo aberto: sem isto, avançava por
+  // trás dele e podia abrir o convite de fim de visita por cima de outro modal.
+  if(autoplay&&!topDialog()){
     autoTimer+=dt;
-    if(autoTimer>9){autoTimer=0;applyScene(sceneIdx+1);}
+    if(autoTimer>9){autoTimer=0;nextScene();}
   }
   if(play&&!play.paused){
     play.timer+=dt;
@@ -8306,6 +8606,29 @@ function readViewport(){
     ori:h>=w?"portrait":"landscape",
     squat:h<=520&&w>h};      // deitado e de altura curta: o caso apertado
 }
+/* As três peças fixas cuja altura muda com o conteúdo. Publicadas como
+   variáveis CSS para que as gavetas se encostem a medidas reais em vez de a
+   números escritos à mão — que ficavam errados assim que o cabeçalho crescia
+   ou o rodapé mudava de tamanho. */
+function measureChrome(){
+  const set=(k,v)=>document.documentElement.style.setProperty(k,v+"px");
+  const h=(el,extra)=>(el&&getComputedStyle(el).display!=="none")
+    ? Math.round(el.getBoundingClientRect().height)+(extra||0) : 0;
+  const hdr=document.querySelector("header");
+  if(hdr)set("--hdr-h",Math.round(hdr.getBoundingClientRect().height));
+  set("--step-h",h(document.getElementById("stepper")));
+  // Em ecrã largo o painel da esquerda está sempre visível e partilha a coluna
+  // com o cartão de arranque: um tem de parar onde o outro começa.
+  set("--quest-h",h(document.getElementById("quest"),12));
+  syncHeadFade();
+}
+/* O esbatimento só faz sentido enquanto houver botões escondidos à direita. */
+function syncHeadFade(){
+  const ha=document.querySelector(".brand .head-actions");
+  if(!ha)return;
+  const more=ha.scrollWidth-ha.clientWidth-ha.scrollLeft;
+  ha.classList.toggle("at-end",more<=2);
+}
 /* Raio a que a estrutura cabe no ecrã, para este formato.
    Mede-se a hierarquia, não a pilha de procedimentos: com vinte procedimentos
    empilhados por baixo, tentar enquadrar tudo mandava a câmara para o limite
@@ -8382,9 +8705,7 @@ function applyViewport(force){
   if(changed){
     // Quanto mede o cabeçalho depois desta mudança? As gavetas encostam-se ao
     // valor medido; adivinhá-lo punha-as por baixo dos botões.
-    const hdr=document.querySelector("header");
-    if(hdr)document.documentElement.style.setProperty(
-      "--hdr-h",Math.round(hdr.getBoundingClientRect().height)+"px");
+    measureChrome();
     // Tudo o que foi desenhado à medida do ecrã antigo tem de ser refeito
     rebuildChevrons();updateChevrons();
     updateWhereBar();drawRadar();renderQuest();
@@ -8536,7 +8857,7 @@ densityRange.addEventListener("input",applyDensity);
    página não existe. Sem prender o Tab, ele saía para os botões do painel e do
    HUD por trás do scrim — visíveis para o teclado, invisíveis para quem lá está. */
 function topDialog(){
-  const layers=[modal,coachEl,helpEl,reassignEl,confirmEl,paletteEl]
+  const layers=[modal,coachEl,helpEl,tourEndEl,reassignEl,confirmEl,paletteEl]
     .filter(l=>l&&l.classList.contains("open"));
   if(!layers.length)return null;
   // O que estiver por cima é o que manda
@@ -8578,6 +8899,7 @@ addEventListener("keydown",e=>{
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(paletteEl&&paletteEl.classList.contains("open"))return;
+  if(tourEndEl&&tourEndEl.classList.contains("open"))return;
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
   // Com o palco 3D em foco, as setas percorrem a hierarquia em vez do tour
   if(document.activeElement===stage&&e.key.indexOf("Arrow")===0){
@@ -8585,7 +8907,7 @@ addEventListener("keydown",e=>{
     kbMove(e.key==="ArrowUp"?"up":e.key==="ArrowDown"?"down":e.key==="ArrowRight"?"right":"left");
     return;
   }
-  if(e.key==="ArrowRight"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx+1);}
+  if(e.key==="ArrowRight"){e.preventDefault();autoplay=false;syncPlay();nextScene();}
   else if(e.key==="ArrowLeft"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx-1);}
   else if(e.key===" "){
     // Toque = play/pausa do tour; manter = espreitar o todo. Decide-se no keyup.
@@ -8615,6 +8937,7 @@ addEventListener("keyup",e=>{
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(paletteEl&&paletteEl.classList.contains("open"))return;
+  if(tourEndEl&&tourEndEl.classList.contains("open"))return;   // faltava aqui
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
   autoplay=!autoplay;autoTimer=0;syncPlay();
 });
@@ -10470,7 +10793,7 @@ window.__F=(function(){
     "anchorMap showFlowchart renderFlowchart fcSel createLayer deleteNode agentById "+
     "closeModalSilent selectAgent selectTask isApexNode nodeImpact "+
     "vpCls vpOri vpSquat readViewport applyViewport settleViewport fitRadiusFor "+
-    "oriPhiBias rGuide focusActive vpMemo coverFor labelFields clickable moteMat").split(/\s+/);
+    "oriPhiBias rGuide focusActive vpMemo tourEndSeen showTourEnd closeTourEnd spotlightNewDataset nextScene scenes sceneIdx autoplay newDataset coverFor labelFields clickable moteMat").split(/\s+/);
   names.forEach(n=>{try{o[n]=eval(n);}catch(e){o[n]="__MISSING__";}});
   o.get=n=>{try{return eval(n);}catch(e){return "__MISSING__";}};
   o.set=(n,v)=>{try{eval(n+"=v");return true;}catch(e){return false;}};
