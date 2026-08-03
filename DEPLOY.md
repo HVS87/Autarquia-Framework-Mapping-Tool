@@ -18,8 +18,15 @@ Os seguintes ficheiros devem estar na **raiz do repositório**:
 .
 ├── index.html                (redireciona a raiz para a app — NÃO remover)
 ├── .nojekyll                 (desativa o Jekyll — NÃO remover)
-├── network-framework.html    (a app — 192KB)
-├── manifest.json             (metadados PWA)
+├── network-framework.html    (a app)
+├── manifest.json             (metadados da app instalável)
+├── sw.js                     (service worker — instalação e uso sem rede)
+├── icons/                    (ícones do ecrã principal — NÃO remover)
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   ├── icon-maskable-192.png
+│   ├── icon-maskable-512.png
+│   └── apple-touch-icon.png
 ├── README.md                 (documentação)
 ├── DEPLOY.md                 (este ficheiro)
 ├── .gitignore               (exclusões Git)
@@ -29,6 +36,12 @@ Os seguintes ficheiros devem estar na **raiz do repositório**:
 > **Importante:** sem `index.html`, o GitHub Pages mostra o `README.md` na raiz
 > em vez da app. O `index.html` reencaminha a raiz para `network-framework.html`,
 > e o `.nojekyll` impede o GitHub de processar o site com Jekyll.
+
+> **Guardar como app:** `sw.js`, `manifest.json` e a pasta `icons/` têm de ficar
+> na raiz, ao lado da app. Sem o service worker o Chrome nunca oferece instalar;
+> sem ícones de 192px ou mais, também não. O service worker exige HTTPS — o
+> GitHub Pages já serve em HTTPS, mas abrir o ficheiro directamente do disco
+> (`file://`) não permite instalar. A app funciona na mesma, só não se instala.
 
 ### 3. Ative GitHub Pages
 
@@ -51,13 +64,38 @@ Pronto! 🎉
 
 ---
 
-## Funcionalidades Habilitadas Automaticamente
+## Guardar como aplicação
 
-- ✅ **PWA (Progressive Web App)**: Instale no ecrã inicial (Chrome, Edge, Firefox, Safari)
-- ✅ **Offline**: Funciona offline após primeiro carregamento
-- ✅ **Ícone**: Logótipo da app personalizado
-- ✅ **Theme Color**: Barra de endereço toma a cor Calçada
-- ✅ **Manifest Shortcuts**: Atalhos rápidos (Nova org, Organograma)
+Depois de publicada em HTTPS, a ferramenta instala-se no ecrã principal e passa
+a abrir sem barra de endereço — e **sem internet**, o que numa junta com ligação
+intermitente é o que faz a diferença.
+
+Dentro da app, o botão está em **Painel → Setup → Guardar como app**. Só aparece
+quando a instalação é mesmo possível.
+
+| Onde | Como |
+|---|---|
+| **Android — Chrome, Edge, Samsung Internet** | O botão instala directamente. O browser também costuma oferecer sozinho. |
+| **Android — Firefox** | Menu **⋮** → *Instalar* / *Adicionar ao ecrã principal*. O botão explica o caminho. |
+| **iPhone e iPad — Safari** | Não há instalação automática em lado nenhum do iOS: **Partilhar** → *Adicionar ao ecrã principal*. O botão mostra os passos. |
+| **iPhone e iPad — Chrome, Edge, Firefox** | O iOS só permite instalar a partir do Safari; a app diz isso e manda abrir lá. |
+| **Windows, macOS, Linux — Chrome/Edge** | Ícone de instalação na barra de endereço, ou o botão dentro da app. |
+| **macOS — Safari** | Ficheiro → *Adicionar à Dock* (Safari 17+). |
+
+Uma vez instalada, o botão desaparece — não faz sentido continuar a oferecer.
+
+### O que fica a funcionar sem rede
+
+Toda a ferramenta: o 3D, os fluxogramas, as vistas, a edição e o histórico. Os
+dados ficam no aparelho. Só precisam de internet, e apenas à primeira vez, as
+exportações para **PDF** e **PowerPoint**, que buscam a biblioteca respectiva.
+
+### Outras funcionalidades automáticas
+
+- ✅ **Ícone próprio** no ecrã principal, incluindo formato *maskable* no Android
+- ✅ **Theme color**: a barra do sistema toma a cor Calçada
+- ✅ **Atalhos**: Nova rede e Organograma, no menu de contexto do ícone
+- ✅ **Actualizações**: quando há versão nova, a app avisa e oferece recarregar
 - ✅ **SEO**: JSON-LD structured data para motores de busca
 
 ## Personalizações Opcionais
