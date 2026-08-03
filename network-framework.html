@@ -4372,8 +4372,12 @@ function addLayerRow(p){
   swatch.innerHTML=`<span class="swatch" style="background:currentColor"></span>`;
   swatch.onclick=()=>{
     const i=processes.indexOf(p);
-    if(!p._visible)p._visible=true;
+    const mudouVisibilidade=!p._visible;
+    if(mudouVisibilidade)p._visible=true;
     isolateProc=(isolateProc===i)?null:i;
+    // Isolar torna o procedimento visível — e isso é uma alteração aos dados,
+    // que sem markDirty se perdia ao recarregar ou ao anular.
+    if(mudouVisibilidade)markDirty();
     syncLayerRows();
   };
 
@@ -4397,6 +4401,7 @@ function addLayerRow(p){
       p.name=v;markDirty();
       name.textContent=v;
       p.refreshLabel();renderGroups();renderDetail();updateLayerCounts();
+      applyProcSearch();   // o novo nome pode já não corresponder ao filtro
     },28);
   });
 
@@ -4465,6 +4470,10 @@ function syncLayerRows(){
   });
   relayoutLayers();
   renderGroups();
+  // O filtro da lista lê os nomes actuais, mas alguém tem de o mandar reler:
+  // sem isto, renomear ou importar deixava as linhas escondidas ou visíveis
+  // segundo os nomes antigos.
+  applyProcSearch();
 }
 document.getElementById("addLayerBtn").onclick=()=>{
   const p=createLayer();
@@ -7559,15 +7568,17 @@ importFile.onchange=()=>{
           buildTaskVisual(t);
         });
       });
-      // 5) Groups
-      if(Array.isArray(cfg.groups)){
-        groups.length=0;
-        cfg.groups.forEach(cg=>{
-          groups.push({id:cg.id||("G"+(++groupCounter)),
-            name:String(cg.name||"Grupo").slice(0,28),
-            layers:(cg.layers||[]).filter(id=>layerById(id))});
-        });
-      }
+      // 5) Groups — o ficheiro define o dataset inteiro. Sem esta lista, os
+      // grupos antigos sobreviviam com ids que agora apontam para outros
+      // procedimentos (os ids passaram a vir do ficheiro), e o utilizador
+      // ficava com agrupamentos que nunca fez.
+      groups.length=0;
+      (Array.isArray(cfg.groups)?cfg.groups:[]).forEach(cg=>{
+        if(!cg||typeof cg!=="object")return;
+        groups.push({id:(typeof cg.id==="string"&&cg.id)?cg.id:("G"+(++groupCounter)),
+          name:String(cg.name||"Grupo").slice(0,28),
+          layers:(Array.isArray(cg.layers)?cg.layers:[]).filter(id=>layerById(id))});
+      });
       if(cfg.theme&&THEMES[cfg.theme]&&cfg.theme!==themeId){
         applyTheme(cfg.theme,{silent:true});
         syncThemeButtons();
@@ -8054,6 +8065,20 @@ function syncThemeButtons(){
    Enquanto exporta, o histórico fica quieto. */
 let exportsRunning=0;
 function exportBusy(){return exportsRunning>0;}
+
+/* Uma ligação que não responde nem falha — captive portal, rede da autarquia a
+   engasgar — não dispara `load` nem `error`: a promessa ficava pendurada para
+   sempre e o botão de exportar com o spinner eternamente. Ao fim de 20s
+   desiste-se e a porta fica aberta para tentar outra vez. */
+function comPrazo(promessa,limparCache,ms){
+  return Promise.race([
+    promessa,
+    new Promise((_,rej)=>setTimeout(()=>{
+      try{limparCache();}catch(e){}
+      rej(new Error("timeout"));
+    },ms||20000))
+  ]);
+}
 let jsPDFLoading=null;
 function ensureJsPDF(){
   if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();
@@ -8072,7 +8097,7 @@ function ensureJsPDF(){
     sc.onerror=()=>{jsPDFLoading=null;rej(new Error("cdn"));};
     document.head.appendChild(sc);
   });
-  return jsPDFLoading;
+  return comPrazo(jsPDFLoading,()=>{jsPDFLoading=null;});
 }
 async function exportPDF(){ exportsRunning++; try{ return await __exportPDF(); } finally { exportsRunning--; } }
 async function __exportPDF(){
@@ -8260,7 +8285,7 @@ function ensurePptx(){
       document.head.appendChild(sc);
     })();
   });
-  return pptxLoading;
+  return comPrazo(pptxLoading,()=>{pptxLoading=null;});
 }
 async function exportPPTX(){ exportsRunning++; try{ return await __exportPPTX(); } finally { exportsRunning--; } }
 async function __exportPPTX(){
@@ -9001,7 +9026,10 @@ const COACH_KEY="of.coach.seen.v1";
 
 // localStorage is unavailable in some privacy modes — never let that break boot.
 function storageGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
-function storageSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+/* Devolve se a escrita passou mesmo. Engolir a falha em silêncio faria a app
+   dizer "guardado" a quem tem o armazenamento cheio ou desligado — e essa
+   pessoa só descobria que não estava, quando o fosse buscar. */
+function storageSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
 
 let lastFocusBeforeDialog=null;
 function openCoach(){
@@ -10247,8 +10275,13 @@ let baseline=null;          // {json, label, at}
 let morphT=0;
 function saveBaseline(label){
   baseline={json:snapshotState(),label:label||"Actual",at:new Date().toISOString()};
-  try{storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
-  flash("Cenário “"+baseline.label+"” guardado. As alterações a partir de agora são a proposta.");
+  let gravou=false;
+  try{gravou=storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
+  flash(gravou
+    ? ("Cenário “"+baseline.label+"” guardado. As alterações a partir de agora são a proposta.")
+    : ("Cenário “"+baseline.label+"” fixado — mas não coube no armazenamento deste browser, "+
+       "por isso perde-se ao fechar. Exporte o dataset se quiser guardá-lo."),
+    gravou?undefined:{type:"err",duration:9000});
   if(scenarioOpen())renderScenario();
 }
 function clearBaseline(){
@@ -10907,10 +10940,23 @@ function updateHistoryUI(){
   if(u)u.disabled=!undoStack.length;
   if(r)r.disabled=!redoStack.length;
 }
+let autosaveWarned=false;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
   autosaveTimer=setTimeout(()=>{
-    try{storageSet(AUTOSAVE_KEY,JSON.stringify({at:new Date().toISOString(),state:snapshotState()}));}catch(e){}
+    let gravou=false;
+    try{gravou=storageSet(AUTOSAVE_KEY,
+      JSON.stringify({at:new Date().toISOString(),state:snapshotState()}));}catch(e){}
+    // Avisa-se uma vez. A promessa de "recuperar a sessão" deixou de valer, e
+    // quem está a trabalhar tem de saber disso enquanto ainda pode exportar.
+    if(!gravou&&!autosaveWarned){
+      autosaveWarned=true;
+      flash("O browser não está a guardar a sessão (armazenamento cheio ou desativado). "+
+            "Exporte o dataset para não perder o trabalho.",{type:"err",duration:0,key:"autosave",
+        actions:[{label:"Exportar",fn:()=>{const b=document.getElementById("exportBtn");if(b)b.click();}}]});
+    }else if(gravou&&autosaveWarned){
+      autosaveWarned=false;   // voltou a haver espaço
+    }
   },1200);
 }
 /* Called from markDirty() — pushes the state as it was *before* this mutation. */
