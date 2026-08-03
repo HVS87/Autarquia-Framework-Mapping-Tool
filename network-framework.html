@@ -2002,7 +2002,9 @@
   <div class="t-agents"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- crossorigin: sem isto a resposta é opaca e o service worker não a pode
+     guardar, o que deitaria abaixo o funcionamento sem rede. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
 <script>
 /* Numa autarquia atrás de uma firewall, o CDN pode simplesmente não chegar.
    Sem esta guarda, o script seguinte rebentava no primeiro `new THREE.*` e a
@@ -7097,7 +7099,8 @@ async function exportProcPNG(p){
     flash("Não foi possível gerar a imagem.",{type:"err",key:"fcpng"});
   }
 }
-async function exportProcPDF(p){
+async function exportProcPDF(p){ exportsRunning++; try{ return await __exportProcPDF(p); } finally { exportsRunning--; } }
+async function __exportProcPDF(p){
   flash("A gerar PDF…",{type:"work",key:"fcpdf"});
   try{await ensureJsPDF();}
   catch(e){flash("Não foi possível carregar o gerador de PDF — verifique a ligação.",{type:"err",key:"fcpdf"});return;}
@@ -7665,6 +7668,11 @@ function newDataset(){
 const installEl=document.getElementById("installHow");
 const installBtn=document.getElementById("installBtn");
 let installPrompt=null;
+/* O Chrome só oferece o evento uma vez por página. Se o utilizador recusar,
+   o evento é gasto — mas o botão tem de continuar lá, senão a mensagem que
+   lhe diz "pode instalar mais tarde em Setup" aponta para um botão que
+   desapareceu. Sem oferta, o botão passa a mostrar as instruções. */
+let installOffered=false;
 
 /* Já a correr como app instalada? */
 function isStandalone(){
@@ -7684,16 +7692,18 @@ function syncInstallBtn(){
   document.body.classList.toggle("standalone",isStandalone());
   // Mostra-se quando o browser aceitou instalar, ou em iOS, onde a instalação
   // existe mas nunca avisa — sem o botão, ninguém descobre que é possível.
-  const podeMostrar=!isStandalone()&&(!!installPrompt||isIOS);
+  const podeMostrar=!isStandalone()&&(!!installPrompt||installOffered||isIOS);
   installBtn.classList.toggle("on",podeMostrar);
 }
 addEventListener("beforeinstallprompt",e=>{
   e.preventDefault();          // guardamos para o utilizador decidir quando
   installPrompt=e;
+  installOffered=true;
   syncInstallBtn();
 });
 addEventListener("appinstalled",()=>{
   installPrompt=null;
+  installOffered=false;
   syncInstallBtn();
   flash("Instalada. Passa a abrir a partir do ecrã principal, mesmo sem internet.",{duration:7000});
 });
@@ -7768,7 +7778,14 @@ syncInstallBtn();
    ferramenta abrir sem rede. Em file:// não existe, e isso não é um erro. */
 if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){
   addEventListener("load",()=>{
-    navigator.serviceWorker.register("./sw.js").then(reg=>{
+    // updateViaCache:"none" — o próprio sw.js não pode vir da cache HTTP.
+    // Sem isto, o browser reutiliza a cópia guardada e uma versão nova da
+    // ferramenta pode nunca chegar a quem já a instalou.
+    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(reg=>{
+      // Verificar se há versão nova a cada arranque, e ao voltar à app
+      const verificar=()=>{try{reg.update();}catch(e){}};
+      verificar();
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden)verificar();});
       reg.addEventListener("updatefound",()=>{
         const nw=reg.installing;
         if(!nw)return;
@@ -8030,6 +8047,13 @@ function syncThemeButtons(){
 /* ============================================================
    PDF EXPORT — Organograma + Fluxogramas (grouped)
 ============================================================ */
+/* Uma exportação percorre os procedimentos com `await` pelo meio, e a app
+   continua a responder durante esse tempo. Um Ctrl+Z ali reconstrói a lista
+   inteira com objectos novos: as imagens já geradas deixavam de corresponder
+   a nada e o ficheiro saía sem um único fluxograma — a dizer que correu bem.
+   Enquanto exporta, o histórico fica quieto. */
+let exportsRunning=0;
+function exportBusy(){return exportsRunning>0;}
 let jsPDFLoading=null;
 function ensureJsPDF(){
   if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();
@@ -8037,13 +8061,21 @@ function ensureJsPDF(){
   jsPDFLoading=new Promise((res,rej)=>{
     const sc=document.createElement("script");
     sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    sc.onload=()=>res();
+    // "load" dispara para qualquer 200 — incluindo a página de um portal
+    // cativo, que não é o jsPDF. Aceitar isso guardava uma promessa resolvida
+    // e a exportação de PDF ficava avariada até recarregar a página, mesmo
+    // depois de a rede voltar. Verifica-se que a biblioteca existe mesmo.
+    sc.onload=()=>{
+      if(window.jspdf&&window.jspdf.jsPDF)res();
+      else{jsPDFLoading=null;rej(new Error("cdn"));}
+    };
     sc.onerror=()=>{jsPDFLoading=null;rej(new Error("cdn"));};
     document.head.appendChild(sc);
   });
   return jsPDFLoading;
 }
-async function exportPDF(){
+async function exportPDF(){ exportsRunning++; try{ return await __exportPDF(); } finally { exportsRunning--; } }
+async function __exportPDF(){
   const __btn=document.getElementById("pdfBtn");
   setBusy(__btn,true,"A gerar…");
   flash("A gerar PDF…",{type:"work",key:"pdf"});
@@ -8230,7 +8262,8 @@ function ensurePptx(){
   });
   return pptxLoading;
 }
-async function exportPPTX(){
+async function exportPPTX(){ exportsRunning++; try{ return await __exportPPTX(); } finally { exportsRunning--; } }
+async function __exportPPTX(){
   const __btn=document.getElementById("pptxBtn");
   setBusy(__btn,true,"A gerar…");
   flash("A gerar apresentação…",{type:"work",key:"pptx"});
@@ -10898,6 +10931,7 @@ function recordHistory(){
   scheduleAutosave();
 }
 function undoAction(){
+  if(exportBusy()){flash("Aguarde o fim da exportação para anular.",{type:"err"});return;}
   if(!undoStack.length){flash("Nada para anular.");return;}
   const cur=snapshotState();
   const prev=undoStack.pop();
@@ -10909,6 +10943,7 @@ function undoAction(){
   flash("Anulado.");
 }
 function redoAction(){
+  if(exportBusy()){flash("Aguarde o fim da exportação para refazer.",{type:"err"});return;}
   if(!redoStack.length){flash("Nada para refazer.");return;}
   const cur=snapshotState();
   const next=redoStack.pop();
@@ -10964,6 +10999,24 @@ setTimeout(offerSessionRestore,1500);
   if(!h)return;
   const n=nodeByAddress(h);
   if(n)setTimeout(()=>locateNode(n),1250);
+})();
+
+/* Atalhos do ícone da app (manifest.json → shortcuts). Sem isto, quem os
+   escolhesse no menu de contexto do ícone abria a app normal e não percebia
+   porquê — um atalho que não faz nada é pior do que não existir. */
+(function(){
+  let q=null;
+  try{q=new URLSearchParams(location.search||"");}catch(e){return;}
+  if(!q)return;
+  const view=q.get("view");
+  if(view==="orgchart")setTimeout(showOrgChart,700);
+  else if(view==="flowcharts")setTimeout(showFlowIndex,700);
+  else if(view&&VIEWS.some(v=>v.id===view))setTimeout(()=>showView(view),700);
+  // "nova rede" apaga tudo: pergunta-se na mesma, atalho ou não
+  if(q.get("new")==="1")setTimeout(()=>{
+    const b=document.getElementById("newDatasetBtn");
+    if(b)b.click();
+  },700);
 })();
 })();
 

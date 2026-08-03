@@ -52,6 +52,13 @@
       "description": "Abrir a hierarquia em documento",
       "url": "./network-framework.html?view=orgchart",
       "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Fluxogramas",
+      "short_name": "Fluxogramas",
+      "description": "Abrir a lista de procedimentos",
+      "url": "./network-framework.html?view=flowcharts",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

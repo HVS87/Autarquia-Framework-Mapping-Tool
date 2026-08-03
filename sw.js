@@ -7,7 +7,7 @@
    primeira visita a ferramenta abre sem rede — numa junta com internet
    intermitente, isso é a diferença entre servir e não servir.
 ============================================================ */
-const VERSION = "v1";
+const VERSION = "v3";
 const SHELL   = "fma-shell-" + VERSION;   // a app em si
 const EXTRA   = "fma-extra-" + VERSION;   // bibliotecas externas
 
@@ -62,6 +62,25 @@ self.addEventListener("message", e => {
 
 const isThree = url => url.startsWith("https://cdnjs.cloudflare.com/ajax/libs/three.js/");
 
+/* Guardar só o que vale a pena voltar a servir. Sem este crivo, um 500
+   passageiro do servidor ficava na cache e passava a ser a resposta offline
+   para sempre; e uma resposta vinda de um redireccionamento rebenta quando
+   mais tarde é usada para uma navegação. */
+function guardavel(r) {
+  return !!r && r.status === 200 && !r.redirected &&
+         (r.type === "basic" || r.type === "cors" || r.type === "default");
+}
+/* O `evt` não é decorativo: sem `waitUntil`, o browser pode desligar o worker
+   assim que a resposta segue para a página, e a escrita na cache — que é
+   assíncrona — morre a meio. O resultado seria uma cache sempre vazia e uma
+   app que promete funcionar sem rede e não funciona. */
+function guardar(evt, cacheName, req, res) {
+  if (!guardavel(res)) return;
+  const copy = res.clone();
+  const escrita = caches.open(cacheName).then(c => c.put(req, copy)).catch(() => {});
+  if (evt && evt.waitUntil) evt.waitUntil(escrita);
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -75,9 +94,9 @@ self.addEventListener("fetch", e => {
     e.respondWith((async () => {
       try {
         const pre = await e.preloadResponse;
-        if (pre) { caches.open(SHELL).then(c => c.put(req, pre.clone())); return pre; }
+        if (pre) { guardar(e, SHELL, req, pre); return pre; }
         const net = await fetch(req);
-        caches.open(SHELL).then(c => c.put(req, net.clone()));
+        guardar(e, SHELL, req, net);
         return net;
       } catch (err) {
         return (await caches.match(req)) ||
@@ -90,13 +109,18 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  /* Three.js: da cache, sempre que lá esteja. É imutável. */
+  /* Three.js: da cache, sempre que lá esteja. É imutável.
+     O pedido segue TAL COMO VEIO. Refazê-lo com outro modo (mode:"cors" sobre
+     um <script> que não pediu CORS) pode falhar — e sem o Three.js não há 3D
+     nenhum, o que é bem pior do que não haver service worker. A tag do script
+     leva crossorigin="anonymous" para a resposta ser inspeccionável e caber na
+     cache; se um dia deixar de levar, isto continua a servir, só não guarda. */
   if (isThree(url.href)) {
     e.respondWith((async () => {
       const hit = await caches.match(req, { ignoreSearch: true });
       if (hit) return hit;
-      const net = await fetch(req, { mode: "cors" });
-      if (net && net.ok) caches.open(EXTRA).then(c => c.put(req, net.clone()));
+      const net = await fetch(req);
+      guardar(e, EXTRA, req, net);
       return net;
     })());
     return;
@@ -106,23 +130,19 @@ self.addEventListener("fetch", e => {
   if (sameOrigin) {
     e.respondWith((async () => {
       const hit = await caches.match(req);
-      const net = fetch(req).then(r => {
-        if (r && r.ok && r.type === "basic")
-          caches.open(SHELL).then(c => c.put(req, r.clone()));
-        return r;
-      }).catch(() => null);
-      return hit || (await net) ||
-        new Response("", { status: 504 });
+      const net = fetch(req).then(r => { guardar(e, SHELL, req, r); return r; })
+                            .catch(() => null);
+      return hit || (await net) || new Response("", { status: 504 });
     })());
     return;
   }
 
-  /* Resto (jsPDF, PptxGenJS — só usados ao exportar): pela rede, guardando
-     o que correr bem, para que uma segunda exportação funcione offline. */
+  /* Resto (jsPDF, PptxGenJS — só usados ao exportar): pela rede, guardando o
+     que correr bem, para que uma segunda exportação funcione offline. */
   e.respondWith((async () => {
     try {
       const net = await fetch(req);
-      if (net && net.ok) caches.open(EXTRA).then(c => c.put(req, net.clone()));
+      guardar(e, EXTRA, req, net);
       return net;
     } catch (err) {
       const hit = await caches.match(req);
