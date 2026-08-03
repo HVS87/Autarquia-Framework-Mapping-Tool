@@ -6,7 +6,14 @@
 <meta name="theme-color" content="#B8AB88">
 <meta name="description" content="Ferramenta de Mapeamento para Autarquias — rede organizacional interativa em 3D para a administração local portuguesa.">
 <link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23B8AB88' width='180' height='180' rx='40'/><circle cx='90' cy='90' r='36' fill='%23FFFFFF' opacity='0.9'/><circle cx='60' cy='65' r='11' fill='%232E8B62' opacity='0.8'/><circle cx='120' cy='75' r='11' fill='%23E06A8A' opacity='0.8'/><circle cx='85' cy='130' r='11' fill='%238A6115' opacity='0.8'/><path d='M 60 65 L 90 90 M 120 75 L 90 90 M 85 130 L 90 90' stroke='%238A6115' stroke-width='2' fill='none' opacity='0.5'/></svg>">
+<!-- O iOS ignora SVG no apple-touch-icon: tem de ser um PNG num endereço real,
+     senão o atalho no ecrã principal fica com uma miniatura da página. -->
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mapeamento">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23B8AB88' width='96' height='96'/><circle cx='48' cy='48' r='24' fill='%23FFFFFF' opacity='0.9'/><circle cx='32' cy='35' r='7' fill='%232E8B62' opacity='0.8'/><circle cx='65' cy='40' r='7' fill='%23E06A8A' opacity='0.8'/><circle cx='48' cy='70' r='7' fill='%238A6115' opacity='0.8'/></svg>">
 <title>Ferramenta de Mapeamento para Autarquias</title>
 <style>
@@ -1201,6 +1208,44 @@
      a atenção está no painel, não no cartão de arranque. */
   body.panel-open #quest{display:none!important}
 
+  /* ---- Guardar como aplicação ---- */
+  #installHow{
+    position:fixed;inset:0;z-index:36;display:none;
+    align-items:center;justify-content:center;padding:22px;
+    background:rgba(4,8,16,0.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  }
+  #installHow.open{display:flex}
+  #ihCard{
+    width:min(460px,100%);max-height:calc(100vh - 44px);overflow-y:auto;
+    border-radius:14px;padding:22px 24px;
+  }
+  #ihCard h3{margin:0 0 6px;font-size:1rem;font-weight:600;color:var(--ink)}
+  #ihCard .sub{font-size:.76rem;line-height:1.55;color:var(--ink-dim);margin-bottom:12px}
+  .ih-steps{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+  .ih-steps li{font-size:.78rem;line-height:1.5;color:var(--ink)}
+  .ih-steps b{color:var(--gold);font-weight:600}
+  .ih-share{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;vertical-align:-6px;margin:0 2px;
+    border:1px solid var(--hairline);border-radius:5px;color:var(--gold);
+  }
+  .ih-note{
+    font-size:.72rem;line-height:1.6;color:var(--ink-dim);
+    border-top:1px solid var(--hairline);padding-top:11px;
+  }
+  .ih-note b{color:var(--ink);font-weight:600}
+  .ih-btns{display:flex;justify-content:flex-end;margin-top:14px}
+  #installBtn{display:none}
+  #installBtn.on{display:inline-flex;align-items:center;gap:6px}
+  #installBtn .ib-ico{font-size:.9rem;line-height:1}
+  /* Já está instalada: não faz sentido continuar a oferecer */
+  body.standalone #installBtn{display:none!important}
+  @media (max-width:640px){
+    #installHow{padding:12px}
+    #ihCard{padding:16px}
+  }
+  body.vp-squat #ihCard{max-height:calc(100vh - 16px);padding:14px 16px}
+
   /* ---- Fim da visita guiada ---- */
   #tourEnd{
     position:fixed;inset:0;z-index:34;display:none;
@@ -1762,6 +1807,9 @@
       <button class="btn tiny" id="addBookmarkBtn" style="margin-bottom:8px">+ Guardar vista actual</button>
 
       <div class="setup-btns">
+        <button class="btn" id="installBtn" title="Guardar no ecrã principal e usar sem internet">
+          <span class="ib-ico" aria-hidden="true">⬇</span><span>Guardar como app</span>
+        </button>
         <button class="btn" id="newDatasetBtn">Nova rede</button>
         <button class="btn" id="exportBtn">Guardar dataset</button>
         <button class="btn" id="importBtn">Abrir dataset</button>
@@ -1891,6 +1939,21 @@
   </div>
 </div>
 
+<div id="installHow" role="dialog" aria-modal="true" aria-labelledby="ihTitle">
+  <div id="ihCard" class="glass">
+    <h3 id="ihTitle">Guardar como aplicação</h3>
+    <div class="sub" id="ihSub"></div>
+    <ol class="ih-steps" id="ihSteps"></ol>
+    <div class="ih-note">
+      Depois de instalada abre em ecrã inteiro, sem barra de endereço, e
+      <b>funciona sem internet</b> — os seus dados ficam neste aparelho.
+    </div>
+    <div class="ih-btns">
+      <button class="btn primary" type="button" id="ihClose">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <div id="tourEnd" role="dialog" aria-modal="true" aria-labelledby="teTitle">
   <div id="teCard" class="glass">
     <h3 id="teTitle">Fim da visita</h3>
@@ -1939,12 +2002,14 @@
   <div class="t-agents"></div>
 </div>
 
+<!-- crossorigin: sem isto a resposta é opaca e o service worker não a pode
+     guardar, o que deitaria abaixo o funcionamento sem rede. -->
 <script>
 window.__errs=[];
 window.addEventListener("error",e=>{window.__errs.push((e.message||"")+" @"+(e.lineno||"?"));});
 window.addEventListener("unhandledrejection",e=>{window.__errs.push("REJECT: "+e.reason);});
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
 <script>
 /* Numa autarquia atrás de uma firewall, o CDN pode simplesmente não chegar.
    Sem esta guarda, o script seguinte rebentava no primeiro `new THREE.*` e a
@@ -4312,8 +4377,12 @@ function addLayerRow(p){
   swatch.innerHTML=`<span class="swatch" style="background:currentColor"></span>`;
   swatch.onclick=()=>{
     const i=processes.indexOf(p);
-    if(!p._visible)p._visible=true;
+    const mudouVisibilidade=!p._visible;
+    if(mudouVisibilidade)p._visible=true;
     isolateProc=(isolateProc===i)?null:i;
+    // Isolar torna o procedimento visível — e isso é uma alteração aos dados,
+    // que sem markDirty se perdia ao recarregar ou ao anular.
+    if(mudouVisibilidade)markDirty();
     syncLayerRows();
   };
 
@@ -4337,6 +4406,7 @@ function addLayerRow(p){
       p.name=v;markDirty();
       name.textContent=v;
       p.refreshLabel();renderGroups();renderDetail();updateLayerCounts();
+      applyProcSearch();   // o novo nome pode já não corresponder ao filtro
     },28);
   });
 
@@ -4405,6 +4475,10 @@ function syncLayerRows(){
   });
   relayoutLayers();
   renderGroups();
+  // O filtro da lista lê os nomes actuais, mas alguém tem de o mandar reler:
+  // sem isto, renomear ou importar deixava as linhas escondidas ou visíveis
+  // segundo os nomes antigos.
+  applyProcSearch();
 }
 document.getElementById("addLayerBtn").onclick=()=>{
   const p=createLayer();
@@ -6225,6 +6299,7 @@ addEventListener("keydown",e=>{
   if(helpEl&&helpEl.classList.contains("open")){closeHelp();return;}
   if(confirmEl.classList.contains("open")){settleConfirm(false);return;}
   // Sair pelo Escape é escolher "explorar mais um pouco" — e leva ao botão
+  if(installEl&&installEl.classList.contains("open")){closeInstallHow();return;}
   if(tourEndEl&&tourEndEl.classList.contains("open")){closeTourEnd();spotlightNewDataset();return;}
   if(document.body.classList.contains("presenting")){togglePresent(false);return;}
   if(play){stopPlayback();return;}
@@ -7038,7 +7113,8 @@ async function exportProcPNG(p){
     flash("Não foi possível gerar a imagem.",{type:"err",key:"fcpng"});
   }
 }
-async function exportProcPDF(p){
+async function exportProcPDF(p){ exportsRunning++; try{ return await __exportProcPDF(p); } finally { exportsRunning--; } }
+async function __exportProcPDF(p){
   flash("A gerar PDF…",{type:"work",key:"fcpdf"});
   try{await ensureJsPDF();}
   catch(e){flash("Não foi possível carregar o gerador de PDF — verifique a ligação.",{type:"err",key:"fcpdf"});return;}
@@ -7497,15 +7573,17 @@ importFile.onchange=()=>{
           buildTaskVisual(t);
         });
       });
-      // 5) Groups
-      if(Array.isArray(cfg.groups)){
-        groups.length=0;
-        cfg.groups.forEach(cg=>{
-          groups.push({id:cg.id||("G"+(++groupCounter)),
-            name:String(cg.name||"Grupo").slice(0,28),
-            layers:(cg.layers||[]).filter(id=>layerById(id))});
-        });
-      }
+      // 5) Groups — o ficheiro define o dataset inteiro. Sem esta lista, os
+      // grupos antigos sobreviviam com ids que agora apontam para outros
+      // procedimentos (os ids passaram a vir do ficheiro), e o utilizador
+      // ficava com agrupamentos que nunca fez.
+      groups.length=0;
+      (Array.isArray(cfg.groups)?cfg.groups:[]).forEach(cg=>{
+        if(!cg||typeof cg!=="object")return;
+        groups.push({id:(typeof cg.id==="string"&&cg.id)?cg.id:("G"+(++groupCounter)),
+          name:String(cg.name||"Grupo").slice(0,28),
+          layers:(Array.isArray(cg.layers)?cg.layers:[]).filter(id=>layerById(id))});
+      });
       if(cfg.theme&&THEMES[cfg.theme]&&cfg.theme!==themeId){
         applyTheme(cfg.theme,{silent:true});
         syncThemeButtons();
@@ -7596,6 +7674,153 @@ function newDataset(){
   markDirty();
   flash("Nova rede criada — apenas o Executivo.");
 }
+/* ============================================================
+   GUARDAR COMO APP
+
+   O Chrome dá um evento que se pode guardar e disparar mais tarde a partir de
+   um botão nosso. O Safari não dá nada: no iPhone e no iPad a instalação é
+   sempre manual, pelo menu Partilhar — resta explicá-la bem e no sítio certo.
+============================================================ */
+const installEl=document.getElementById("installHow");
+const installBtn=document.getElementById("installBtn");
+let installPrompt=null;
+/* O Chrome só oferece o evento uma vez por página. Se o utilizador recusar,
+   o evento é gasto — mas o botão tem de continuar lá, senão a mensagem que
+   lhe diz "pode instalar mais tarde em Setup" aponta para um botão que
+   desapareceu. Sem oferta, o botão passa a mostrar as instruções. */
+let installOffered=false;
+
+/* Já a correr como app instalada? */
+function isStandalone(){
+  return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||
+         (window.matchMedia&&matchMedia("(display-mode: minimal-ui)").matches)||
+         navigator.standalone===true;
+}
+function uaHas(re){return re.test(navigator.userAgent||"");}
+/* O iPadOS finge ser um Mac; distingue-se pelo ecrã táctil. */
+const isIOS=uaHas(/iPad|iPhone|iPod/)||
+  (uaHas(/Macintosh/)&&(navigator.maxTouchPoints||0)>1);
+const isSafari=uaHas(/^((?!chrome|android|crios|fxios|edgios).)*safari/i);
+const isFirefox=uaHas(/Firefox|FxiOS/);
+
+function syncInstallBtn(){
+  if(!installBtn)return;
+  document.body.classList.toggle("standalone",isStandalone());
+  // Mostra-se quando o browser aceitou instalar, ou em iOS, onde a instalação
+  // existe mas nunca avisa — sem o botão, ninguém descobre que é possível.
+  const podeMostrar=!isStandalone()&&(!!installPrompt||installOffered||isIOS);
+  installBtn.classList.toggle("on",podeMostrar);
+}
+addEventListener("beforeinstallprompt",e=>{
+  e.preventDefault();          // guardamos para o utilizador decidir quando
+  installPrompt=e;
+  installOffered=true;
+  syncInstallBtn();
+});
+addEventListener("appinstalled",()=>{
+  installPrompt=null;
+  installOffered=false;
+  syncInstallBtn();
+  flash("Instalada. Passa a abrir a partir do ecrã principal, mesmo sem internet.",{duration:7000});
+});
+if(window.matchMedia){
+  const mq=matchMedia("(display-mode: standalone)");
+  const on=()=>syncInstallBtn();
+  if(mq.addEventListener)mq.addEventListener("change",on);
+  else if(mq.addListener)mq.addListener(on);
+}
+
+/* Instruções para quem não tem o evento: iOS sempre, e o Firefox/desktop. */
+function installSteps(){
+  const ico='<span class="ih-share" aria-hidden="true">'+
+    '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.4">'+
+    '<path d="M6 1v8M3 4l3-3 3 3"/><path d="M1.5 7v5.5h9V7"/></svg></span>';
+  if(isIOS&&isSafari)return {
+    sub:"No iPhone e no iPad a instalação faz-se pelo menu Partilhar do Safari.",
+    steps:["Toque no botão <b>Partilhar</b> "+ico+", na barra do Safari.",
+           "Deslize a lista e escolha <b>Adicionar ao ecrã principal</b>.",
+           "Confirme em <b>Adicionar</b>, no canto superior direito."]};
+  if(isIOS)return {
+    sub:"Neste aparelho a instalação só está disponível a partir do Safari.",
+    steps:["Abra esta página no <b>Safari</b>.",
+           "Toque em <b>Partilhar</b> "+ico+" e depois em <b>Adicionar ao ecrã principal</b>."]};
+  if(isFirefox)return {
+    sub:"No Firefox a instalação está no menu do browser.",
+    steps:["Abra o menu <b>⋮</b> do Firefox.",
+           "Escolha <b>Instalar</b> ou <b>Adicionar ao ecrã principal</b>."]};
+  return {
+    sub:"O seu browser ainda não ofereceu a instalação. Costuma aparecer depois de usar a página durante alguns instantes.",
+    steps:["Procure o ícone de instalação na barra de endereço, à direita.",
+           "Em alternativa, abra o menu <b>⋮</b> e escolha <b>Instalar</b>.",
+           "No Android, o Chrome também oferece <b>Adicionar ao ecrã principal</b>."]};
+}
+function showInstallHow(){
+  if(!installEl)return;
+  const d=installSteps();
+  document.getElementById("ihSub").textContent=d.sub;
+  const ol=document.getElementById("ihSteps");
+  ol.innerHTML="";
+  d.steps.forEach(s=>{const li=document.createElement("li");li.innerHTML=s;ol.append(li);});
+  rememberFocus();
+  installEl.classList.add("open");
+  setTimeout(()=>{const b=document.getElementById("ihClose");if(b)b.focus();},30);
+}
+function closeInstallHow(){
+  if(!installEl||!installEl.classList.contains("open"))return;
+  installEl.classList.remove("open");
+  restoreFocus();
+}
+async function askToInstall(){
+  if(isStandalone()){flash("Já está instalada neste aparelho.");return;}
+  if(!installPrompt){showInstallHow();return;}
+  const p=installPrompt;
+  installPrompt=null;             // o evento só pode ser usado uma vez
+  syncInstallBtn();
+  try{
+    p.prompt();
+    const r=await p.userChoice;
+    if(r&&r.outcome==="accepted")flash("A instalar…");
+    else flash("Pode instalar mais tarde: Setup → Guardar como app.",{duration:6000});
+  }catch(e){ showInstallHow(); }
+}
+if(installBtn)installBtn.onclick=askToInstall;
+if(installEl){
+  document.getElementById("ihClose").onclick=closeInstallHow;
+  installEl.addEventListener("pointerdown",e=>{if(e.target===installEl)closeInstallHow();});
+}
+syncInstallBtn();
+
+/* O service worker é o que torna a instalação possível no Chrome e o que faz a
+   ferramenta abrir sem rede. Em file:// não existe, e isso não é um erro. */
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){
+  addEventListener("load",()=>{
+    // updateViaCache:"none" — o próprio sw.js não pode vir da cache HTTP.
+    // Sem isto, o browser reutiliza a cópia guardada e uma versão nova da
+    // ferramenta pode nunca chegar a quem já a instalou.
+    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(reg=>{
+      // Verificar se há versão nova a cada arranque, e ao voltar à app
+      const verificar=()=>{try{reg.update();}catch(e){}};
+      verificar();
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden)verificar();});
+      reg.addEventListener("updatefound",()=>{
+        const nw=reg.installing;
+        if(!nw)return;
+        nw.addEventListener("statechange",()=>{
+          // Só é "actualização" se já havia uma versão a servir a página
+          if(nw.state==="installed"&&navigator.serviceWorker.controller){
+            flash("Há uma versão nova.",{duration:0,key:"sw",actions:[
+              {label:"Actualizar",fn:()=>{
+                try{nw.postMessage({type:"skip-waiting"});}catch(e){}
+                location.reload();
+              }}
+            ]});
+          }
+        });
+      });
+    }).catch(()=>{/* sem service worker a app continua a funcionar */});
+  });
+}
+
 /* ============================================================
    FIM DA VISITA — o que fazer à demonstração
 
@@ -7838,6 +8063,27 @@ function syncThemeButtons(){
 /* ============================================================
    PDF EXPORT — Organograma + Fluxogramas (grouped)
 ============================================================ */
+/* Uma exportação percorre os procedimentos com `await` pelo meio, e a app
+   continua a responder durante esse tempo. Um Ctrl+Z ali reconstrói a lista
+   inteira com objectos novos: as imagens já geradas deixavam de corresponder
+   a nada e o ficheiro saía sem um único fluxograma — a dizer que correu bem.
+   Enquanto exporta, o histórico fica quieto. */
+let exportsRunning=0;
+function exportBusy(){return exportsRunning>0;}
+
+/* Uma ligação que não responde nem falha — captive portal, rede da autarquia a
+   engasgar — não dispara `load` nem `error`: a promessa ficava pendurada para
+   sempre e o botão de exportar com o spinner eternamente. Ao fim de 20s
+   desiste-se e a porta fica aberta para tentar outra vez. */
+function comPrazo(promessa,limparCache,ms){
+  return Promise.race([
+    promessa,
+    new Promise((_,rej)=>setTimeout(()=>{
+      try{limparCache();}catch(e){}
+      rej(new Error("timeout"));
+    },ms||20000))
+  ]);
+}
 let jsPDFLoading=null;
 function ensureJsPDF(){
   if(window.jspdf&&window.jspdf.jsPDF)return Promise.resolve();
@@ -7845,13 +8091,21 @@ function ensureJsPDF(){
   jsPDFLoading=new Promise((res,rej)=>{
     const sc=document.createElement("script");
     sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    sc.onload=()=>res();
+    // "load" dispara para qualquer 200 — incluindo a página de um portal
+    // cativo, que não é o jsPDF. Aceitar isso guardava uma promessa resolvida
+    // e a exportação de PDF ficava avariada até recarregar a página, mesmo
+    // depois de a rede voltar. Verifica-se que a biblioteca existe mesmo.
+    sc.onload=()=>{
+      if(window.jspdf&&window.jspdf.jsPDF)res();
+      else{jsPDFLoading=null;rej(new Error("cdn"));}
+    };
     sc.onerror=()=>{jsPDFLoading=null;rej(new Error("cdn"));};
     document.head.appendChild(sc);
   });
-  return jsPDFLoading;
+  return comPrazo(jsPDFLoading,()=>{jsPDFLoading=null;});
 }
-async function exportPDF(){
+async function exportPDF(){ exportsRunning++; try{ return await __exportPDF(); } finally { exportsRunning--; } }
+async function __exportPDF(){
   const __btn=document.getElementById("pdfBtn");
   setBusy(__btn,true,"A gerar…");
   flash("A gerar PDF…",{type:"work",key:"pdf"});
@@ -8036,9 +8290,10 @@ function ensurePptx(){
       document.head.appendChild(sc);
     })();
   });
-  return pptxLoading;
+  return comPrazo(pptxLoading,()=>{pptxLoading=null;});
 }
-async function exportPPTX(){
+async function exportPPTX(){ exportsRunning++; try{ return await __exportPPTX(); } finally { exportsRunning--; } }
+async function __exportPPTX(){
   const __btn=document.getElementById("pptxBtn");
   setBusy(__btn,true,"A gerar…");
   flash("A gerar apresentação…",{type:"work",key:"pptx"});
@@ -8776,7 +9031,10 @@ const COACH_KEY="of.coach.seen.v1";
 
 // localStorage is unavailable in some privacy modes — never let that break boot.
 function storageGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
-function storageSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+/* Devolve se a escrita passou mesmo. Engolir a falha em silêncio faria a app
+   dizer "guardado" a quem tem o armazenamento cheio ou desligado — e essa
+   pessoa só descobria que não estava, quando o fosse buscar. */
+function storageSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
 
 let lastFocusBeforeDialog=null;
 function openCoach(){
@@ -8857,7 +9115,7 @@ densityRange.addEventListener("input",applyDensity);
    página não existe. Sem prender o Tab, ele saía para os botões do painel e do
    HUD por trás do scrim — visíveis para o teclado, invisíveis para quem lá está. */
 function topDialog(){
-  const layers=[modal,coachEl,helpEl,tourEndEl,reassignEl,confirmEl,paletteEl]
+  const layers=[modal,coachEl,helpEl,tourEndEl,installEl,reassignEl,confirmEl,paletteEl]
     .filter(l=>l&&l.classList.contains("open"));
   if(!layers.length)return null;
   // O que estiver por cima é o que manda
@@ -8900,6 +9158,7 @@ addEventListener("keydown",e=>{
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(paletteEl&&paletteEl.classList.contains("open"))return;
   if(tourEndEl&&tourEndEl.classList.contains("open"))return;
+  if(installEl&&installEl.classList.contains("open"))return;
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
   // Com o palco 3D em foco, as setas percorrem a hierarquia em vez do tour
   if(document.activeElement===stage&&e.key.indexOf("Arrow")===0){
@@ -8938,6 +9197,7 @@ addEventListener("keyup",e=>{
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(paletteEl&&paletteEl.classList.contains("open"))return;
   if(tourEndEl&&tourEndEl.classList.contains("open"))return;   // faltava aqui
+  if(installEl&&installEl.classList.contains("open"))return;
   if(modal.classList.contains("open")||confirmEl.classList.contains("open"))return;
   autoplay=!autoplay;autoTimer=0;syncPlay();
 });
@@ -10020,8 +10280,13 @@ let baseline=null;          // {json, label, at}
 let morphT=0;
 function saveBaseline(label){
   baseline={json:snapshotState(),label:label||"Actual",at:new Date().toISOString()};
-  try{storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
-  flash("Cenário “"+baseline.label+"” guardado. As alterações a partir de agora são a proposta.");
+  let gravou=false;
+  try{gravou=storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
+  flash(gravou
+    ? ("Cenário “"+baseline.label+"” guardado. As alterações a partir de agora são a proposta.")
+    : ("Cenário “"+baseline.label+"” fixado — mas não coube no armazenamento deste browser, "+
+       "por isso perde-se ao fechar. Exporte o dataset se quiser guardá-lo."),
+    gravou?undefined:{type:"err",duration:9000});
   if(scenarioOpen())renderScenario();
 }
 function clearBaseline(){
@@ -10329,6 +10594,7 @@ function paletteActions(){
     {kind:"Acção",label:"Organograma 2D",run:showOrgChart},
     {kind:"Acção",label:"Fluxogramas",run:showFlowIndex},
     {kind:"Acção",label:"Estado da rede",run:showHealth},
+    {kind:"Acção",label:"Guardar como app (instalar)",run:askToInstall},
     {kind:"Acção",label:"Vistas — galeria",run:showViewGallery},
     {kind:"Acção",label:"Vista: Matriz Nó × Procedimento",run:()=>showView("matrix")},
     {kind:"Acção",label:"Vista: Mapa de fluxo (Sankey)",run:()=>showView("sankey")},
@@ -10679,10 +10945,23 @@ function updateHistoryUI(){
   if(u)u.disabled=!undoStack.length;
   if(r)r.disabled=!redoStack.length;
 }
+let autosaveWarned=false;
 function scheduleAutosave(){
   clearTimeout(autosaveTimer);
   autosaveTimer=setTimeout(()=>{
-    try{storageSet(AUTOSAVE_KEY,JSON.stringify({at:new Date().toISOString(),state:snapshotState()}));}catch(e){}
+    let gravou=false;
+    try{gravou=storageSet(AUTOSAVE_KEY,
+      JSON.stringify({at:new Date().toISOString(),state:snapshotState()}));}catch(e){}
+    // Avisa-se uma vez. A promessa de "recuperar a sessão" deixou de valer, e
+    // quem está a trabalhar tem de saber disso enquanto ainda pode exportar.
+    if(!gravou&&!autosaveWarned){
+      autosaveWarned=true;
+      flash("O browser não está a guardar a sessão (armazenamento cheio ou desativado). "+
+            "Exporte o dataset para não perder o trabalho.",{type:"err",duration:0,key:"autosave",
+        actions:[{label:"Exportar",fn:()=>{const b=document.getElementById("exportBtn");if(b)b.click();}}]});
+    }else if(gravou&&autosaveWarned){
+      autosaveWarned=false;   // voltou a haver espaço
+    }
   },1200);
 }
 /* Called from markDirty() — pushes the state as it was *before* this mutation. */
@@ -10703,6 +10982,7 @@ function recordHistory(){
   scheduleAutosave();
 }
 function undoAction(){
+  if(exportBusy()){flash("Aguarde o fim da exportação para anular.",{type:"err"});return;}
   if(!undoStack.length){flash("Nada para anular.");return;}
   const cur=snapshotState();
   const prev=undoStack.pop();
@@ -10714,6 +10994,7 @@ function undoAction(){
   flash("Anulado.");
 }
 function redoAction(){
+  if(exportBusy()){flash("Aguarde o fim da exportação para refazer.",{type:"err"});return;}
   if(!redoStack.length){flash("Nada para refazer.");return;}
   const cur=snapshotState();
   const next=redoStack.pop();
@@ -10771,6 +11052,24 @@ setTimeout(offerSessionRestore,1500);
   if(n)setTimeout(()=>locateNode(n),1250);
 })();
 
+/* Atalhos do ícone da app (manifest.json → shortcuts). Sem isto, quem os
+   escolhesse no menu de contexto do ícone abria a app normal e não percebia
+   porquê — um atalho que não faz nada é pior do que não existir. */
+(function(){
+  let q=null;
+  try{q=new URLSearchParams(location.search||"");}catch(e){return;}
+  if(!q)return;
+  const view=q.get("view");
+  if(view==="orgchart")setTimeout(showOrgChart,700);
+  else if(view==="flowcharts")setTimeout(showFlowIndex,700);
+  else if(view&&VIEWS.some(v=>v.id===view))setTimeout(()=>showView(view),700);
+  // "nova rede" apaga tudo: pergunta-se na mesma, atalho ou não
+  if(q.get("new")==="1")setTimeout(()=>{
+    const b=document.getElementById("newDatasetBtn");
+    if(b)b.click();
+  },700);
+})();
+
 /* ---- QA harness ---- */
 window.__F=(function(){
   const o={};
@@ -10793,7 +11092,7 @@ window.__F=(function(){
     "anchorMap showFlowchart renderFlowchart fcSel createLayer deleteNode agentById "+
     "closeModalSilent selectAgent selectTask isApexNode nodeImpact "+
     "vpCls vpOri vpSquat readViewport applyViewport settleViewport fitRadiusFor "+
-    "oriPhiBias rGuide focusActive vpMemo tourEndSeen showTourEnd closeTourEnd spotlightNewDataset nextScene scenes sceneIdx autoplay newDataset coverFor labelFields clickable moteMat").split(/\s+/);
+    "oriPhiBias rGuide focusActive vpMemo tourEndSeen showTourEnd closeTourEnd spotlightNewDataset nextScene scenes sceneIdx autoplay newDataset coverFor labelFields clickable moteMat isStandalone isIOS isSafari installPrompt syncInstallBtn showInstallHow closeInstallHow askToInstall installSteps installOffered exportBusy exportsRunning ensureJsPDF ensurePptx undoAction redoAction measureChrome syncHeadFade topDialog spaceTaken historyBusy canReparent reparentNode applyNodeRemoval nodeImpact").split(/\s+/);
   names.forEach(n=>{try{o[n]=eval(n);}catch(e){o[n]="__MISSING__";}});
   o.get=n=>{try{return eval(n);}catch(e){return "__MISSING__";}};
   o.set=(n,v)=>{try{eval(n+"=v");return true;}catch(e){return false;}};
