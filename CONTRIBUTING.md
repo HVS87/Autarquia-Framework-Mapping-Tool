@@ -27,7 +27,7 @@ Obrigado por querer melhorar a Ferramenta de Mapeamento para Autarquias!
    ```
 6. **Abra um Pull Request** no GitHub
 
-## Directrizes
+## Diretrizes
 
 ### Código
 - Use JavaScript vanilla (sem frameworks)
@@ -64,9 +64,9 @@ Evite:
 
 - ⚠️ Dependências externas (não bibliotecas, use CDN se necessário)
 - ⚠️ Grandes refactors sem discussão prévia
-- ⚠️ Mudanças arquitectónicas radicais
+- ⚠️ Mudanças arquitetónicas radicais
 
-## Arquitetura do Projecto
+## Arquitetura do Projeto
 
 ```
 network-framework.html

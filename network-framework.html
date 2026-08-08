@@ -705,7 +705,7 @@
      de três classes ganhava à de uma, mostrando o HUD onde não cabe. */
   body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #whereBar{display:flex!important}
   body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #radarWrap{display:flex!important}
-  /* Só o cartão que está mesmo activo: forçar #quest sem .on ressuscitava-o
+  /* Só o cartão que está mesmo ativo: forçar #quest sem .on ressuscitava-o
      depois de dispensado, como uma caixa vazia a flutuar. */
   body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #quest.on{display:block!important}
   body.vp-tablet.vp-landscape #whereBar{max-width:min(460px,46vw)}
@@ -731,7 +731,7 @@
   }
   body.vp-tablet.vp-portrait #modalCard{width:min(720px,100%)}
 
-  /* ---- Alvos de toque maiores em qualquer aparelho táctil ---- */
+  /* ---- Alvos de toque maiores em qualquer aparelho tátil ---- */
   body.vp-touch .btn.tiny{padding:6px 11px}
   /* Num dedo, 25px de altura é pouco — as setas da visita ficavam abaixo do
      que se acerta com confiança. */
@@ -741,6 +741,11 @@
   body.vp-touch .switch{width:30px;height:17px}
   body.vp-touch .switch::after{width:12px;height:12px;top:1.5px}
   body.vp-touch .switch.on::after{transform:translateX(13px)}
+  /* O nome da autarquia é editável no sítio, mas sendo texto sublinhado não
+     tem altura própria: com o cabeçalho comprimido em modo deitado ficava com
+     21px e era preciso acertar-lhe na linha. Uma altura mínima e um pouco de
+     folga em baixo dão-lhe um alvo em condições sem lhe mexer no aspecto. */
+  body.vp-touch #orgName{min-height:28px;padding-bottom:4px}
 
   /* A rotação não deve ser uma animação: o que muda, muda já */
   body.vp-rotating *,body.vp-rotating *::before,body.vp-rotating *::after{
@@ -1312,7 +1317,7 @@
   .vg-card .vg-t{font-size:.8rem;font-weight:600}
   .vg-card .vg-d{font-size:.66rem;color:var(--ink-dim);line-height:1.4}
 
-  /* ---- barra de acções comum às vistas ---- */
+  /* ---- barra de ações comum às vistas ---- */
   .vw-bar{
     display:flex;align-items:center;gap:8px;flex-wrap:wrap;
     margin:-4px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--hairline);
@@ -1670,15 +1675,15 @@
       <button class="btn tiny" id="viewsBtn" title="Outras vistas da mesma informação (V)">Vistas</button>
       <button class="btn tiny" id="contBtn" title="Modo continuidade — quem assegura o quê quando alguém falta" aria-pressed="false">Continuidade</button>
       <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de uma unidade para outra para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
-      <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detectados">Estado</button>
+      <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detetados">Estado</button>
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
       <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo">👁</button>
       <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação">⛶</button>
-      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D actual como imagem PNG" aria-label="Guardar vista como imagem">📷</button>
+      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem">📷</button>
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
     </div>
   </div>
-  <div class="hint">Drag to orbit · Scroll to zoom<br>Click a node or task arc to inspect &amp; edit</div>
+  <div class="hint">Arraste para rodar · Roda do rato para aproximar<br>Clique num node ou num arco de tarefa para ver e editar</div>
 </header>
 
 <aside id="panel" class="glass" aria-label="Painel de controlo">
@@ -1686,10 +1691,10 @@
   <details>
     <summary>Legenda da rede</summary>
     <div class="sec-body">
-      <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste tier"><span class="swatch" style="background:#FFFFFF"></span>Tier 0 · Executivo<span class="legend-note">apex</span></button>
-      <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Tier 1 · Coordenação Geral<span class="legend-note">primary colours</span></button>
-      <button type="button" class="legend-row jump" data-tier="2" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#7FB2EC"></span><span style="background:#EC8B86"></span><span style="background:#F2DA84"></span></span>Tier 2 · Coordenação Setorial<span class="legend-note">branch tints</span></button>
-      <button type="button" class="legend-row jump" data-tier="3" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#AECFF4"></span><span style="background:#F4B7B3"></span><span style="background:#F8EAB4"></span></span>Tier 3 · Coordenação Operacional<span class="legend-note">lighter tints</span></button>
+      <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste tier"><span class="swatch" style="background:#FFFFFF"></span>Tier 0 · Executivo<span class="legend-note">topo</span></button>
+      <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Tier 1 · Coordenação Geral<span class="legend-note">cores primárias</span></button>
+      <button type="button" class="legend-row jump" data-tier="2" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#7FB2EC"></span><span style="background:#EC8B86"></span><span style="background:#F2DA84"></span></span>Tier 2 · Coordenação Setorial<span class="legend-note">tons do ramo</span></button>
+      <button type="button" class="legend-row jump" data-tier="3" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#AECFF4"></span><span style="background:#F4B7B3"></span><span style="background:#F8EAB4"></span></span>Tier 3 · Coordenação Operacional<span class="legend-note">tons mais claros</span></button>
       <div class="mini-title" style="margin-top:8px">Chave de codificação</div>
       <div id="codeKey"></div>
 
@@ -1721,9 +1726,9 @@
         <input type="range" id="densityRange" min="0" max="3" step="1" value="3" aria-label="Profundidade visível da hierarquia">
         <span class="density-val" id="densityVal">todos os tiers</span>
       </div>
-      <div class="legend-row"><span class="swatch line" style="background:var(--gold);opacity:.7"></span>Hierarchy link<span class="legend-note">vertical</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#fff;width:5px;height:5px"></span>Agent (orbiting)<span class="legend-note">per node</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#FFD84D;width:6px;height:6px"></span>Task pulse (blinks)<span class="legend-note">from → to</span></div>
+      <div class="legend-row"><span class="swatch line" style="background:var(--gold);opacity:.7"></span>Ligação hierárquica<span class="legend-note">vertical</span></div>
+      <div class="legend-row"><span class="swatch" style="background:#fff;width:5px;height:5px"></span>Agente (em órbita)<span class="legend-note">por node</span></div>
+      <div class="legend-row"><span class="swatch" style="background:#FFD84D;width:6px;height:6px"></span>Pulso de tarefa (pisca)<span class="legend-note">origem → destino</span></div>
     </div>
   </details>
 
@@ -1770,9 +1775,9 @@
             <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
           </svg>
         </span>
-        New node
+        Novo node
       </button>
-      <div class="foot-note">Click a node to open its panel — name, tier, agents, and tasks are edited there. Drag a node onto another to place it under that node in the hierarchy.</div>
+      <div class="foot-note">Clique num node para abrir o painel dele — é lá que se edita o nome, o tier, os agentes e as tarefas. Arraste um node para cima de outro para o colocar sob esse node na hierarquia.</div>
     </div>
   </details>
 
@@ -1780,16 +1785,16 @@
     <summary>Pessoas</summary>
     <div class="sec-body">
       <div id="agentList"></div>
-      <div class="foot-note">Click an agent to open their panel — name, category, and assigned tasks live there. Drag an agent onto a node header (or another agent) to move them to that node. ★ marks each node's primary agent.</div>
+      <div class="foot-note">Clique num agente para abrir o painel dele — é lá que estão o nome, a categoria e as tarefas atribuídas. Arraste um agente para o cabeçalho de um node (ou para outro agente) para o mudar para esse node. ★ assinala o responsável de cada node.</div>
     </div>
   </details>
 
   <details>
-    <summary>Setup</summary>
+    <summary>Definições</summary>
     <div class="sec-body">
       <div class="mini-title">Tema</div>
       <div id="themeRow">
-        <button class="theme-btn" data-theme="nocturno" title="Navy profundo com dourado"><span class="tdot" style="background:linear-gradient(135deg,#0A1424,#E8B44C)"></span>Nocturno</button>
+        <button class="theme-btn" data-theme="nocturno" title="Navy profundo com dourado"><span class="tdot" style="background:linear-gradient(135deg,#0A1424,#E8B44C)"></span>Noturno</button>
         <button class="theme-btn" data-theme="lisboa" title="Índigo com azulejo e amarelo de elétrico"><span class="tdot" style="background:linear-gradient(135deg,#10163A,#3E7CB1 55%,#F4C542)"></span>Meia-noite em Lisboa</button>
         <button class="theme-btn on" data-theme="calcada" title="Modo claro — pedra, areia e basalto"><span class="tdot" style="background:linear-gradient(135deg,#B8AB88,#775212 60%,#3A3122)"></span>Calçada</button>
         <button class="theme-btn" data-theme="verde" title="Verde institucional"><span class="tdot" style="background:linear-gradient(135deg,#0B241A,#2E8B62 60%,#D9C36A)"></span>Verde Institucional</button>
@@ -1804,7 +1809,7 @@
 
       <div class="mini-title">Vistas guardadas</div>
       <div id="bookmarkList"></div>
-      <button class="btn tiny" id="addBookmarkBtn" style="margin-bottom:8px">+ Guardar vista actual</button>
+      <button class="btn tiny" id="addBookmarkBtn" style="margin-bottom:8px">+ Guardar vista atual</button>
 
       <div class="setup-btns">
         <button class="btn" id="installBtn" title="Guardar no ecrã principal e usar sem internet">
@@ -1838,7 +1843,7 @@
 <div id="palette" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
   <div id="paletteCard" class="glass">
     <input id="paletteInput" type="text" autocomplete="off" spellcheck="false"
-      placeholder="Procurar nodes, agentes, procedimentos, grupos — ou executar uma acção…"
+      placeholder="Procurar nodes, agentes, procedimentos, grupos — ou executar uma ação…"
       aria-label="Procurar ou executar comando">
     <div id="paletteList" role="listbox"></div>
   </div>
@@ -1863,7 +1868,7 @@
     <div class="sub">Uma rede 3D da estrutura da autarquia. Quatro formas de a explorar:</div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">🖱️</span>
-      <span class="coach-txt"><b>Arraste</b> para rodar a câmara e use o <b>scroll</b> para aproximar.</span>
+      <span class="coach-txt"><b>Arraste</b> para rodar a câmara e use a <b>roda do rato</b> para aproximar.</span>
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">👆</span>
@@ -1871,7 +1876,7 @@
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">⇧</span>
-      <span class="coach-txt"><b>Shift+clique</b> num arco isola todo o procedimento; <b>duplo clique</b> num node activa o modo de foco.</span>
+      <span class="coach-txt"><b>Shift+clique</b> num arco isola todo o procedimento; <b>duplo clique</b> num node ativa o modo de foco.</span>
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">☰</span>
@@ -1889,18 +1894,18 @@
     <h3 id="helpTitle">Ajuda &amp; atalhos</h3>
     <h4>Navegação 3D</h4>
     <div class="kbd-row"><kbd>Arrastar</kbd><span>Rodar a câmara em torno da rede</span></div>
-    <div class="kbd-row"><kbd>Scroll / Pinch</kbd><span>Aproximar e afastar</span></div>
+    <div class="kbd-row"><kbd>Roda / Pinça</kbd><span>Aproximar e afastar</span></div>
     <div class="kbd-row"><kbd>Clique</kbd><span>Selecionar um node ou uma tarefa</span></div>
     <div class="kbd-row"><kbd>Shift + clique</kbd><span>Isolar todo o procedimento de uma tarefa</span></div>
     <div class="kbd-row"><kbd>Duplo clique</kbd><span>Modo de foco — destaca o node e esbate o resto</span></div>
-    <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o node e as suas ligações directas</span></div>
+    <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o node e as suas ligações diretas</span></div>
     <h4>Teclado</h4>
     <div class="kbd-row"><kbd>← / →</kbd><span>Cena anterior / seguinte do tour</span></div>
     <div class="kbd-row"><kbd>Espaço</kbd><span>Toque: reproduzir/pausar o tour · Manter: espreitar o todo</span></div>
     <div class="kbd-row"><kbd>Tab → setas</kbd><span>Com a rede em foco: ↑ superior · ↓ subordinado · ←/→ irmãos</span></div>
     <div class="kbd-row"><kbd>R</kbd><span>Recentrar a câmara na vista inicial</span></div>
     <div class="kbd-row"><kbd>P</kbd><span>Modo apresentação — esconde os painéis</span></div>
-    <div class="kbd-row"><kbd>Ctrl + K</kbd><span>Paleta de comandos — procurar tudo e executar acções</span></div>
+    <div class="kbd-row"><kbd>Ctrl + K</kbd><span>Paleta de comandos — procurar tudo e executar ações</span></div>
     <div class="kbd-row"><kbd>Ctrl + Z</kbd><span>Anular a última alteração</span></div>
     <div class="kbd-row"><kbd>Ctrl + ⇧ + Z</kbd><span>Refazer</span></div>
     <div class="kbd-row"><kbd>?</kbd><span>Abrir esta janela de ajuda</span></div>
@@ -1909,7 +1914,7 @@
     <h4>Gestão</h4>
     <div class="kbd-row"><kbd>Arrastar node</kbd><span>Reorganizar a hierarquia no Organograma 2D</span></div>
     <div class="kbd-row"><kbd>Arrastar agente</kbd><span>Transferir para outro node</span></div>
-    <div class="kbd-row"><kbd>Botões laterais</kbd><span>Voltar / avançar no histórico de selecção</span></div>
+    <div class="kbd-row"><kbd>Botões laterais</kbd><span>Voltar / avançar no histórico de seleção</span></div>
     <div class="card-btns">
       <button class="btn" id="helpReplay">Rever introdução</button>
       <button class="btn primary" id="helpClose">Fechar</button>
@@ -1975,7 +1980,7 @@
       </button>
     </div>
     <div class="te-how">
-      <b>Quando quiser recomeçar:</b> abra <b>Painel → Setup</b> e carregue em
+      <b>Quando quiser recomeçar:</b> abra <b>Painel → Definições</b> e carregue em
       <b>Nova rede</b>. Exporte antes, em <b>Guardar dataset</b>, se quiser ficar
       com esta cópia.
     </div>
@@ -2164,7 +2169,7 @@ const SEED={id:"c0",name:"Executivo",cat:"Presidente",sec:[["Vogal",4]],kids:[
       {id:"o3",name:"Escola 1",cat:"Coordenador de Escola",sec:[["Monitor de CAF",8],["Assistente Operacional",5]]},
       {id:"o4",name:"Escola 2",cat:"Coordenador de Escola",sec:[["Monitor de CAF",6],["Assistente Operacional",3]]},
       {id:"o5",name:"Escola 3",cat:"Coordenador de Escola",sec:[["Monitor de CAF",7],["Assistente Operacional",4]]}]},
-    {id:"s7",name:"Gabinete de Acção Social",cat:"Técnico Superior",sec:[["Técnico Superior",2],["Assistente Técnico",1]],kids:[
+    {id:"s7",name:"Gabinete de Ação Social",cat:"Técnico Superior",sec:[["Técnico Superior",2],["Assistente Técnico",1]],kids:[
       {id:"o6",name:"Universidade Sénior",cat:"Técnico Superior",sec:[["Assistente Técnico",1],["Assistente Operacional",1]]},
       {id:"o7",name:"Gabinete de Psicologia",cat:"Técnico Superior"}]},
     {id:"s8",name:"Gabinete de Desporto",cat:"Técnico Superior"},
@@ -2848,7 +2853,7 @@ function disposeNodeVisual(n){
   /* As esferas em órbita — uma por pessoa, até oito — também são geometria e
      material a sério. Tirá-las do grafo não liberta nada na placa gráfica, e
      esta função corre a cada mudança de tema, de continuidade, de equipa ou de
-     posição: sem isto, cada uma dessas acções deixava lá tudo para trás.
+     posição: sem isto, cada uma dessas ações deixava lá tudo para trás.
      O `map` do halo vem do cache partilhado glowTexture e não se toca. */
   if(sys)sys.agents.forEach(o=>{
     if(!o||!o.mesh)return;
@@ -4230,7 +4235,7 @@ function el(tag,cls,text){
 }
 /* Nem tudo o que se clica pode ser um <button> — uma célula de tabela ou um
    <text> de SVG não podem. Quando não pode, tem pelo menos de se comportar
-   como um: foco pelo Tab, activação por Enter ou Espaço, e um nome. */
+   como um: foco pelo Tab, ativação por Enter ou Espaço, e um nome. */
 function clickable(node,label,onActivate){
   if(!node)return node;
   node.setAttribute("role","button");
@@ -4367,7 +4372,7 @@ function addLayerRow(p){
   row.style.color=hex(p.color);
 
   const swatch=el("button","swatch-btn");
-  swatch.title="Isolate this layer";
+  swatch.title="Isolar este procedimento";
   swatch.setAttribute("aria-label","Isolar "+p.name);
   swatch.innerHTML=`<span class="swatch" style="background:currentColor"></span>`;
   swatch.onclick=()=>{
@@ -4470,7 +4475,7 @@ function syncLayerRows(){
   });
   relayoutLayers();
   renderGroups();
-  // O filtro da lista lê os nomes actuais, mas alguém tem de o mandar reler:
+  // O filtro da lista lê os nomes atuais, mas alguém tem de o mandar reler:
   // sem isto, renomear ou importar deixava as linhas escondidas ou visíveis
   // segundo os nomes antigos.
   applyProcSearch();
@@ -4580,7 +4585,7 @@ function renderNodeList(){
       const tg=el("span","tree-toggle",n._collapsed?"▸":"▾");
       tg.setAttribute("role","button");
       tg.setAttribute("tabindex","0");
-      tg.setAttribute("aria-label",(n._collapsed?"Expand ":"Collapse ")+n.name);
+      tg.setAttribute("aria-label",(n._collapsed?"Expandir ":"Recolher ")+n.name);
       tg.title=n._collapsed?"Expandir ramo":"Recolher ramo";
       const toggle=e=>{
         e.stopPropagation();
@@ -4856,7 +4861,7 @@ function closeModalSilent(){
   modalView=null;
 }
 function applySelection(sel){
-  // Uma selecção sem alvo (node apagado, id inválido) é tratada como "nada seleccionado"
+  // Uma seleção sem alvo (node apagado, id inválido) é tratada como "nada selecionado"
   if(sel&&((sel.type==="node"&&(!sel.node||!sel.node.pos))||
            (sel.type==="task"&&!sel.task)||
            (sel.type==="agent"&&!sel.agent)||
@@ -7215,7 +7220,7 @@ function renderOrgChart(){
     card.style.cursor="pointer";
     card.title="Abrir painel do node · arraste para reorganizar";
     // O organograma 2D inteiro era intocável pelo teclado: cartões clicáveis
-    // sem foco nem activação. Cada um passa a ser um alvo a sério.
+    // sem foco nem ativação. Cada um passa a ser um alvo a sério.
     clickable(card,"Abrir "+n.name,()=>selectNode(n));
 
     card.draggable=true;
@@ -7481,7 +7486,7 @@ importFile.onchange=()=>{
       }
       // 1) Nodes: update matches, create missing
       (Array.isArray(cfg.nodes)?cfg.nodes:[]).forEach(cn=>{
-        // Uma entrada sem id (ou que nem é um objecto) criaria um node
+        // Uma entrada sem id (ou que nem é um objeto) criaria um node
         // fantasma que nada mais consegue referenciar.
         if(!cn||typeof cn!=="object"||typeof cn.id!=="string"||!cn.id)return;
         let n=byId(cn.id);
@@ -7681,7 +7686,7 @@ const installBtn=document.getElementById("installBtn");
 let installPrompt=null;
 /* O Chrome só oferece o evento uma vez por página. Se o utilizador recusar,
    o evento é gasto — mas o botão tem de continuar lá, senão a mensagem que
-   lhe diz "pode instalar mais tarde em Setup" aponta para um botão que
+   lhe diz "pode instalar mais tarde em Definições" aponta para um botão que
    desapareceu. Sem oferta, o botão passa a mostrar as instruções. */
 let installOffered=false;
 
@@ -7692,7 +7697,7 @@ function isStandalone(){
          navigator.standalone===true;
 }
 function uaHas(re){return re.test(navigator.userAgent||"");}
-/* O iPadOS finge ser um Mac; distingue-se pelo ecrã táctil. */
+/* O iPadOS finge ser um Mac; distingue-se pelo ecrã tátil. */
 const isIOS=uaHas(/iPad|iPhone|iPod/)||
   (uaHas(/Macintosh/)&&(navigator.maxTouchPoints||0)>1);
 const isSafari=uaHas(/^((?!chrome|android|crios|fxios|edgios).)*safari/i);
@@ -7775,7 +7780,7 @@ async function askToInstall(){
     p.prompt();
     const r=await p.userChoice;
     if(r&&r.outcome==="accepted")flash("A instalar…");
-    else flash("Pode instalar mais tarde: Setup → Guardar como app.",{duration:6000});
+    else flash("Pode instalar mais tarde: Definições → Guardar como app.",{duration:6000});
   }catch(e){ showInstallHow(); }
 }
 if(installBtn)installBtn.onclick=askToInstall;
@@ -7801,10 +7806,10 @@ if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){
         const nw=reg.installing;
         if(!nw)return;
         nw.addEventListener("statechange",()=>{
-          // Só é "actualização" se já havia uma versão a servir a página
+          // Só é "atualização" se já havia uma versão a servir a página
           if(nw.state==="installed"&&navigator.serviceWorker.controller){
             flash("Há uma versão nova.",{duration:0,key:"sw",actions:[
-              {label:"Actualizar",fn:()=>{
+              {label:"Atualizar",fn:()=>{
                 try{nw.postMessage({type:"skip-waiting"});}catch(e){}
                 location.reload();
               }}
@@ -7862,7 +7867,7 @@ function spotlightNewDataset(){
       const hr=host.getBoundingClientRect(),br=btn.getBoundingClientRect();
       const to=host.scrollTop+(br.top-hr.top)-(host.clientHeight-br.height)/2;
       const top=Math.max(0,Math.min(to,host.scrollHeight-host.clientHeight));
-      // scrollTop directo, e sem scroll-behavior:smooth no painel: há
+      // scrollTop direto, e sem scroll-behavior:smooth no painel: há
       // ambientes onde o deslocamento suave é ignorado em silêncio, e então o
       // painel nem se mexia — o botão ficava apontado mas fora do ecrã.
       // Chegar lá de certeza vale mais do que chegar lá com elegância.
@@ -7912,7 +7917,7 @@ document.getElementById("newDatasetBtn").onclick=async()=>{
    THEMES
 ============================================================ */
 const THEMES={
-  nocturno:{label:"Nocturno",light:false,
+  nocturno:{label:"Noturno",light:false,
     css:{"--bg-deep":"#04070E","--bg-mid":"#0A1424","--ink":"#E9EFF7","--ink-dim":"#8FA2BC",
       "--gold":"#E8B44C","--steel":"#C9D6E8","--panel":"rgba(10,20,36,0.86)",
       "--hairline":"rgba(201,214,232,0.14)","--vignette":"rgba(2,5,10,0.5)","--scrim":"rgba(4,8,16,0.72)"},
@@ -8049,6 +8054,11 @@ document.querySelectorAll("#themeRow .theme-btn").forEach(btn=>{
   btn.onclick=()=>{
     applyTheme(btn.dataset.theme);
     syncThemeButtons();
+    // O tema é uma preferência da pessoa, não do ficheiro: quem escolhe o alto
+    // contraste escolhe-o porque precisa dele, e tê-lo de repor a cada abertura
+    // era pedir-lhe a mesma coisa todos os dias. Guarda-se à parte do dataset,
+    // como já se fazia com o tamanho de letra.
+    try{storageSet(TH_KEY,btn.dataset.theme);}catch(e){}
   };
 });
 function syncThemeButtons(){
@@ -8060,7 +8070,7 @@ function syncThemeButtons(){
 ============================================================ */
 /* Uma exportação percorre os procedimentos com `await` pelo meio, e a app
    continua a responder durante esse tempo. Um Ctrl+Z ali reconstrói a lista
-   inteira com objectos novos: as imagens já geradas deixavam de corresponder
+   inteira com objetos novos: as imagens já geradas deixavam de corresponder
    a nada e o ficheiro saía sem um único fluxograma — a dizer que correu bem.
    Enquanto exporta, o histórico fica quieto. */
 let exportsRunning=0;
@@ -8847,10 +8857,18 @@ function readViewport(){
   const short=Math.min(w,h),long=Math.max(w,h);
   const coarse=(matchMedia&&matchMedia("(pointer: coarse)").matches)||false;
   const touch=coarse||("ontouchstart" in window)||(navigator.maxTouchPoints||0)>0;
+  /* `touch` e `coarse` respondem a perguntas diferentes e não se podem trocar.
+     Um portátil com ecrã tátil — 1366x768, dos mais vendidos — tem
+     maxTouchPoints>0 e portanto `touch`, mas quem o usa tem rato e teclado à
+     frente: o ponteiro primário é fino. Decidir o layout por `touch` dava-lhe
+     a disposição de tablet numa máquina de secretária. Quem manda no layout é
+     o ponteiro primário (`coarse`); `touch` continua a mandar nos alvos, que
+     esse portátil também precisa de ter generosos quando lhe tocam no ecrã. */
   let cls;
-  if(!touch&&long>=1000)cls="desktop";
-  else if(short<=460)cls="phone";
-  else if(short<=900)cls="tablet";
+  if(short<=460)cls="phone";
+  else if(coarse)cls="tablet";        // dedo, e não cabe em telemóvel
+  else if(long>=1000)cls="desktop";   // rato e ecrã grande
+  else if(short<=900)cls="tablet";    // janela pequena com rato: espaço de tablet
   else cls="desktop";
   return {w,h,cls,touch,short,long,
     ori:h>=w?"portrait":"landscape",
@@ -8901,8 +8919,11 @@ const oriPhiBias=o=>o==="portrait"?0.16:-0.08;
 
 function applyViewport(force){
   // Um ecrã de 0px ainda não é um ecrã: classificá-lo agora daria "telemóvel
-  // ao alto" a um portátil, e nada mais voltaria a corrigir isso.
-  if(!innerWidth||!innerHeight)return;
+  // ao alto" a um portátil, e nada mais voltaria a corrigir isso. Nem sempre
+  // o valor por assentar é zero — já se viu 1x1 num separador ainda escondido,
+  // que passava o teste do zero e classificava na mesma. Abaixo de 200px não
+  // há aparelho nenhum, por isso é sinal de leitura prematura, não de ecrã.
+  if(innerWidth<200||innerHeight<200)return;
   const vp=readViewport();
   const changed=force||vp.cls!==vpCls||vp.ori!==vpOri||vp.squat!==vpSquat;
   const rotated=vp.ori!==vpOri;
@@ -8926,7 +8947,7 @@ function applyViewport(force){
   renderer.setSize(vp.w,vp.h);
 
   if(rotated&&focusActive){
-    // Com uma unidade em foco, o raio actual é o do foco e não o da vista geral.
+    // Com uma unidade em foco, o raio atual é o do foco e não o da vista geral.
     // Guardá-lo envenenaria a memória do formato, e repor o da memória
     // arrancaria a câmara de cima do que o utilizador estava a ver.
     camera.updateProjectionMatrix();
@@ -8979,8 +9000,10 @@ function settleViewport(){
   };
   const tick=()=>{
     const w=innerWidth,h=innerHeight,sig=w+"x"+h;
-    // Um ecrã de 0px é um ecrã que ainda não existe — esperar por um a sério
-    if(w&&h&&sig===vpLast){done();return;}
+    // Um ecrã de 0px é um ecrã que ainda não existe — esperar por um a sério.
+    // Mesmo limiar de applyViewport: duas leituras iguais de 1x1 não são um
+    // ecrã que assentou, são um separador que ainda não abriu.
+    if(w>=200&&h>=200&&sig===vpLast){done();return;}
     if(vpTries++>40){done();return;}
     vpLast=sig;
     vpTimer=requestAnimationFrame(tick);
@@ -9133,7 +9156,7 @@ addEventListener("keydown",e=>{
 },true);
 
 /* O elemento em foco já usa o Espaço? Botões, ligações, <summary> e tudo o que
-   se anuncia como botão ou interruptor activam-se com ele. */
+   se anuncia como botão ou interruptor ativam-se com ele. */
 function spaceTaken(){
   const a=document.activeElement;
   if(!a||a===document.body||a===stage)return false;
@@ -9166,7 +9189,7 @@ addEventListener("keydown",e=>{
   else if(e.key===" "){
     // Toque = play/pausa do tour; manter = espreitar o todo. Decide-se no keyup.
     // Mas só quando o Espaço não pertence a mais ninguém: um <button> em foco
-    // activa-se com Espaço, e roubá-lo aqui deixava quase todos os comandos
+    // ativa-se com Espaço, e roubá-lo aqui deixava quase todos os comandos
     // da aplicação inalcançáveis por teclado.
     if(spaceTaken())return;
     e.preventDefault();
@@ -9378,7 +9401,7 @@ function renderHealth(){
   modalBody.append(head);
 
   if(!issues.length){
-    modalBody.append(el("div","hx-ok","Sem problemas detectados — a estrutura está consistente."));
+    modalBody.append(el("div","hx-ok","Sem problemas detetados — a estrutura está consistente."));
     modal.classList.add("open");
     return;
   }
@@ -9825,7 +9848,7 @@ function renderOficial(){
   tb.className="doc-t";
   const th=document.createElement("thead");
   const hr=document.createElement("tr");
-  ["Unidade","Nível","Responsável","Efectivos"].forEach(h=>hr.append(el("th",null,h)));
+  ["Unidade","Nível","Responsável","Efetivos"].forEach(h=>hr.append(el("th",null,h)));
   th.append(hr);tb.append(th);
   const tbody=document.createElement("tbody");
   nodes.slice().sort((a,b)=>(a.tier-b.tier)||a.name.localeCompare(b.name,"pt")).forEach(n=>{
@@ -9947,7 +9970,7 @@ function renderMunicipe(){
 
 /* ============================================================
    COMET — ligar dois nodes arrastando, com um rasto que mostra o gesto
-   Ligar A a B era: seleccionar A, abrir o painel, escolher B numa lista.
+   Ligar A a B era: selecionar A, abrir o painel, escolher B numa lista.
    Aqui é o que a mão já quer fazer — arrastar de um para o outro.
 ============================================================ */
 let linkMode=false,cometFrom=null,cometHover=null;
@@ -10125,7 +10148,7 @@ function actingPrimary(nodeId){
   if(s)return s;
   return agentsOf(nodeId).find(a=>!a.absent)||null;
 }
-/* Unidades que, com as ausências actuais, ficam sem ninguém em funções. */
+/* Unidades que, com as ausências atuais, ficam sem ninguém em funções. */
 function uncoveredNodes(){
   return nodes.filter(n=>{
     const all=agentsOf(n.id);
@@ -10268,13 +10291,13 @@ function renderContinuity(){
 
 /* ============================================================
    COMPARAR CENÁRIOS — o que muda entre o que existe e o que se propõe
-   Guarda-se um retrato ("Actual"); a partir daí toda a edição é a "Proposta".
+   Guarda-se um retrato ("Atual"); a partir daí toda a edição é a "Proposta".
    O morph interpola as posições no 3D para se ver a reorganização a acontecer.
 ============================================================ */
 let baseline=null;          // {json, label, at}
 let morphT=0;
 function saveBaseline(label){
-  baseline={json:snapshotState(),label:label||"Actual",at:new Date().toISOString()};
+  baseline={json:snapshotState(),label:label||"Atual",at:new Date().toISOString()};
   let gravou=false;
   try{gravou=storageSet("of.baseline.v1",JSON.stringify(baseline));}catch(e){}
   flash(gravou
@@ -10299,7 +10322,7 @@ function clearBaseline(){
     }
   }catch(e){baseline=null;}
 })();
-/* Diferenças estruturais entre o retrato e o estado actual. */
+/* Diferenças estruturais entre o retrato e o estado atual. */
 function scenarioDiff(){
   const out={nodesAdded:[],nodesRemoved:[],nodesRenamed:[],nodesMoved:[],
              agentsAdded:[],agentsRemoved:[],agentsMoved:[],
@@ -10339,7 +10362,7 @@ function diffCount(d){
          d.agentsAdded.length+d.agentsRemoved.length+d.agentsMoved.length+
          d.procsAdded.length+d.procsRemoved.length+d.procsChanged.length;
 }
-/* Morph: t=0 mostra as posições do retrato, t=1 as actuais. Os nodes que só
+/* Morph: t=0 mostra as posições do retrato, t=1 as atuais. Os nodes que só
    existem num dos cenários encolhem/crescem em vez de saltarem. */
 function applyMorph(t){
   morphT=Math.max(0,Math.min(1,t));
@@ -10379,9 +10402,9 @@ function scenarioOpen(){return !!(modalView&&modalView.type==="scenario");}
 function renderScenario(){
   modalTitle.textContent="Comparar cenários";
   modalBody.innerHTML="";
-  const saveBtn=el("button","btn tiny",baseline?"Regravar “Actual”":"Guardar o estado como “Actual”");
+  const saveBtn=el("button","btn tiny",baseline?"Regravar “Atual”":"Guardar o estado como “Atual”");
   saveBtn.type="button";
-  saveBtn.onclick=()=>saveBaseline(baseline?baseline.label:"Actual");
+  saveBtn.onclick=()=>saveBaseline(baseline?baseline.label:"Atual");
   const extra=[saveBtn];
   if(baseline){
     const clr=el("button","btn tiny","Esquecer o cenário");
@@ -10392,22 +10415,22 @@ function renderScenario(){
   modalBody.append(viewBar(
     baseline
       ? "Retrato guardado a "+new Date(baseline.at).toLocaleString("pt-PT")+". Tudo o que editou desde então é a proposta."
-      : "Guarde um retrato do estado actual; depois edite à vontade e volte aqui para ver o que mudou.",
+      : "Guarde um retrato do estado atual; depois edite à vontade e volte aqui para ver o que mudou.",
     extra));
   if(!baseline){
     modalBody.append(el("div","empty-note",
-      "Sem cenário de referência. Guarde o estado actual para começar a comparar."));
+      "Sem cenário de referência. Guarde o estado atual para começar a comparar."));
     modal.classList.add("open");
     return;
   }
   const d=scenarioDiff();
   const n=diffCount(d);
   const slide=el("div","sc-morph");
-  slide.append(el("span","sc-end","Actual"));
+  slide.append(el("span","sc-end","Atual"));
   const rng=el("input");
   rng.type="range";rng.min="0";rng.max="100";rng.step="1";
   rng.value=String(Math.round(morphT*100));
-  rng.setAttribute("aria-label","Transição entre o cenário actual e a proposta");
+  rng.setAttribute("aria-label","Transição entre o cenário atual e a proposta");
   rng.oninput=()=>applyMorph(+rng.value/100);
   slide.append(rng,el("span","sc-end","Proposta"));
   const reset=el("button","btn tiny","Repor");
@@ -10474,7 +10497,7 @@ function parsePasted(text){
   /* Detectar o cabeçalho sem comer dados. A regra anterior procurava
      "servi" em qualquer célula — e "Divisão de Serviços Urbanos", que é
      precisamente o tipo de unidade que se cola aqui, era engolida como se
-     fosse um cabeçalho. Agora exige-se igualdade exacta em duas colunas e
+     fosse um cabeçalho. Agora exige-se igualdade exata em duas colunas e
      que a coluna do nível não seja um número (se for, é uma linha de dados). */
   const norm=s=>String(s==null?"":s).toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
@@ -10586,33 +10609,33 @@ let palItems=[],palIdx=0;
 
 function paletteActions(){
   return [
-    {kind:"Acção",label:"Organograma 2D",run:showOrgChart},
-    {kind:"Acção",label:"Fluxogramas",run:showFlowIndex},
-    {kind:"Acção",label:"Estado da rede",run:showHealth},
-    {kind:"Acção",label:"Guardar como app (instalar)",run:askToInstall},
-    {kind:"Acção",label:"Vistas — galeria",run:showViewGallery},
-    {kind:"Acção",label:"Vista: Matriz Nó × Procedimento",run:()=>showView("matrix")},
-    {kind:"Acção",label:"Vista: Mapa de fluxo (Sankey)",run:()=>showView("sankey")},
-    {kind:"Acção",label:"Vista: Mural de procedimentos",run:()=>showView("mural")},
-    {kind:"Acção",label:"Vista: Mapa de metro",run:()=>showView("metro")},
-    {kind:"Acção",label:"Vista: Organograma oficial",run:()=>showView("oficial")},
-    {kind:"Acção",label:"Vista: Vista do munícipe",run:()=>showView("municipe")},
-    {kind:"Acção",label:"Modo continuidade — ausências e substituições",run:showContinuity},
-    {kind:"Acção",label:"Comparar cenários (actual → proposta)",run:showScenario},
-    {kind:"Acção",label:"Colar do Excel — criar unidades em massa",run:showPaste},
-    {kind:"Acção",label:"Modo ligar (arrastar para criar tarefas)",run:()=>setLinkMode(!linkMode)},
-    {kind:"Acção",label:"Modo apresentação",run:()=>togglePresent(true)},
-    {kind:"Acção",label:"Um dia na Junta — reproduzir tudo",
+    {kind:"Ação",label:"Organograma 2D",run:showOrgChart},
+    {kind:"Ação",label:"Fluxogramas",run:showFlowIndex},
+    {kind:"Ação",label:"Estado da rede",run:showHealth},
+    {kind:"Ação",label:"Guardar como app (instalar)",run:askToInstall},
+    {kind:"Ação",label:"Vistas — galeria",run:showViewGallery},
+    {kind:"Ação",label:"Vista: Matriz Nó × Procedimento",run:()=>showView("matrix")},
+    {kind:"Ação",label:"Vista: Mapa de fluxo (Sankey)",run:()=>showView("sankey")},
+    {kind:"Ação",label:"Vista: Mural de procedimentos",run:()=>showView("mural")},
+    {kind:"Ação",label:"Vista: Mapa de metro",run:()=>showView("metro")},
+    {kind:"Ação",label:"Vista: Organograma oficial",run:()=>showView("oficial")},
+    {kind:"Ação",label:"Vista: Vista do munícipe",run:()=>showView("municipe")},
+    {kind:"Ação",label:"Modo continuidade — ausências e substituições",run:showContinuity},
+    {kind:"Ação",label:"Comparar cenários (atual → proposta)",run:showScenario},
+    {kind:"Ação",label:"Colar do Excel — criar unidades em massa",run:showPaste},
+    {kind:"Ação",label:"Modo ligar (arrastar para criar tarefas)",run:()=>setLinkMode(!linkMode)},
+    {kind:"Ação",label:"Modo apresentação",run:()=>togglePresent(true)},
+    {kind:"Ação",label:"Um dia na Junta — reproduzir tudo",
       run:()=>startPlayback(processes.filter(p=>p._visible),{label:"Um dia na Junta"})},
-    {kind:"Acção",label:"Recentrar a vista",run:resetView},
-    {kind:"Acção",label:"Guardar vista como imagem",run:snapshotPNG},
-    {kind:"Acção",label:"Guardar vista actual",run:addBookmark},
-    {kind:"Acção",label:"Anular",run:undoAction},
-    {kind:"Acção",label:"Refazer",run:redoAction},
-    {kind:"Acção",label:"Novo procedimento",run:()=>{const p=createLayer();showFlowchart(p);}},
-    {kind:"Acção",label:"Exportar dataset (JSON)",run:()=>document.getElementById("exportBtn").click()},
-    {kind:"Acção",label:"Exportar PDF",run:()=>document.getElementById("pdfBtn").click()},
-    {kind:"Acção",label:"Ajuda e atalhos",run:openHelp}
+    {kind:"Ação",label:"Recentrar a vista",run:resetView},
+    {kind:"Ação",label:"Guardar vista como imagem",run:snapshotPNG},
+    {kind:"Ação",label:"Guardar vista atual",run:addBookmark},
+    {kind:"Ação",label:"Anular",run:undoAction},
+    {kind:"Ação",label:"Refazer",run:redoAction},
+    {kind:"Ação",label:"Novo procedimento",run:()=>{const p=createLayer();showFlowchart(p);}},
+    {kind:"Ação",label:"Exportar dataset (JSON)",run:()=>document.getElementById("exportBtn").click()},
+    {kind:"Ação",label:"Exportar PDF",run:()=>document.getElementById("pdfBtn").click()},
+    {kind:"Ação",label:"Ajuda e atalhos",run:openHelp}
   ];
 }
 function buildPaletteItems(){
@@ -10632,7 +10655,7 @@ function buildPaletteItems(){
 }
 function scoreItem(it,q){
   const l=String(it.label||"").toLowerCase();
-  if(!q)return it.kind==="Acção"?2:1;
+  if(!q)return it.kind==="Ação"?2:1;
   const i=l.indexOf(q);
   if(i===0)return 100;
   if(i>0)return 60-Math.min(40,i);
@@ -10698,7 +10721,7 @@ if(paletteEl)paletteEl.addEventListener("pointerdown",e=>{if(e.target===paletteE
 /* ============================================================
    SMALL POLISH — bookmarks, font scale, initials, inline rename
 ============================================================ */
-const BM_KEY="of.bookmarks.v1", FS_KEY="of.fontscale.v1";
+const BM_KEY="of.bookmarks.v1", FS_KEY="of.fontscale.v1", TH_KEY="of.theme.v1";
 function loadBookmarks(){
   try{const l=JSON.parse(storageGet(BM_KEY)||"[]");return Array.isArray(l)?l:[];}catch(e){return [];}
 }
@@ -11018,7 +11041,9 @@ updateLayerCounts();
 renderNodeList();
 renderAgentsTab();
 renderGroups();
-applyTheme("calcada",{silent:true});
+// Calçada é o arranque por omissão, mas uma escolha anterior manda nela.
+const temaGuardado=storageGet(TH_KEY);
+applyTheme(THEMES[temaGuardado]?temaGuardado:"calcada",{silent:true});
 syncThemeButtons();
 applyScene(0);
 syncPlay();

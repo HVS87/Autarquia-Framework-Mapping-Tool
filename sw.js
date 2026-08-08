@@ -2,7 +2,7 @@
    Service worker — "guardar como app"
 
    Faz duas coisas. Primeira: sem um service worker com um handler de fetch,
-   o Chrome nunca oferece a instalação, por muito correcto que o manifesto
+   o Chrome nunca oferece a instalação, por muito correto que o manifesto
    esteja. Segunda, e a que interessa a quem anda no terreno: depois da
    primeira visita a ferramenta abre sem rede — numa junta com internet
    intermitente, isso é a diferença entre servir e não servir.
@@ -64,7 +64,7 @@ const isThree = url => url.startsWith("https://cdnjs.cloudflare.com/ajax/libs/th
 
 /* Guardar só o que vale a pena voltar a servir. Sem este crivo, um 500
    passageiro do servidor ficava na cache e passava a ser a resposta offline
-   para sempre; e uma resposta vinda de um redireccionamento rebenta quando
+   para sempre; e uma resposta vinda de um redirecionamento rebenta quando
    mais tarde é usada para uma navegação. */
 function guardavel(r) {
   return !!r && r.status === 200 && !r.redirected &&
@@ -113,7 +113,7 @@ self.addEventListener("fetch", e => {
      O pedido segue TAL COMO VEIO. Refazê-lo com outro modo (mode:"cors" sobre
      um <script> que não pediu CORS) pode falhar — e sem o Three.js não há 3D
      nenhum, o que é bem pior do que não haver service worker. A tag do script
-     leva crossorigin="anonymous" para a resposta ser inspeccionável e caber na
+     leva crossorigin="anonymous" para a resposta ser inspecionável e caber na
      cache; se um dia deixar de levar, isto continua a servir, só não guarda. */
   if (isThree(url.href)) {
     e.respondWith((async () => {
@@ -126,7 +126,7 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  /* Recursos próprios: responde da cache e actualiza em segundo plano. */
+  /* Recursos próprios: responde da cache e atualiza em segundo plano. */
   if (sameOrigin) {
     e.respondWith((async () => {
       const hit = await caches.match(req);
