@@ -124,6 +124,13 @@
   .fey-mais text{fill:var(--gold);font-size:11px;font-weight:700}
   .fey-mais:hover circle{fill:var(--gold)}
   .fey-mais:hover text{fill:var(--bg-deep)}
+  .fey-menos{cursor:pointer}
+  .fey-menos circle{fill:var(--panel);stroke:#E0554F;stroke-width:1.2}
+  .fey-menos text{fill:#E0554F;font-size:12px;font-weight:700}
+  .fey-menos:hover circle{fill:#E0554F}
+  .fey-menos:hover text{fill:#fff}
+  .fey-resp{cursor:pointer}
+  .fey-resp:hover text{fill:var(--gold)}
   .fey-done-btn.done{border-color:var(--gold);color:var(--gold)}
 
   /* ---- Escolha de nódulo / responsável (fluxo de nova tarefa) ---- */
@@ -152,6 +159,31 @@
     padding:8px 10px;cursor:pointer}
   .ap-agente:hover{border-color:var(--gold)}
   .ap-agente .cat{margin-left:auto;font-size:.68rem;color:var(--ink-dim)}
+
+  /* ---- Editor rápido de tarefa e pergunta de cascata ---- */
+  #taskEdit{position:fixed;inset:0;z-index:46;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #taskEdit.open{display:grid;place-items:center}
+  #teCard{width:min(440px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px;animation:confirmIn .2s ease}
+  #teCard h3{font-size:.98rem;margin:0 0 10px;font-weight:600}
+  .te-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;margin-bottom:12px}
+  .te-grid label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+  .te-grid input,.te-grid textarea{font:inherit;font-size:.82rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:6px 8px;min-width:0}
+  .te-grid textarea{resize:vertical}
+  .te-grid input:focus,.te-grid textarea:focus{outline:none;border-color:var(--gold)}
+  .te-grid .btn{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .danger-btn{border-color:#E0554F;color:#E0554F}
+  .danger-btn:hover{background:rgba(224,85,79,0.12)}
+  #optDialog{position:fixed;inset:0;z-index:52;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #optDialog.open{display:grid;place-items:center}
+  #odCard{width:min(470px,calc(100vw - 48px));padding:20px;border-radius:14px;animation:confirmIn .2s ease}
+  #odCard h3{font-size:.95rem;margin:0 0 4px;font-weight:600}
+  #odCard .sub{font-size:.78rem;color:var(--ink-dim);margin-bottom:12px}
+  #odBtns{display:flex;flex-direction:column;gap:6px}
+  #odBtns .btn{text-align:left}
 
   /* Selos de aviso — o "!" num triângulo, no canto superior direito da linha */
   .row{position:relative}
@@ -2133,6 +2165,39 @@
   </div>
 </div>
 
+<!-- Editor rápido de tarefa (vista de interações) -->
+<div id="taskEdit" role="dialog" aria-modal="true" aria-labelledby="teTitle">
+  <div id="teCard" class="glass">
+    <h3 id="teTitle">Editar tarefa</h3>
+    <div class="te-grid">
+      <label for="teNome">Nome</label>
+      <input id="teNome" type="text" maxlength="40" placeholder="rótulo curto no diagrama">
+      <label for="teDur">Duração</label>
+      <input id="teDur" type="text" maxlength="20">
+      <label for="teDesc">Descrição</label>
+      <textarea id="teDesc" maxlength="400" rows="3"></textarea>
+      <label>Responsável</label>
+      <button class="btn tiny" id="teResp" title="Alterar ou anular o responsável"></button>
+      <label>Destino</label>
+      <button class="btn tiny" id="teDest" title="Mudar o nódulo de chegada desta tarefa"></button>
+    </div>
+    <div class="card-btns">
+      <button class="btn danger-btn" id="teDel" title="Apagar esta tarefa">− Apagar tarefa</button>
+      <span style="flex:1"></span>
+      <button class="btn primary" id="teOk">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pergunta com várias opções (cascatas de tarefas) -->
+<div id="optDialog" role="dialog" aria-modal="true" aria-labelledby="odTitle">
+  <div id="odCard" class="glass">
+    <h3 id="odTitle"></h3>
+    <div class="sub" id="odSub"></div>
+    <div id="odBtns"></div>
+  </div>
+</div>
+
 <div id="installHow" role="dialog" aria-modal="true" aria-labelledby="ihTitle">
   <div id="ihCard" class="glass">
     <h3 id="ihTitle">Guardar como aplicação</h3>
@@ -2469,6 +2534,7 @@ function makeLayerData(name,color){
 function makeTaskData(p,a,b,desc,agentId,duration){
   const t={id:"t"+(++taskCounter), a, b,
     desc:desc||"Descrever a tarefa — entregável, âmbito e cadência.",
+    nome:"",                      // rótulo curto para o diagrama; vazio usa a descrição
     agent:agentId||null, duration:duration||"1 dia",
     proc:processes.indexOf(p), custom:false};
   p.tasks.push(t);
@@ -6588,6 +6654,12 @@ function renderTaskDetail(head,closeBtn){
   grid.append(el("label",null,"Responsável"));
   grid.append(agentSelect(t.a,t.agent,v=>{t.agent=v;markDirty();},true));
 
+  grid.append(el("label",null,"Nome"));
+  const nomeIn=el("input");nomeIn.type="text";nomeIn.value=t.nome||"";nomeIn.maxLength=40;
+  nomeIn.setAttribute("aria-label","Nome curto da tarefa — aparece no diagrama");
+  nomeIn.placeholder="rótulo curto no diagrama";
+  nomeIn.addEventListener("change",()=>{t.nome=nomeIn.value.trim().slice(0,40);markDirty();});
+  grid.append(nomeIn);
   grid.append(el("label",null,"Duração"));
   const dur=el("input");dur.type="text";dur.value=t.duration;dur.maxLength=20;
   dur.setAttribute("aria-label","Duração da tarefa");
@@ -6848,8 +6920,10 @@ confirmNo.onclick=()=>settleConfirm(false);
 confirmEl.addEventListener("pointerdown",e=>{if(e.target===confirmEl)settleConfirm(false);});
 addEventListener("keydown",e=>{
   if(e.key!=="Escape")return;
+  if(optDialogEl&&optDialogEl.classList.contains("open")){fechaOpcoes(null);return;}
   if(agentPickEl&&agentPickEl.classList.contains("open")){closeAgentPick();return;}
   if(nodePickEl&&nodePickEl.classList.contains("open")){closeNodePick();return;}
+  if(taskEditEl&&taskEditEl.classList.contains("open")){closeTaskEdit();return;}
   if(reassignEl&&reassignEl.classList.contains("open")){closeReassign(null);return;}
   if(paletteEl&&paletteEl.classList.contains("open")){closePalette();return;}
   if(coachEl&&coachEl.classList.contains("open")){closeCoach();return;}
@@ -7603,7 +7677,7 @@ function svgEl(tag,attrs,parent){
   if(parent)parent.appendChild(e);
   return e;
 }
-let feyProcId=null,feyVB=null;
+let feyProcId=null,feyVB=null,feyReabrir=null;
 function showFeynman(p){navigateTo({type:"feynman",layer:p});}
 function feyLayout(p){
   const g=procGraph(p);
@@ -7643,6 +7717,12 @@ function renderFeynman(p){
   bMais.title="Aproximar";bMais.setAttribute("aria-label","Aproximar");
   const bFit=el("button","btn tiny","Ajustar");
   bFit.title="Voltar a enquadrar o diagrama inteiro";
+  const bUndo=el("button","btn tiny icon-round","↶");
+  bUndo.title="Anular (Ctrl+Z)";bUndo.setAttribute("aria-label","Anular");
+  bUndo.onclick=()=>undoAction();
+  const bRedo=el("button","btn tiny icon-round","↷");
+  bRedo.title="Refazer (Ctrl+Shift+Z)";bRedo.setAttribute("aria-label","Refazer");
+  bRedo.onclick=()=>redoAction();
   const bNova=el("button","btn tiny primary","+ Nova tarefa");
   bNova.title="Criar uma tarefa escolhendo origem e destino no organograma";
   bNova.onclick=()=>startAddTask(p,null);
@@ -7656,7 +7736,7 @@ function renderFeynman(p){
   bFluxo.title="Voltar à vista de fluxograma";
   bFluxo.onclick=()=>showFlowchart(p);
   const sep=el("span","sep");
-  acts.append(bMenos,bMais,bFit,bNova,bDone,sep,bFluxo);
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo);
   modalBody.append(acts);
 
   const wrap=el("div");wrap.id="feyWrap";
@@ -7711,27 +7791,47 @@ function renderFeynman(p){
     const a=L.pos[t.a],b=L.pos[t.b];
     if(!a||!b)return;
     const ga=svgEl("g",{class:"fey-aresta",tabindex:0,role:"button"},svg);
-    svgEl("title",{},ga).textContent=(t.desc||"Tarefa")+" — abrir o painel da tarefa";
+    svgEl("title",{},ga).textContent=(t.nome||t.desc||"Tarefa")+" — editar nome, descrição e responsável";
     // linha visível + zona de clique gorda por cima
     svgEl("line",{class:"tr",x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:corProc,
       "stroke-width":2.2,"marker-end":"url(#feySeta)"},ga);
     svgEl("line",{class:"hit",x1:a.x,y1:a.y,x2:b.x,y2:b.y},ga);
     const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
     const ag=t.agent?agentById(t.agent):null;
-    const rot=String(t.desc||"").slice(0,22)+(String(t.desc||"").length>22?"…":"");
+    const base=String(t.nome||t.desc||"");
+    const rot=base.slice(0,22)+(base.length>22?"…":"");
     const tx=svgEl("text",{x:mx,y:my-10,"text-anchor":"middle","font-size":10.5,fill:ink},ga);
     tx.textContent=rot;
-    svgEl("text",{x:mx,y:my+16,"text-anchor":"middle","font-size":9.5,fill:dim},ga)
-      .textContent=(ag?ag.name:"— sem responsável —")+" · "+t.duration;
     if(!t.agent){
       // o "!" amarelo, no canto superior direito da tarefa
       const wg=svgEl("g",{transform:"translate("+(mx+34)+","+(my-30)+")"},ga);
       wg.innerHTML=triSVG("yellow",13);
       svgEl("title",{},wg).textContent="Tarefa sem responsável";
     }
-    const abrir=()=>selectTask(t);
+    const abrir=()=>openTaskEdit(p,t);
+    ga.addEventListener("pointerdown",e=>e.stopPropagation());
     ga.addEventListener("click",abrir);
     ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
+    /* O responsável é um alvo próprio: clicar nele vai direto à troca. */
+    const gAg=svgEl("g",{class:"fey-resp",tabindex:0,role:"button"},svg);
+    svgEl("title",{},gAg).textContent="Alterar ou anular o responsável";
+    svgEl("text",{x:mx,y:my+16,"text-anchor":"middle","font-size":9.5,fill:dim,
+      "text-decoration":"underline"},gAg)
+      .textContent=(ag?ag.name:"— sem responsável —")+" · "+t.duration;
+    const trocaResp=()=>openAgentPickFor(p,t);
+    gAg.addEventListener("pointerdown",e=>e.stopPropagation());
+    gAg.addEventListener("click",e=>{e.stopPropagation();trocaResp();});
+    gAg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trocaResp();}});
+    /* E o "−": apagar esta tarefa, com a pergunta sobre as encadeadas. */
+    const menos=svgEl("g",{class:"fey-menos",transform:"translate("+(mx-34)+","+(my-30)+")",
+      tabindex:0,role:"button"},svg);
+    svgEl("title",{},menos).textContent="Apagar esta tarefa";
+    svgEl("circle",{cx:0,cy:0,r:7},menos);
+    svgEl("text",{x:0,y:3.4,"text-anchor":"middle"},menos).textContent="−";
+    const apaga=()=>apagarTarefaFey(p,t);
+    menos.addEventListener("pointerdown",e=>e.stopPropagation());
+    menos.addEventListener("click",e=>{e.stopPropagation();apaga();});
+    menos.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();apaga();}});
   });
 
   // ---- vértices (nódulos) ----
@@ -7751,6 +7851,7 @@ function renderFeynman(p){
     svgEl("circle",{cx:0,cy:0,r:8},mais);
     svgEl("text",{x:0,y:3.6,"text-anchor":"middle"},mais).textContent="+";
     const go=()=>startAddTask(p,n);
+    mais.addEventListener("pointerdown",e=>e.stopPropagation());
     mais.addEventListener("click",e=>{e.stopPropagation();go();});
     mais.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
   });
@@ -7790,12 +7891,16 @@ function renderFeynman(p){
   let panIni=null,pinIni=null;
   svg.addEventListener("pointerdown",e=>{
     dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    svg.setPointerCapture(e.pointerId);
-    if(dedos.size===1){panIni={cx:e.clientX,cy:e.clientY,vb:{...vb}};svg.classList.add("arrastando");}
+    /* NÃO capturar já: a captura retarga o pointerup para o svg e o browser
+       deixa de compor o click sobre o "+" ou a aresta. Só se captura quando
+       o ponteiro se move de facto — um toque parado é um clique. */
+    if(dedos.size===1){panIni={cx:e.clientX,cy:e.clientY,vb:{...vb},cap:false};}
     else if(dedos.size===2){
+      [...dedos.keys()].forEach(id=>{try{svg.setPointerCapture(id);}catch(err){}});
       const pts=[...dedos.values()];
       pinIni={d:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),vb:{...vb}};
       panIni=null;
+      svg.classList.add("arrastando");
     }
   });
   svg.addEventListener("pointermove",e=>{
@@ -7816,6 +7921,12 @@ function renderFeynman(p){
         aplicaVB();
       }
     }else if(panIni){
+      if(!panIni.cap){
+        if(Math.hypot(e.clientX-panIni.cx,e.clientY-panIni.cy)<5)return;
+        try{svg.setPointerCapture(e.pointerId);}catch(err){}
+        panIni.cap=true;
+        svg.classList.add("arrastando");
+      }
       vb={x:panIni.vb.x-(e.clientX-panIni.cx)/r.width*panIni.vb.w,
           y:panIni.vb.y-(e.clientY-panIni.cy)/r.height*panIni.vb.h,
           w:panIni.vb.w,h:panIni.vb.h};
@@ -7869,6 +7980,9 @@ function npTitulos(){
   if(npState.modo==="agente"){
     T.textContent="Nova pessoa — escolha o nódulo";
     S.textContent="Clique no nódulo onde a pessoa vai trabalhar.";
+  }else if(npState.modo==="retarget"){
+    T.textContent="Novo destino da tarefa";
+    S.textContent="De “"+npState.origem.name+"” até… clique no novo nódulo de chegada.";
   }else if(!npState.origem){
     T.textContent="Nova tarefa — escolha o nódulo de origem";
     S.textContent="Clique no nódulo de onde a tarefa parte.";
@@ -7956,6 +8070,13 @@ function npPick(n,gEl,ancoraFio){
     selectAgent(a);
     return;
   }
+  if(npState.modo==="retarget"){
+    const st=npState;
+    if(n.id===st.t.a){flash("O destino não pode ser a própria origem.");return;}
+    if(n.id===st.t.b){closeNodePick();return;}   // escolheu o mesmo: nada a fazer
+    retargetAplica(st.p,st.t,n);
+    return;
+  }
   if(!npState.origem){
     npState.origem=n;
     gEl.classList.add("pk-origem");
@@ -7995,11 +8116,186 @@ function apChoose(agentId){
   if(!apState)return;
   const st=apState;
   closeAgentPick();
+  /* Modo edição: trocar (ou anular) o responsável de uma tarefa existente. */
+  if(st.editTask){
+    st.editTask.agent=agentId;
+    markDirty();updateLayerCounts();
+    flash(agentId?"Responsável atualizado.":"Responsável anulado — tarefa assinalada a amarelo.");
+    refreshTaskEditRows();
+    if(modalView&&modalView.type==="feynman")renderFeynman(st.p);
+    return;
+  }
   const t=createTask(processes.indexOf(st.p),st.origem.id,st.destino.id,undefined,agentId,undefined);
   if(!t){flash("Não foi possível criar a tarefa.",{type:"err"});return;}
   flash(agentId?"Tarefa criada.":"Tarefa criada sem responsável — assinalada a amarelo.");
   if(modalView&&modalView.type==="feynman"&&modalView.layer===st.p)renderFeynman(st.p);
   else showFeynman(st.p);
+}
+function openAgentPickFor(p,t){
+  openAgentPick({p,origem:byId(t.a),destino:byId(t.b),editTask:t});
+}
+
+/* ============================================================
+   EDITOR RÁPIDO DE TAREFA + PERGUNTAS DE CASCATA
+   Clicar numa aresta do diagrama abre isto: nome, descrição, duração,
+   responsável, destino e o "−". Apagar ou mudar o destino pergunta o que
+   fazer às tarefas encadeadas a jusante — recuar um passo, seguir do novo
+   destino, ou cair com esta. Cada resposta é UM passo de histórico.
+============================================================ */
+const taskEditEl=document.getElementById("taskEdit");
+const optDialogEl=document.getElementById("optDialog");
+let teState=null,odResolve=null;
+function closeTaskEdit(){if(taskEditEl)taskEditEl.classList.remove("open");teState=null;}
+function refreshTaskEditRows(){
+  if(!teState)return;
+  const t=teState.t;
+  const ag=t.agent?agentById(t.agent):null;
+  document.getElementById("teResp").textContent=ag?ag.name:"— sem responsável —";
+  const nd=byId(t.b);
+  document.getElementById("teDest").textContent=nd?nd.name:"?";
+}
+function openTaskEdit(p,t){
+  teState={p,t};
+  document.getElementById("teNome").value=t.nome||"";
+  document.getElementById("teDur").value=t.duration||"";
+  document.getElementById("teDesc").value=t.desc||"";
+  refreshTaskEditRows();
+  taskEditEl.classList.add("open");
+}
+document.getElementById("teOk").onclick=()=>closeTaskEdit();
+taskEditEl.addEventListener("pointerdown",e=>{if(e.target===taskEditEl)closeTaskEdit();});
+document.getElementById("teNome").addEventListener("change",function(){
+  if(!teState)return;teState.t.nome=this.value.trim().slice(0,40);markDirty();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+});
+document.getElementById("teDur").addEventListener("change",function(){
+  if(!teState)return;teState.t.duration=this.value.trim().slice(0,20)||"—";markDirty();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+});
+document.getElementById("teDesc").addEventListener("change",function(){
+  if(!teState)return;teState.t.desc=this.value.slice(0,400);markDirty();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+});
+document.getElementById("teResp").onclick=()=>{if(teState)openAgentPickFor(teState.p,teState.t);};
+document.getElementById("teDest").onclick=()=>{if(teState)startRetarget(teState.p,teState.t);};
+document.getElementById("teDel").onclick=()=>{if(teState)apagarTarefaFey(teState.p,teState.t);};
+
+/* Pergunta com N opções; devolve a chave escolhida, ou null se cancelar. */
+function askOpcoes(titulo,sub,ops){
+  return new Promise(res=>{
+    odResolve=res;
+    document.getElementById("odTitle").textContent=titulo;
+    document.getElementById("odSub").textContent=sub;
+    const box=document.getElementById("odBtns");
+    box.innerHTML="";
+    ops.forEach(o=>{
+      const b=el("button","btn"+(o.danger?" danger-btn":"")+(o.primary?" primary":""),o.label);
+      b.onclick=()=>fechaOpcoes(o.k);
+      box.append(b);
+    });
+    optDialogEl.classList.add("open");
+    const f=box.querySelector("button");if(f)f.focus();
+  });
+}
+function fechaOpcoes(v){
+  optDialogEl.classList.remove("open");
+  const r=odResolve;odResolve=null;
+  if(r)r(v===undefined?null:v);
+}
+optDialogEl.addEventListener("pointerdown",e=>{if(e.target===optDialogEl)fechaOpcoes(null);});
+
+/* Várias mutações, um só passo de anular: o recordHistory salta enquanto
+   historyBusy estiver alto, e o markDirty final grava o antes-de-tudo. */
+function loteHistorico(fn){
+  historyBusy=true;
+  try{fn();}finally{historyBusy=false;}
+  markDirty();
+}
+/* As tarefas a jusante: tudo o que se alcança a partir do destino de t. */
+function tarefasAJusante(p,t){
+  const alcanca=new Set([t.b]);
+  const resto=p.tasks.filter(x=>x!==t);
+  const fora=[];
+  let mudou=true;
+  while(mudou){
+    mudou=false;
+    resto.forEach(x=>{
+      if(alcanca.has(x.a)&&fora.indexOf(x)<0){
+        fora.push(x);
+        if(!alcanca.has(x.b)){alcanca.add(x.b);mudou=true;}
+      }
+    });
+  }
+  return fora;
+}
+async function apagarTarefaFey(p,t){
+  if(p.tasks.indexOf(t)<0)return;
+  const rot=t.nome||String(t.desc||"tarefa").slice(0,30);
+  const seg=tarefasAJusante(p,t);
+  if(!seg.length){
+    if(!(await askConfirm("Apagar a tarefa “"+rot+"”?",{yes:"Apagar",danger:true})))return;
+    deleteTask(t);
+  }else{
+    const r=await askOpcoes("Apagar a tarefa “"+rot+"”?",
+      "Há "+seg.length+" tarefa(s) encadeada(s) a seguir a esta.",
+      [{k:"so",label:"Apagar só esta — as seguintes recuam um passo",primary:true},
+       {k:"cadeia",label:"Apagar esta e as "+seg.length+" seguintes",danger:true},
+       {k:null,label:"Cancelar"}]);
+    if(r===null)return;
+    loteHistorico(()=>{
+      if(r==="cadeia"){
+        seg.forEach(x=>deleteTask(x));
+        deleteTask(t);
+      }else{
+        /* As diretamente encadeadas recuam um passo: passam a partir da
+           origem da apagada. Uma que ficasse origem===destino cai também. */
+        p.tasks.filter(x=>x!==t&&x.a===t.b).forEach(x=>{
+          x.a=t.a;
+          if(x.a===x.b)deleteTask(x);else rebuildTaskVisual(x);
+        });
+        deleteTask(t);
+      }
+    });
+  }
+  closeTaskEdit();
+  if(modalView&&modalView.type==="feynman")renderFeynman(p);
+}
+/* Mudar o destino de uma tarefa, com a mesma pergunta sobre a cascata. */
+function startRetarget(p,t){
+  npState={modo:"retarget",p,t,origem:byId(t.a)};
+  buildNodePick();
+  nodePickEl.classList.add("open");
+}
+async function retargetAplica(p,t,n){
+  closeNodePick();
+  const diretas=p.tasks.filter(x=>x!==t&&x.a===t.b);
+  const jusante=tarefasAJusante(p,t);
+  let modo="seguir";
+  if(diretas.length){
+    const r=await askOpcoes("Mudar o destino para “"+n.name+"”?",
+      jusante.length+" tarefa(s) encadeada(s) partem do destino antigo.",
+      [{k:"seguir",label:"Manter — passam a partir de “"+n.name+"”",primary:true},
+       {k:"apagar",label:"Apagar as "+jusante.length+" tarefas seguintes",danger:true},
+       {k:null,label:"Cancelar"}]);
+    if(r===null)return;
+    modo=r;
+  }
+  loteHistorico(()=>{
+    if(modo==="apagar"){
+      jusante.forEach(x=>deleteTask(x));
+    }else{
+      diretas.forEach(x=>{
+        x.a=n.id;
+        if(x.a===x.b)deleteTask(x);else rebuildTaskVisual(x);
+      });
+    }
+    t.b=n.id;
+    rebuildTaskVisual(t);
+  });
+  updateLayerCounts();
+  refreshTaskEditRows();
+  if(modalView&&modalView.type==="feynman")renderFeynman(p);
+  flash("Destino atualizado.");
 }
 
 /* ---- Per-procedure export. One layout feeds the screen, the SVG and the PDF. ---- */
@@ -8137,7 +8433,7 @@ function renderTaskListAll(){
       const row=el("button","row task-row");
       row.type="button";
       row.title="Abrir o painel desta tarefa";
-      row.append(el("span","t-desc",t.desc||"(sem descrição)"));
+      row.append(el("span","t-desc",t.nome||t.desc||"(sem descrição)"));
       row.append(el("span","t-route",
         (A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")
         +(ag?(" · "+ag.name):"")
@@ -8448,7 +8744,7 @@ document.getElementById("exportBtn").onclick=()=>{
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
   };
@@ -8595,6 +8891,7 @@ importFile.onchange=()=>{
             typeof ct.desc==="string"?ct.desc.slice(0,400):undefined,
             ct.agent&&agentById(ct.agent)?ct.agent:null,
             typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
+          t.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
           t.custom=!!ct.custom;
           buildTaskVisual(t);
         });
@@ -9095,6 +9392,15 @@ function applyTheme(id,opts){
   rebuildHierLinks();
   processes.forEach(p=>{if(p.refreshLabel)p.refreshLabel();});
   renderNodeList();renderAgentsTab();renderGroups();renderDetail();refreshTaskTab();
+    /* O restauro reconstruiu `processes` e o clearSelection fechou o modal:
+       se o diagrama estava aberto, reabre-se já apontado ao objeto novo — e
+       se o procedimento deixou de existir (anulou-se a criação), fica fechado. */
+    if(feyReabrir){
+      const pf=layerById(feyReabrir);
+      feyReabrir=null;
+      if(pf){modalView={type:"feynman",layer:pf};modal.classList.add("open");renderFeynman(pf);}
+    }
+    if(typeof closeTaskEdit==="function")closeTaskEdit();
   if(!opts.silent)markDirty();
 }
 document.querySelectorAll("#themeRow .theme-btn").forEach(btn=>{
@@ -10200,7 +10506,7 @@ densityRange.addEventListener("input",applyDensity);
    página não existe. Sem prender o Tab, ele saía para os botões do painel e do
    HUD por trás do scrim — visíveis para o teclado, invisíveis para quem lá está. */
 function topDialog(){
-  const layers=[modal,coachEl,helpEl,tourEndEl,installEl,reassignEl,confirmEl,paletteEl,nodePickEl,agentPickEl]
+  const layers=[modal,coachEl,helpEl,tourEndEl,installEl,reassignEl,confirmEl,paletteEl,nodePickEl,agentPickEl,taskEditEl,optDialogEl]
     .filter(l=>l&&l.classList.contains("open"));
   if(!layers.length)return null;
   // O que estiver por cima é o que manda
@@ -11909,7 +12215,7 @@ function snapshotState(){
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
     theme:themeId
   });
@@ -11928,6 +12234,11 @@ function restoreState(json){
   let s=null;
   try{s=JSON.parse(json);}catch(e){return false;}
   if(!s||!Array.isArray(s.nodes)||!s.nodes.length)return false;
+  /* Se o diagrama de interações estava aberto, o clearSelection abaixo vai
+     fechá-lo — guarda-se o id do procedimento para o reabrir no fim, já
+     apontado ao objeto novo. */
+  feyReabrir=(modal.classList.contains("open")&&modalView&&modalView.type==="feynman"&&modalView.layer)
+    ?modalView.layer.id:null;
   historyBusy=true;
   try{
     clearSelection();
@@ -11999,6 +12310,7 @@ function restoreState(json){
           ct.agent&&agentById(ct.agent)?ct.agent:null,
           typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
         if(ct.id)t.id=ct.id;
+        t.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
         t.custom=!!ct.custom;
       });
     });
@@ -12019,6 +12331,15 @@ function restoreState(json){
     updateGround();
     updateLayerCounts();syncLayerRows();
     renderNodeList();renderAgentsTab();renderGroups();renderDetail();refreshTaskTab();
+    /* O restauro reconstruiu `processes` e o clearSelection fechou o modal:
+       se o diagrama estava aberto, reabre-se já apontado ao objeto novo — e
+       se o procedimento deixou de existir (anulou-se a criação), fica fechado. */
+    if(feyReabrir){
+      const pf=layerById(feyReabrir);
+      feyReabrir=null;
+      if(pf){modalView={type:"feynman",layer:pf};modal.classList.add("open");renderFeynman(pf);}
+    }
+    if(typeof closeTaskEdit==="function")closeTaskEdit();
     if(s.theme&&THEMES[s.theme]&&s.theme!==themeId){applyTheme(s.theme,{silent:true});syncThemeButtons();}
     syncDensityRange();updateEmptyHint();
   }catch(e){
