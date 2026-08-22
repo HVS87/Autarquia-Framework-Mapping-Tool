@@ -173,7 +173,13 @@
   #npConvList .conv-item .de{margin-left:auto;font-size:.68rem;color:var(--ink-dim);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%}
   #npConvList .conv-proc{font-weight:600}
+  #npConvBusca{width:100%;margin-top:6px;font:inherit;font-size:.8rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:8px;padding:6px 9px}
+  #npConvBusca:focus{outline:none;border-color:var(--gold)}
   #npConvList .conv-grupo-item{font-weight:600}
+  #npConvList .conv-item mark{background:none;color:var(--gold);font-weight:600}
+  #npConvList .conv-item .via{margin-left:auto;font-size:.66rem;color:var(--ink-dim);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%}
   #npConvList .gico{color:var(--gold);flex:none}
   #npConvList .conv-volta{color:var(--ink-dim);border-style:dashed}
 
@@ -2238,6 +2244,9 @@
       <button class="btn tiny" id="npConvTog" aria-expanded="false" aria-controls="npConvList">
         ⇢ Convergir para uma etapa existente
       </button>
+      <input id="npConvBusca" type="search" hidden autocomplete="off" spellcheck="false"
+        placeholder="Procurar procedimento, grupo ou etapa…"
+        aria-label="Procurar o procedimento para o qual convergir">
       <div id="npConvList" hidden></div>
     </div>
     <div class="card-btns"><button class="btn" id="npCancel">Cancelar</button></div>
@@ -8618,19 +8627,104 @@ function montaConvergencia(){
       lista.append(b);
     });
   };
+  /* Pesquisa preditiva. Sem acentos e sem maiúsculas dos dois lados: numa
+     ferramenta portuguesa, obrigar a escrever "Proteção" com o cedilha e o
+     til certos para achar o procedimento não é rigor, é um obstáculo. */
+  const sacode=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const realca=(txt,q)=>{
+    const sp=document.createElement("span");
+    const i=sacode(txt).indexOf(q);
+    if(i<0||!q){sp.textContent=txt;return sp;}
+    sp.append(document.createTextNode(txt.slice(0,i)));
+    const m=document.createElement("mark");m.textContent=txt.slice(i,i+q.length);
+    sp.append(m,document.createTextNode(txt.slice(i+q.length)));
+    return sp;
+  };
+  const desenhaBusca=(termo)=>{
+    const q=sacode(termo).trim();
+    lista.innerHTML="";
+    if(!q){desenhaRaiz();return;}
+    let achou=0;
+    const gs=groups.filter(g=>sacode(g.name).indexOf(q)>=0
+      &&g.layers.map(layerById).filter(Boolean).some(temEtapas));
+    if(gs.length){
+      lista.append(el("div","conv-grupo","Grupos"));
+      gs.forEach(g=>{
+        const membros=g.layers.map(layerById).filter(Boolean).filter(temEtapas);
+        const b=el("button","conv-item conv-grupo-item");
+        b.dataset.gid=g.id;
+        b.append(el("span","gico","▤"));
+        b.append(realca(g.name,q));
+        b.append(el("span","de",membros.length+" procedimento(s) ›"));
+        b.onclick=()=>desenhaGrupo(g);
+        lista.append(b);achou++;
+      });
+    }
+    const ps=processes.filter(pp=>sacode(pp.name).indexOf(q)>=0&&temEtapas(pp));
+    if(ps.length){
+      lista.append(el("div","conv-grupo","Procedimentos"));
+      ps.forEach(pp=>{
+        const b=el("button","conv-item conv-proc");
+        b.dataset.pid=pp.id;
+        const s=el("span","swatch");s.style.background=hex(pp.color);
+        b.append(s);
+        b.append(realca(pp.name+(pp===pAtual?" (este)":""),q));
+        b.append(el("span","de",etapasDoProc(pp).length+" etapa(s) ›"));
+        b.onclick=()=>desenhaEtapas(pp,()=>desenhaBusca(termo));
+        lista.append(b);achou++;
+      });
+    }
+    /* As etapas entram na mesma pesquisa: quem sabe o nome da unidade não
+       tem de descobrir primeiro em que procedimento ela está. */
+    const ets=[];
+    processes.forEach(pp=>etapasDoProc(pp).forEach(it=>{
+      if(sacode(it.node.name).indexOf(q)>=0||sacode(nodeAddress(it.node)).indexOf(q)>=0)
+        ets.push({pp,it});
+    }));
+    if(ets.length){
+      lista.append(el("div","conv-grupo","Etapas"));
+      ets.slice(0,40).forEach(({pp,it})=>{
+        const b=el("button","conv-item");
+        b.dataset.nid=it.node.id;b.dataset.pid=pp.id;
+        b.append(realca(it.node.name,q));
+        const via=el("span","via",pp.name);
+        b.append(via);
+        b.title="Convergir para “"+it.node.name+"”, etapa de “"+pp.name+"”";
+        b.onclick=()=>{
+          const alvo=byId(it.node.id);
+          if(!alvo)return;
+          npPick(alvo,document.querySelector('#npSvg .pk-caixa[data-id="'+alvo.id+'"]'),null);
+        };
+        lista.append(b);achou++;
+      });
+      if(ets.length>40)lista.append(el("div","empty-note","… e mais "+(ets.length-40)+". Escreva mais para afinar."));
+    }
+    if(!achou)lista.append(el("div","empty-note","Nada com “"+termo.trim()+"”."));
+  };
+  const busca=document.getElementById("npConvBusca");
+  busca.value="";
+  busca.oninput=()=>desenhaBusca(busca.value);
+  busca.onkeydown=e=>{
+    if(e.key==="Escape"&&busca.value){e.stopPropagation();busca.value="";desenhaRaiz();return;}
+    if(e.key==="Enter"){
+      e.preventDefault();
+      const pri=lista.querySelector(".conv-item");
+      if(pri)pri.click();
+    }
+  };
   const desenhaProcs=desenhaRaiz;   // o botão de abrir volta sempre à raiz
   const totalEtapas=processes.reduce((s,pp)=>s+etapasDoProc(pp).length,0);
   desenhaRaiz();
   cx.hidden=false;
   // fechada por omissão: o organograma é o caminho principal
-  lista.hidden=true;
+  lista.hidden=true;busca.hidden=true;
   tog.setAttribute("aria-expanded","false");
   tog.textContent="⇢ Convergir para uma etapa existente"+(totalEtapas?(" ("+totalEtapas+")"):"");
   tog.onclick=()=>{
     const abrir=lista.hidden;
-    lista.hidden=!abrir;
+    lista.hidden=!abrir;busca.hidden=!abrir;
     tog.setAttribute("aria-expanded",String(abrir));
-    if(abrir)desenhaProcs();     // reabrir volta sempre à lista de procedimentos
+    if(abrir){busca.value="";desenhaRaiz();busca.focus();}
   };
 }
 function npPick(n,gEl,ancoraFio){
