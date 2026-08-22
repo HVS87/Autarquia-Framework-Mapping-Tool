@@ -108,6 +108,55 @@
   #secTarefas{display:none}
   body[data-tab="tarefas"] #panel>#secTarefas{display:block}
 
+  /* ---- Vista de interações (diagrama de Feynman) ---- */
+  #feyWrap{position:relative;overflow:hidden;border:1px solid var(--hairline);border-radius:10px;
+    background:rgba(127,127,127,0.05);touch-action:none}
+  #feySvg{display:block;width:100%;height:min(58vh,520px);cursor:grab}
+  #feySvg.arrastando{cursor:grabbing}
+  .fey-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+  .fey-acts .sep{flex:1}
+  .fey-aresta{cursor:pointer}
+  .fey-aresta .hit{stroke:transparent;stroke-width:14;fill:none}
+  .fey-aresta:hover .tr{stroke-width:3.4}
+  .fey-vert{cursor:default}
+  .fey-mais{cursor:pointer}
+  .fey-mais circle{fill:var(--panel);stroke:var(--gold);stroke-width:1.2}
+  .fey-mais text{fill:var(--gold);font-size:11px;font-weight:700}
+  .fey-mais:hover circle{fill:var(--gold)}
+  .fey-mais:hover text{fill:var(--bg-deep)}
+  .fey-done-btn.done{border-color:var(--gold);color:var(--gold)}
+
+  /* ---- Escolha de nódulo / responsável (fluxo de nova tarefa) ---- */
+  #nodePick,#agentPick{position:fixed;inset:0;z-index:48;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #nodePick.open,#agentPick.open{display:grid;place-items:center}
+  #npCard{width:min(760px,100%);max-height:calc(100vh - 64px);display:flex;flex-direction:column;
+    padding:20px;border-radius:14px;animation:confirmIn .2s ease}
+  #npCard h3,#apCard h3{font-size:.98rem;margin:0 0 3px;font-weight:600}
+  #npCard .sub,#apCard .sub{font-size:.78rem;color:var(--ink-dim);margin-bottom:10px}
+  #npScroll{overflow:auto;border:1px solid var(--hairline);border-radius:10px;
+    background:rgba(127,127,127,0.05);max-height:56vh}
+  .pk-caixa{cursor:pointer}
+  .pk-caixa rect{fill:var(--panel);stroke:var(--hairline);stroke-width:1;transition:stroke .12s}
+  .pk-caixa text{fill:var(--ink);pointer-events:none}
+  .pk-caixa.pk-hover rect{stroke:var(--gold);stroke-width:2;fill:rgba(127,127,127,0.16)}
+  .pk-caixa.pk-origem rect{stroke:var(--gold);stroke-width:2.4}
+  #apCard{width:min(460px,100%);max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px;animation:confirmIn .2s ease}
+  #apList{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .ap-agente{display:flex;align-items:center;gap:8px;text-align:left;font:inherit;font-size:.8rem;
+    color:var(--ink);background:transparent;border:1px solid var(--hairline);border-radius:8px;
+    padding:8px 10px;cursor:pointer}
+  .ap-agente:hover{border-color:var(--gold)}
+  .ap-agente .cat{margin-left:auto;font-size:.68rem;color:var(--ink-dim)}
+
+  /* Selos de aviso — o "!" num triângulo, no canto superior direito da linha */
+  .row{position:relative}
+  .fc-index-row{position:relative}
+  .warn-slot{position:absolute;top:1px;right:2px;display:flex;gap:2px;pointer-events:auto;line-height:0}
+  .warn-slot .warn-badge{display:inline-flex}
+  .warn-slot svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))}
+
   .task-row{display:block;text-align:left}
   .task-row .t-desc{display:block}
   .task-row .t-route{display:block;font-size:.68rem;color:var(--ink-dim);margin-top:2px}
@@ -2048,6 +2097,29 @@
   </div>
 </div>
 
+<!-- Escolha de nódulo no organograma simplificado (fluxo de nova tarefa) -->
+<div id="nodePick" role="dialog" aria-modal="true" aria-labelledby="npTitle">
+  <div id="npCard" class="glass">
+    <h3 id="npTitle">Nova tarefa — escolha o nódulo de origem</h3>
+    <div class="sub" id="npSub">Clique num nódulo do organograma.</div>
+    <div id="npScroll"></div>
+    <div class="card-btns"><button class="btn" id="npCancel">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- Escolha do responsável pela nova tarefa -->
+<div id="agentPick" role="dialog" aria-modal="true" aria-labelledby="apTitle">
+  <div id="apCard" class="glass">
+    <h3 id="apTitle">Quem fica responsável?</h3>
+    <div class="sub" id="apSub"></div>
+    <div id="apList"></div>
+    <div class="card-btns">
+      <button class="btn" id="apNone">Sem responsável — fica assinalada</button>
+      <button class="btn" id="apCancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div id="installHow" role="dialog" aria-modal="true" aria-labelledby="ihTitle">
   <div id="ihCard" class="glass">
     <h3 id="ihTitle">Guardar como aplicação</h3>
@@ -2376,7 +2448,7 @@ function makeLayerData(name,color){
   // _visible tem de nascer verdadeiro: um procedimento criado depois do
   // arranque ficava com undefined, era exportado como visible:false e
   // reaparecia invisível no 3D sem ninguém perceber porquê.
-  const p={id:"L"+(++layerCounter), name, color, _visible:true,
+  const p={id:"L"+(++layerCounter), name, color, _visible:true, done:false,
     height:layerHeight(processes.length), tasks:[]};
   processes.push(p);
   return p;
@@ -2458,6 +2530,9 @@ const layerById = id => processes.find(p=>p.id===id);
 
 processes.forEach(p=>p._visible=true);
 [L4,L5,L6,L7,L8,L11,L12].forEach(p=>p._visible=false); // keep the opening view uncluttered — toggle on in the panel
+// As cadeias da demonstração estão completas de origem — sem isto, a primeira
+// impressão da ferramenta seria uma coluna de avisos vermelhos.
+processes.forEach(p=>{p.done=true;});
 
 /* ============================================================
    THREE BASICS
@@ -4659,6 +4734,7 @@ function updateDirtyUI(){
 function markDirty(){
   recordHistory();          // snapshots the state as it was before this change
   refreshTaskTab();         // o separador Tarefas, se estiver à vista, acompanha
+  if(booted)refreshAvisos();// os selos amarelo/vermelho idem (na semente ainda nao ha "processes": TDZ)
   // `booted` primeiro: markDirty corre durante a semente, antes de `noGL` existir (TDZ)
   if(booted&&noGL)renderFallbackSVG();   // Plano B: manter o SVG a par dos dados
   if(!booted||dirty)return;
@@ -4734,6 +4810,51 @@ function applyProcSearch(){
     if(p._row)p._row.style.display=(!q||p.name.toLowerCase().includes(q))?"":"none";
   });
 }
+/* ============================================================
+   AVISOS DE PROCEDIMENTO
+   Amarelo: há tarefas sem responsável. Vermelho: a cadeia está por
+   finalizar (ou vazia, ou cíclica). O aviso vive na tarefa e no diagrama,
+   mas SOBE para todas as vistas onde o procedimento aparece resumido —
+   linha do painel, linha do grupo, cartão do índice — porque é aí que o
+   nível máximo de detalhe visível é o procedimento inteiro.
+============================================================ */
+function procAvisos(p){
+  return {
+    amarelo:p.tasks.some(t=>!t.agent),
+    vermelho:!p.done||!p.tasks.length||procGraph(p).cyclic
+  };
+}
+/* O símbolo pedido: um "!" dentro de um triângulo. Uma só definição serve o
+   DOM (innerHTML) e o interior dos SVG do diagrama. */
+function triSVG(cor,s){
+  s=s||12;
+  const fill=cor==="red"?"#E0554F":"#F4C542";
+  const ink=cor==="red"?"#FFFFFF":"#1A1509";
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 12 12" aria-hidden="true">'+
+    '<path d="M6 0.8 L11.4 11.2 L0.6 11.2 Z" fill="'+fill+'" stroke="rgba(0,0,0,0.35)" stroke-width="0.7"/>'+
+    '<rect x="5.35" y="4.1" width="1.3" height="3.6" rx="0.6" fill="'+ink+'"/>'+
+    '<rect x="5.35" y="8.6" width="1.3" height="1.4" rx="0.6" fill="'+ink+'"/></svg>';
+}
+function avisoHTML(av){
+  let h="";
+  if(av.vermelho)h+='<span class="warn-badge" title="Procedimento por finalizar — a cadeia não está marcada como finalizada">'+triSVG("red")+'</span>';
+  if(av.amarelo)h+='<span class="warn-badge" title="Há tarefa(s) sem responsável">'+triSVG("yellow")+'</span>';
+  return h;
+}
+/* Refresca os selos nas linhas do painel e dos grupos sem reconstruir nada. */
+function refreshAvisos(){
+  processes.forEach(p=>{
+    if(p._warnEl)p._warnEl.innerHTML=avisoHTML(procAvisos(p));
+  });
+  groups.forEach(g=>{
+    if(!g._warnEl)return;
+    const membros=g.layers.map(layerById).filter(Boolean);
+    const ag={amarelo:false,vermelho:false};
+    membros.forEach(p=>{const a=procAvisos(p);ag.amarelo=ag.amarelo||a.amarelo;ag.vermelho=ag.vermelho||a.vermelho;});
+    g._warnEl.innerHTML=avisoHTML(ag);
+  });
+}
+
 function addLayerRow(p){
   const row=el("div","row");
   row.style.color=hex(p.color);
@@ -4803,14 +4924,16 @@ function addLayerRow(p){
   const openFc=el("span","open-fc","▸ fluxograma");
   openFc.setAttribute("aria-hidden","true");
 
-  row.append(swatch,name,openFc,count,del,sw);
+  const warn=el("span","warn-slot");
+  row.append(swatch,name,openFc,count,del,sw,warn);
   procList.appendChild(row);
-  p._row=row;p._nameEl=name;p._countEl=count;p._delBtn=del;
+  p._row=row;p._nameEl=name;p._countEl=count;p._delBtn=del;p._warnEl=warn;
   applyProcSearch();
 }
 processes.forEach(addLayerRow);
 
 function updateLayerCounts(){
+  refreshAvisos();
   processes.forEach(p=>{
     p._countEl.textContent=p.tasks.length;
     p._countEl.title=p.tasks.length+" tarefas";
@@ -4849,7 +4972,10 @@ function syncLayerRows(){
 }
 document.getElementById("addLayerBtn").onclick=()=>{
   const p=createLayer();
-  showFlowchart(p);
+  // Um procedimento novo começa logo pela primeira tarefa: abre-se o diagrama
+  // e, por cima dele, o organograma simplificado para escolher a origem.
+  showFeynman(p);
+  startAddTask(p,null);
 };
 
 const groupList=document.getElementById("groupList");
@@ -4893,6 +5019,8 @@ function renderGroups(){
       renderGroups();renderDetail();
     };
 
+    const gw=el("span","warn-slot");
+    g._warnEl=gw;
     const allOn=members.length>0&&members.every(p=>p._visible);
     const sw=el("button","switch"+(allOn?" on":""));
     sw.style.color="var(--gold)";
@@ -4911,7 +5039,7 @@ function renderGroups(){
       if(selected&&selected.type==="group")renderDetail();
     };
 
-    row.append(name,count,del,sw);
+    row.append(name,count,del,sw,gw);
     groupList.append(row);
   });
 }
@@ -5194,6 +5322,7 @@ function viewsEqual(a,b){
   if(a.type==="task")return a.task===b.task;
   if(a.type==="agent")return a.agent===b.agent;
   if(a.type==="flowchart")return a.layer===b.layer;
+  if(a.type==="feynman")return a.layer===b.layer;
   if(a.type==="group")return a.group===b.group;
   if(a.type==="orgchart")return true;
   if(a.type==="flowindex")return true;
@@ -5211,6 +5340,7 @@ function viewValid(v){
   if(v.type==="task")return processes[v.task.proc]&&processes[v.task.proc].tasks.includes(v.task);
   if(v.type==="agent")return agents.includes(v.agent);
   if(v.type==="flowchart")return processes.includes(v.layer);
+  if(v.type==="feynman")return processes.includes(v.layer);
   if(v.type==="group")return groups.includes(v.group);
   if(v.type==="orgchart")return true;
   if(v.type==="flowindex")return true;
@@ -5268,6 +5398,7 @@ function applyView(v){
   }
   else if(v&&v.type==="orgchart"){modalView=v;modal.classList.remove("from-3d");renderOrgChart();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="flowindex"){modalView=v;modal.classList.remove("from-3d");renderFlowIndex();modal.classList.add("open");renderDetail();}
+  else if(v&&v.type==="feynman"){modalView=v;modal.classList.remove("from-3d");renderFeynman(v.layer);modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="health"){modalView=v;modal.classList.remove("from-3d");renderHealth();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="views"){modalView=v;modal.classList.remove("from-3d");renderViewGallery();modal.classList.add("open");renderDetail();}
   else if(v&&v.type==="view"){modalView=v;modal.classList.remove("from-3d");renderView(v.view);modal.classList.add("open");renderDetail();}
@@ -6662,6 +6793,8 @@ confirmNo.onclick=()=>settleConfirm(false);
 confirmEl.addEventListener("pointerdown",e=>{if(e.target===confirmEl)settleConfirm(false);});
 addEventListener("keydown",e=>{
   if(e.key!=="Escape")return;
+  if(agentPickEl&&agentPickEl.classList.contains("open")){closeAgentPick();return;}
+  if(nodePickEl&&nodePickEl.classList.contains("open")){closeNodePick();return;}
   if(reassignEl&&reassignEl.classList.contains("open")){closeReassign(null);return;}
   if(paletteEl&&paletteEl.classList.contains("open")){closePalette();return;}
   if(coachEl&&coachEl.classList.contains("open")){closeCoach();return;}
@@ -6911,6 +7044,7 @@ function duplicateProcedure(p){
   const np=createLayer(String(p.name).slice(0,20)+" (cópia)",p.color);
   const ni=processes.indexOf(np);
   p.tasks.forEach(t=>createTask(ni,t.a,t.b,t.desc,t.agent,t.duration));
+  np.done=!!p.done;   // a cópia é a mesma cadeia; o estado vai com ela
   groups.forEach(g=>{if(g.layers.includes(p.id)&&!g.layers.includes(np.id))g.layers.push(np.id);});
   markDirty();          // a herança do grupo também tem de entrar no histórico
   renderGroups();syncLayerRows();updateLayerCounts();
@@ -6960,6 +7094,9 @@ function renderFlowchart(p){
   const modeBtn=el("button","btn tiny","Ver: "+nextMode.l);
   modeBtn.title="Alternar entre fluxo ramificado, pistas por nódulo e cronograma";
   modeBtn.onclick=()=>{fcMode=nextMode.k;renderFlowchart(p);};
+  const feyBtn=el("button","btn tiny","Diagrama");
+  feyBtn.title="Vista de interações — bifurcações e convergências, com zoom";
+  feyBtn.onclick=()=>showFeynman(p);
   const playBtn=el("button","btn tiny","▶ Reproduzir");
   playBtn.title="Percorrer o procedimento passo a passo, em 2D e no 3D";
   playBtn.disabled=!p.tasks.length;
@@ -6977,7 +7114,7 @@ function renderFlowchart(p){
   const pdfB=el("button","btn tiny","PDF");
   pdfB.title="Exportar apenas este procedimento em PDF";
   pdfB.onclick=()=>exportProcPDF(p);
-  acts.append(modeBtn,dupBtn,pngB,svgB,pdfB);
+  acts.append(modeBtn,feyBtn,dupBtn,pngB,svgB,pdfB);
   top.append(acts);
   modalBody.append(top);
 
@@ -7383,13 +7520,412 @@ function renderFlowIndex(){
       p.tasks.length+" tarefa(s)"+(st.forks?(" · "+st.forks+" ramif."):"")+" · "+fmtDays(st.total)));
     row.title="Abrir o fluxograma de "+p.name;
     row.onclick=()=>showFlowchart(p);
+    const fw=el("span","warn-slot");
+    fw.innerHTML=avisoHTML(procAvisos(p));
+    row.append(fw);
     modalBody.append(row);
   });
   const nb=el("button","btn primary","+ Novo procedimento");
   nb.style.marginTop="8px";
-  nb.onclick=()=>{const np=createLayer();showFlowchart(np);};
+  nb.onclick=()=>{const np=createLayer();showFeynman(np);startAddTask(np,null);};
   modalBody.append(nb);
   modal.classList.add("open");
+}
+
+/* ============================================================
+   VISTA DE INTERAÇÕES — diagrama à Feynman
+   Os nódulos são vértices, as tarefas são linhas com seta; o tempo corre da
+   esquerda para a direita. Bifurcações são vértices com várias linhas de
+   saída, convergências com várias de entrada — o procGraph já era um DAG,
+   isto é a vista que finalmente o mostra como tal. Todo o procedimento tem
+   um Início e um Fim explícitos; o Fim só "fecha" quando a cadeia é marcada
+   como finalizada. Zoom com a roda (ou botões), arrastar para deslocar.
+============================================================ */
+const NS="http://www.w3.org/2000/svg";
+function svgEl(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(parent)parent.appendChild(e);
+  return e;
+}
+let feyProcId=null,feyVB=null;
+function showFeynman(p){navigateTo({type:"feynman",layer:p});}
+function feyLayout(p){
+  const g=procGraph(p);
+  // coluna por camada topológica; num ciclo (importado) cai-se na ordem de chegada
+  const col={};
+  g.ids.forEach((id,i)=>{col[id]=g.cyclic?i:(g.layer[id]||0);});
+  const porCol={};
+  g.ids.forEach(id=>{(porCol[col[id]]=porCol[col[id]]||[]).push(id);});
+  const cols=Object.keys(porCol).map(Number).sort((a,b)=>a-b);
+  const pos={};
+  const X0=150,DX=190,DY=100,Y0=96;
+  let maxLinhas=1;
+  cols.forEach(c=>{
+    const linhas=porCol[c];
+    maxLinhas=Math.max(maxLinhas,linhas.length);
+    linhas.forEach((id,r)=>{pos[id]={x:X0+c*DX,y:Y0+r*DY};});
+  });
+  const maxCol=cols.length?cols[cols.length-1]:0;
+  const H=Y0+Math.max(1,maxLinhas)*DY+30;
+  const meioY=Y0+((maxLinhas-1)*DY)/2;
+  const inicio={x:44,y:meioY};
+  const fim={x:X0+maxCol*DX+DX,y:meioY};
+  return {g,pos,inicio,fim,W:fim.x+90,H:Math.max(H,meioY+120)};
+}
+function renderFeynman(p){
+  modalTitle.innerHTML="";
+  modalTitle.append(document.createTextNode("Diagrama · "+p.name+" "));
+  const tw=el("span","warn-slot");tw.style.position="static";
+  tw.innerHTML=avisoHTML(procAvisos(p));
+  modalTitle.append(tw);
+  modalBody.innerHTML="";
+
+  const acts=el("div","fey-acts");
+  const bMenos=el("button","btn tiny icon-round","−");
+  bMenos.title="Afastar";bMenos.setAttribute("aria-label","Afastar");
+  const bMais=el("button","btn tiny icon-round","+");
+  bMais.title="Aproximar";bMais.setAttribute("aria-label","Aproximar");
+  const bFit=el("button","btn tiny","Ajustar");
+  bFit.title="Voltar a enquadrar o diagrama inteiro";
+  const bNova=el("button","btn tiny primary","+ Nova tarefa");
+  bNova.title="Criar uma tarefa escolhendo origem e destino no organograma";
+  bNova.onclick=()=>startAddTask(p,null);
+  const bDone=el("button","btn tiny fey-done-btn"+(p.done?" done":""),
+    p.done?"✓ Cadeia finalizada":"Marcar como finalizada");
+  bDone.title=p.done
+    ?"A cadeia está dada como completa — clique para reabrir"
+    :"Declarar que a cadeia de tarefas está completa, do Início ao Fim";
+  bDone.onclick=()=>{p.done=!p.done;markDirty();renderFeynman(p);};
+  const bFluxo=el("button","btn tiny","Fluxograma");
+  bFluxo.title="Voltar à vista de fluxograma";
+  bFluxo.onclick=()=>showFlowchart(p);
+  const sep=el("span","sep");
+  acts.append(bMenos,bMais,bFit,bNova,bDone,sep,bFluxo);
+  modalBody.append(acts);
+
+  const wrap=el("div");wrap.id="feyWrap";
+  modalBody.append(wrap);
+  const L=feyLayout(p);
+  if(feyProcId!==p.id){feyVB=null;feyProcId=p.id;}
+  const svg=svgEl("svg",{id:"feySvg",role:"img","aria-label":"Diagrama de interações de "+p.name},wrap);
+
+  // seta das tarefas
+  const defs=svgEl("defs",{},svg);
+  const mk=svgEl("marker",{id:"feySeta",viewBox:"0 0 10 10",refX:"9",refY:"5",
+    markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs);
+  svgEl("path",{d:"M0 0 L10 5 L0 10 Z",fill:hex(p.color)},mk);
+
+  const cs=getComputedStyle(document.documentElement);
+  const ink=(cs.getPropertyValue("--ink")||"#eee").trim();
+  const dim=(cs.getPropertyValue("--ink-dim")||"#999").trim();
+  const gold=(cs.getPropertyValue("--gold")||"#d9c36a").trim();
+  const corProc=hex(p.color);
+
+  // ---- terminais Início / Fim ----
+  const gIni=svgEl("g",{class:"fey-vert"},svg);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:10,fill:"none",stroke:dim,"stroke-width":1.4},gIni);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:4.5,fill:dim},gIni);
+  svgEl("text",{x:L.inicio.x,y:L.inicio.y+26,"text-anchor":"middle","font-size":11,fill:dim},gIni)
+    .textContent="Início";
+  const gFim=svgEl("g",{class:"fey-vert"},svg);
+  const fimCor=p.done?gold:"#E0554F";
+  svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:10,fill:"none",stroke:fimCor,
+    "stroke-width":p.done?2:1.4,"stroke-dasharray":p.done?"none":"3 3"},gFim);
+  if(p.done)svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:4.5,fill:gold},gFim);
+  svgEl("text",{x:L.fim.x,y:L.fim.y+26,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
+    .textContent="Fim";
+  if(!p.done){
+    const fw=svgEl("g",{transform:"translate("+(L.fim.x+8)+","+(L.fim.y-24)+")"},gFim);
+    fw.innerHTML=triSVG("red",13);
+    svgEl("title",{},gFim).textContent="Cadeia por finalizar";
+  }
+
+  // ligações tracejadas Início→arranques e remates→Fim
+  if(!L.g.cyclic){
+    L.g.starts.forEach(id=>{const q=L.pos[id];if(!q)return;
+      svgEl("line",{x1:L.inicio.x+10,y1:L.inicio.y,x2:q.x-12,y2:q.y,
+        stroke:dim,"stroke-width":1,"stroke-dasharray":"4 4",opacity:0.7},svg);});
+    L.g.ends.forEach(id=>{const q=L.pos[id];if(!q)return;
+      svgEl("line",{x1:q.x+12,y1:q.y,x2:L.fim.x-10,y2:L.fim.y,
+        stroke:fimCor,"stroke-width":1,"stroke-dasharray":p.done?"none":"4 4",opacity:0.75},svg);});
+  }
+
+  // ---- arestas (tarefas) ----
+  p.tasks.forEach(t=>{
+    const a=L.pos[t.a],b=L.pos[t.b];
+    if(!a||!b)return;
+    const ga=svgEl("g",{class:"fey-aresta",tabindex:0,role:"button"},svg);
+    svgEl("title",{},ga).textContent=(t.desc||"Tarefa")+" — abrir o painel da tarefa";
+    // linha visível + zona de clique gorda por cima
+    svgEl("line",{class:"tr",x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:corProc,
+      "stroke-width":2.2,"marker-end":"url(#feySeta)"},ga);
+    svgEl("line",{class:"hit",x1:a.x,y1:a.y,x2:b.x,y2:b.y},ga);
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    const ag=t.agent?agentById(t.agent):null;
+    const rot=String(t.desc||"").slice(0,22)+(String(t.desc||"").length>22?"…":"");
+    const tx=svgEl("text",{x:mx,y:my-10,"text-anchor":"middle","font-size":10.5,fill:ink},ga);
+    tx.textContent=rot;
+    svgEl("text",{x:mx,y:my+16,"text-anchor":"middle","font-size":9.5,fill:dim},ga)
+      .textContent=(ag?ag.name:"— sem responsável —")+" · "+t.duration;
+    if(!t.agent){
+      // o "!" amarelo, no canto superior direito da tarefa
+      const wg=svgEl("g",{transform:"translate("+(mx+34)+","+(my-30)+")"},ga);
+      wg.innerHTML=triSVG("yellow",13);
+      svgEl("title",{},wg).textContent="Tarefa sem responsável";
+    }
+    const abrir=()=>selectTask(t);
+    ga.addEventListener("click",abrir);
+    ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
+  });
+
+  // ---- vértices (nódulos) ----
+  L.g.ids.forEach(id=>{
+    const n=byId(id);const q=L.pos[id];
+    if(!n||!q)return;
+    const gv=svgEl("g",{class:"fey-vert"},svg);
+    svgEl("title",{},gv).textContent=n.name;
+    svgEl("circle",{cx:q.x,cy:q.y,r:8,fill:hex(n.color),stroke:"rgba(0,0,0,0.35)","stroke-width":1},gv);
+    const nome=n.name.length>16?n.name.slice(0,15)+"…":n.name;
+    svgEl("text",{x:q.x,y:q.y+24,"text-anchor":"middle","font-size":10.5,fill:ink},gv).textContent=nome;
+    svgEl("text",{x:q.x,y:q.y+37,"text-anchor":"middle","font-size":8.5,fill:dim},gv).textContent=nodeAddress(n);
+    // o "+" — nova tarefa a partir deste nódulo
+    const mais=svgEl("g",{class:"fey-mais",transform:"translate("+(q.x+14)+","+(q.y-14)+")",
+      tabindex:0,role:"button"},svg);
+    svgEl("title",{},mais).textContent="Nova tarefa a partir de "+n.name;
+    svgEl("circle",{cx:0,cy:0,r:8},mais);
+    svgEl("text",{x:0,y:3.6,"text-anchor":"middle"},mais).textContent="+";
+    const go=()=>startAddTask(p,n);
+    mais.addEventListener("click",e=>{e.stopPropagation();go();});
+    mais.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+  });
+
+  if(!p.tasks.length){
+    svgEl("text",{x:(L.inicio.x+L.fim.x)/2,y:L.inicio.y-34,"text-anchor":"middle",
+      "font-size":12,fill:dim},svg).textContent="Cadeia vazia — comece com “+ Nova tarefa”.";
+  }
+
+  // ---- zoom e deslocação ----
+  const fit=()=>({x:0,y:0,w:L.W,h:L.H});
+  let vb=feyVB&&feyProcId===p.id?feyVB:fit();
+  const aplicaVB=()=>{svg.setAttribute("viewBox",vb.x+" "+vb.y+" "+vb.w+" "+vb.h);feyVB=vb;};
+  aplicaVB();
+  const zoomEm=(fx,fy,fator)=>{
+    const nw=Math.max(L.W/8,Math.min(L.W*4,vb.w*fator));
+    const k=nw/vb.w;
+    vb={x:fx-(fx-vb.x)*k,y:fy-(fy-vb.y)*k,w:nw,h:vb.h*k};
+    aplicaVB();
+  };
+  const centro=()=>({x:vb.x+vb.w/2,y:vb.y+vb.h/2});
+  bMais.onclick=()=>{const c=centro();zoomEm(c.x,c.y,0.8);};
+  bMenos.onclick=()=>{const c=centro();zoomEm(c.x,c.y,1.25);};
+  bFit.onclick=()=>{vb=fit();aplicaVB();};
+  const paraSvg=(ev)=>{
+    const r=svg.getBoundingClientRect();
+    return {x:vb.x+(ev.clientX-r.left)/r.width*vb.w,
+            y:vb.y+(ev.clientY-r.top)/r.height*vb.h};
+  };
+  svg.addEventListener("wheel",e=>{
+    e.preventDefault();
+    const q=paraSvg(e);
+    zoomEm(q.x,q.y,e.deltaY>0?1.12:1/1.12);
+  },{passive:false});
+  // arrastar para deslocar; dois dedos fazem pinça
+  const dedos=new Map();
+  let panIni=null,pinIni=null;
+  svg.addEventListener("pointerdown",e=>{
+    dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    svg.setPointerCapture(e.pointerId);
+    if(dedos.size===1){panIni={cx:e.clientX,cy:e.clientY,vb:{...vb}};svg.classList.add("arrastando");}
+    else if(dedos.size===2){
+      const pts=[...dedos.values()];
+      pinIni={d:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y),vb:{...vb}};
+      panIni=null;
+    }
+  });
+  svg.addEventListener("pointermove",e=>{
+    if(!dedos.has(e.pointerId))return;
+    dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const r=svg.getBoundingClientRect();
+    if(dedos.size===2&&pinIni){
+      const pts=[...dedos.values()];
+      const d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+      if(d>8){
+        const k=pinIni.d/d;
+        const cxp=(pts[0].x+pts[1].x)/2,cyp=(pts[0].y+pts[1].y)/2;
+        const fx=pinIni.vb.x+(cxp-r.left)/r.width*pinIni.vb.w;
+        const fy=pinIni.vb.y+(cyp-r.top)/r.height*pinIni.vb.h;
+        const nw=Math.max(L.W/8,Math.min(L.W*4,pinIni.vb.w*k));
+        const kk=nw/pinIni.vb.w;
+        vb={x:fx-(fx-pinIni.vb.x)*kk,y:fy-(fy-pinIni.vb.y)*kk,w:nw,h:pinIni.vb.h*kk};
+        aplicaVB();
+      }
+    }else if(panIni){
+      vb={x:panIni.vb.x-(e.clientX-panIni.cx)/r.width*panIni.vb.w,
+          y:panIni.vb.y-(e.clientY-panIni.cy)/r.height*panIni.vb.h,
+          w:panIni.vb.w,h:panIni.vb.h};
+      aplicaVB();
+    }
+  });
+  const solta=e=>{
+    dedos.delete(e.pointerId);
+    if(dedos.size<2)pinIni=null;
+    if(dedos.size<1){panIni=null;svg.classList.remove("arrastando");}
+  };
+  svg.addEventListener("pointerup",solta);
+  svg.addEventListener("pointercancel",solta);
+}
+
+/* ============================================================
+   NOVA TAREFA GUIADA
+   O organograma simplificado abre por cima do diagrama: escolhe-se a origem
+   (se ainda não veio escolhida), depois o destino — com uma linha elástica da
+   origem ao cursor e as caixas a acender à passagem. Escolhido o destino,
+   pergunta-se quem do nódulo de ORIGEM fica responsável; "sem responsável"
+   cria a tarefa assinalada a amarelo.
+============================================================ */
+const nodePickEl=document.getElementById("nodePick");
+const agentPickEl=document.getElementById("agentPick");
+let npState=null,apState=null;
+function closeNodePick(){nodePickEl.classList.remove("open");npState=null;}
+function closeAgentPick(){agentPickEl.classList.remove("open");apState=null;}
+document.getElementById("npCancel").onclick=()=>closeNodePick();
+document.getElementById("apCancel").onclick=()=>closeAgentPick();
+nodePickEl.addEventListener("pointerdown",e=>{if(e.target===nodePickEl)closeNodePick();});
+agentPickEl.addEventListener("pointerdown",e=>{if(e.target===agentPickEl)closeAgentPick();});
+
+function startAddTask(p,origem){
+  npState={p,origem:origem||null};
+  buildNodePick();
+  nodePickEl.classList.add("open");
+}
+function npTitulos(){
+  const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
+  if(!npState)return;
+  if(!npState.origem){
+    T.textContent="Nova tarefa — escolha o nódulo de origem";
+    S.textContent="Clique no nódulo de onde a tarefa parte.";
+  }else{
+    T.textContent="Nova tarefa — escolha o nódulo de destino";
+    S.textContent="De “"+npState.origem.name+"” até… clique no nódulo de chegada.";
+  }
+}
+function buildNodePick(){
+  npTitulos();
+  const scroll=document.getElementById("npScroll");
+  scroll.innerHTML="";
+  const BW=104,BH=32,GX=12,GY=30;
+  const porTier=TIER.map((t,i)=>nodes.filter(n=>n.tier===i).sort((a,b)=>a.angle-b.angle));
+  const maxN=Math.max(1,...porTier.map(r=>r.length));
+  const W=Math.max(520,maxN*(BW+GX)+40);
+  const H=porTier.length*(BH+GY)+26;
+  const svg=svgEl("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,id:"npSvg"});
+  scroll.append(svg);
+  const cs=getComputedStyle(document.documentElement);
+  const gold=(cs.getPropertyValue("--gold")||"#d9c36a").trim();
+  const pos={};
+  porTier.forEach((linha,ti)=>{
+    const lw=linha.length*(BW+GX)-GX;
+    const x0=(W-lw)/2;
+    linha.forEach((n,i)=>{
+      pos[n.id]={x:x0+i*(BW+GX)+BW/2,y:18+ti*(BH+GY)+BH/2};
+    });
+  });
+  // ligações hierárquicas, finas, por trás das caixas
+  nodes.forEach(n=>{
+    if(!n.parent||!pos[n.parent]||!pos[n.id])return;
+    const a=pos[n.parent],b=pos[n.id];
+    svgEl("line",{x1:a.x,y1:a.y+BH/2,x2:b.x,y2:b.y-BH/2,
+      stroke:"var(--hairline)","stroke-width":1},svg);
+  });
+  // a linha elástica: da origem ao cursor
+  const fio=svgEl("line",{x1:0,y1:0,x2:0,y2:0,stroke:gold,"stroke-width":2,
+    "stroke-dasharray":"6 4",visibility:"hidden","pointer-events":"none"},svg);
+  const ancoraFio=()=>{
+    if(npState&&npState.origem&&pos[npState.origem.id]){
+      const a=pos[npState.origem.id];
+      fio.setAttribute("x1",a.x);fio.setAttribute("y1",a.y);
+      fio.setAttribute("x2",a.x);fio.setAttribute("y2",a.y);
+      fio.setAttribute("visibility","visible");
+    }else fio.setAttribute("visibility","hidden");
+  };
+  ancoraFio();
+  svg.addEventListener("pointermove",e=>{
+    if(!npState||!npState.origem)return;
+    const r=svg.getBoundingClientRect();
+    fio.setAttribute("x2",(e.clientX-r.left)/r.width*W);
+    fio.setAttribute("y2",(e.clientY-r.top)/r.height*H);
+  });
+  // as caixas
+  nodes.forEach(n=>{
+    const q=pos[n.id];if(!q)return;
+    const g=svgEl("g",{class:"pk-caixa","data-id":n.id,tabindex:0,role:"button"},svg);
+    svgEl("title",{},g).textContent=n.name+" — "+(TIER[n.tier]||{}).label;
+    svgEl("rect",{x:q.x-BW/2,y:q.y-BH/2,width:BW,height:BH,rx:7},g);
+    svgEl("rect",{x:q.x-BW/2,y:q.y-BH/2,width:4,height:BH,rx:2,fill:hex(n.color)},g);
+    const nome=n.name.length>14?n.name.slice(0,13)+"…":n.name;
+    svgEl("text",{x:q.x+2,y:q.y-1,"text-anchor":"middle","font-size":10},g).textContent=nome;
+    svgEl("text",{x:q.x+2,y:q.y+11,"text-anchor":"middle","font-size":8,opacity:0.7},g)
+      .textContent=nodeAddress(n);
+    g.addEventListener("pointerenter",()=>g.classList.add("pk-hover"));
+    g.addEventListener("pointerleave",()=>g.classList.remove("pk-hover"));
+    const escolhe=()=>npPick(n,g,ancoraFio);
+    g.addEventListener("click",escolhe);
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();escolhe();}});
+  });
+  // origem pré-escolhida (veio do "+" de um vértice): marcar já a caixa
+  if(npState&&npState.origem){
+    const g=svg.querySelector('.pk-caixa[data-id="'+npState.origem.id+'"]');
+    if(g)g.classList.add("pk-origem");
+    ancoraFio();
+  }
+}
+function npPick(n,gEl,ancoraFio){
+  if(!npState)return;
+  if(!npState.origem){
+    npState.origem=n;
+    gEl.classList.add("pk-origem");
+    npTitulos();
+    if(ancoraFio)ancoraFio();
+    return;
+  }
+  if(n.id===npState.origem.id){
+    flash("A origem e o destino têm de ser diferentes.");
+    return;
+  }
+  const st={p:npState.p,origem:npState.origem,destino:n};
+  closeNodePick();
+  openAgentPick(st);
+}
+function openAgentPick(st){
+  apState=st;
+  document.getElementById("apSub").textContent=
+    "Tarefa de “"+st.origem.name+"” para “"+st.destino.name+"”. O responsável sai da equipa de “"+st.origem.name+"”.";
+  const lista=document.getElementById("apList");
+  lista.innerHTML="";
+  const eq=agentsOf(st.origem.id);
+  if(!eq.length){
+    lista.append(el("div","empty-note","“"+st.origem.name+"” não tem ninguém na equipa — a tarefa fica sem responsável."));
+  }
+  eq.forEach(a=>{
+    const b=el("button","ap-agente");
+    b.append(el("span",null,(a.primary?"★ ":"")+a.name));
+    b.append(el("span","cat",a.category));
+    b.onclick=()=>apChoose(a.id);
+    lista.append(b);
+  });
+  agentPickEl.classList.add("open");
+}
+document.getElementById("apNone").onclick=()=>apChoose(null);
+function apChoose(agentId){
+  if(!apState)return;
+  const st=apState;
+  closeAgentPick();
+  const t=createTask(processes.indexOf(st.p),st.origem.id,st.destino.id,undefined,agentId,undefined);
+  if(!t){flash("Não foi possível criar a tarefa.",{type:"err"});return;}
+  flash(agentId?"Tarefa criada.":"Tarefa criada sem responsável — assinalada a amarelo.");
+  if(modalView&&modalView.type==="feynman"&&modalView.layer===st.p)renderFeynman(st.p);
+  else showFeynman(st.p);
 }
 
 /* ---- Per-procedure export. One layout feeds the screen, the SVG and the PDF. ---- */
@@ -7837,7 +8373,7 @@ document.getElementById("exportBtn").onclick=()=>{
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
-    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,
+    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
@@ -7973,6 +8509,7 @@ importFile.onchange=()=>{
         }
         if(cl.name){p.name=String(cl.name).slice(0,28);if(p._nameEl)p._nameEl.textContent=p.name;p.refreshLabel();}
         if(typeof cl.visible==="boolean")p._visible=cl.visible;
+        p.done=cl.done===undefined?true:!!cl.done;   // mesma regra do restauro
         // Validar ANTES de destruir: com `tasks` a vir noutro formato, o
         // procedimento ficaria vazio em vez de intacto.
         const impTasks=Array.isArray(cl.tasks)?cl.tasks:[];
@@ -9589,7 +10126,7 @@ densityRange.addEventListener("input",applyDensity);
    página não existe. Sem prender o Tab, ele saía para os botões do painel e do
    HUD por trás do scrim — visíveis para o teclado, invisíveis para quem lá está. */
 function topDialog(){
-  const layers=[modal,coachEl,helpEl,tourEndEl,installEl,reassignEl,confirmEl,paletteEl]
+  const layers=[modal,coachEl,helpEl,tourEndEl,installEl,reassignEl,confirmEl,paletteEl,nodePickEl,agentPickEl]
     .filter(l=>l&&l.classList.contains("open"));
   if(!layers.length)return null;
   // O que estiver por cima é o que manda
@@ -10132,7 +10669,7 @@ function renderMural(){
   if(!processes.length){
     modalBody.append(el("div","empty-note","Ainda não há procedimentos."));
     const nb=el("button","btn primary","+ Novo procedimento");
-    nb.onclick=()=>{const np=createLayer();showFlowchart(np);};
+    nb.onclick=()=>{const np=createLayer();showFeynman(np);startAddTask(np,null);};
     modalBody.append(nb);
     modal.classList.add("open");
     return;
@@ -11297,7 +11834,7 @@ function snapshotState(){
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
-    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,
+    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
     theme:themeId
@@ -11377,6 +11914,9 @@ function restoreState(json){
         typeof cl.color==="number"?cl.color:LAYER_COLORS[processes.length%LAYER_COLORS.length]);
       if(cl.id)p.id=cl.id;
       p._visible=cl.visible!==false;
+      // Ausente = ficheiro de antes de existir o estado: dá-se por finalizado,
+      // senão um dataset antigo acordava todo a vermelho sem ninguém lhe tocar.
+      p.done=cl.done===undefined?true:!!cl.done;
       addLayerRow(p);
       (cl.tasks||[]).forEach(ct=>{
         if(!ct||!byId(ct.a)||!byId(ct.b)||ct.a===ct.b)return;   // a===b seria um auto-laço
