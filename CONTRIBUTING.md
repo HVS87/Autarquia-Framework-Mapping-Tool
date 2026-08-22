@@ -76,7 +76,7 @@ network-framework.html
 │   ├── Layout (vidro, painéis, rodapé da visita)
 │   └── Animações (microinterações)
 ├── <body>
-│   ├── #stage (tela 3D)
+│   ├── #stage (canvas 3D)
 │   ├── #header (nome da organização + botões)
 │   ├── #panel (painel esquerdo: Nódulos, Agentes, Procedimentos, Grupos)
 │   ├── #detail (painel direito: detalhe de nódulo/tarefa/agente)
