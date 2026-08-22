@@ -5410,6 +5410,30 @@ groupList.parentNode.insertBefore(
   makeTabSearch("Pesquisar grupos…",v=>{groupSearch=v;renderGroups();}),
   groupList
 );
+/* O interruptor "todos os procedimentos deste grupo" existe em dois sítios —
+   na linha do grupo, no painel, e no painel de detalhe do grupo. Eram duas
+   cópias da mesma lógica, que é o tipo de par que diverge à primeira
+   correção feita só de um lado. */
+function switchGrupo(g,membros,rotulo,depois){
+  const allOn=membros.length>0&&membros.every(p=>p._visible);
+  const sw=el("button","switch"+(allOn?" on":""));
+  sw.style.color="var(--gold)";
+  sw.setAttribute("role","switch");
+  sw.setAttribute("aria-checked",String(allOn));
+  sw.setAttribute("aria-label",rotulo);
+  sw.onclick=()=>{
+    const alvo=!allOn;
+    membros.forEach(p=>{
+      p._visible=alvo;
+      const i=processes.indexOf(p);
+      if(!alvo&&isolateProc===i)isolateProc=null;
+    });
+    markDirty();          // depois de mudar: o histórico grava o estado anterior
+    syncLayerRows();
+    if(depois)depois();
+  };
+  return sw;
+}
 function renderGroups(){
   groupList.innerHTML="";
   const gq=groupSearch.trim().toLowerCase();
@@ -5448,23 +5472,8 @@ function renderGroups(){
 
     const gw=el("span","warn-slot");
     g._warnEl=gw;
-    const allOn=members.length>0&&members.every(p=>p._visible);
-    const sw=el("button","switch"+(allOn?" on":""));
-    sw.style.color="var(--gold)";
-    sw.setAttribute("role","switch");
-    sw.setAttribute("aria-checked",String(allOn));
-    sw.setAttribute("aria-label","Alternar grupo "+g.name);
-    sw.onclick=()=>{
-      const target=!allOn;
-      members.forEach(p=>{
-        p._visible=target;
-        const i=processes.indexOf(p);
-        if(!target&&isolateProc===i)isolateProc=null;
-      });
-      markDirty();          // depois de mudar: o histórico grava o estado anterior
-      syncLayerRows();
-      if(selected&&selected.type==="group")renderDetail();
-    };
+    const sw=switchGrupo(g,members,"Alternar grupo "+g.name,
+      ()=>{if(selected&&selected.type==="group")renderDetail();});
 
     row.append(name,count,del,sw,gw);
     groupList.append(row);
@@ -6791,23 +6800,8 @@ function renderGroupDetail(head,closeBtn){
   // Master toggle
   const togRow=el("div","agent-row");
   togRow.append(el("span","row-name","Mostrar todos os procedimentos"));
-  const allOn=members.length>0&&members.every(p=>p._visible);
-  const sw=el("button","switch"+(allOn?" on":""));
-  sw.style.color="var(--gold)";
-  sw.setAttribute("role","switch");
-  sw.setAttribute("aria-checked",String(allOn));
-  sw.setAttribute("aria-label","Alternar todos os procedimentos do grupo");
-  sw.onclick=()=>{
-    const target=!allOn;
-    members.forEach(p=>{
-      p._visible=target;
-      const i=processes.indexOf(p);
-      if(!target&&isolateProc===i)isolateProc=null;
-    });
-    markDirty();          // depois de mudar: o histórico grava o estado anterior
-    syncLayerRows();
-    renderDetail();
-  };
+  const sw=switchGrupo(g,members,"Alternar todos os procedimentos do grupo",
+    ()=>renderDetail());
   togRow.append(sw);
   detail.append(togRow);
 
