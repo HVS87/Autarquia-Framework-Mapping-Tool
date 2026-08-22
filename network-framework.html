@@ -130,18 +130,21 @@
   #nodePick,#agentPick{position:fixed;inset:0;z-index:48;display:none;background:var(--scrim);
     -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
   #nodePick.open,#agentPick.open{display:grid;place-items:center}
-  #npCard{width:min(760px,100%);max-height:calc(100vh - 64px);display:flex;flex-direction:column;
+  /* O tecto tem de ser o ECRÃ, não os 760px: o organograma lá dentro é um SVG
+     largo dentro de um rolo, e o min-width:auto do flex deixava-o empurrar o
+     cartão até ao tecto — 760px num telemóvel de 360. */
+  #npCard{width:min(760px,calc(100vw - 48px));max-height:calc(100vh - 64px);display:flex;flex-direction:column;
     padding:20px;border-radius:14px;animation:confirmIn .2s ease}
   #npCard h3,#apCard h3{font-size:.98rem;margin:0 0 3px;font-weight:600}
   #npCard .sub,#apCard .sub{font-size:.78rem;color:var(--ink-dim);margin-bottom:10px}
   #npScroll{overflow:auto;border:1px solid var(--hairline);border-radius:10px;
-    background:rgba(127,127,127,0.05);max-height:56vh}
+    background:rgba(127,127,127,0.05);max-height:56vh;min-width:0;min-height:0}
   .pk-caixa{cursor:pointer}
   .pk-caixa rect{fill:var(--panel);stroke:var(--hairline);stroke-width:1;transition:stroke .12s}
   .pk-caixa text{fill:var(--ink);pointer-events:none}
   .pk-caixa.pk-hover rect{stroke:var(--gold);stroke-width:2;fill:rgba(127,127,127,0.16)}
   .pk-caixa.pk-origem rect{stroke:var(--gold);stroke-width:2.4}
-  #apCard{width:min(460px,100%);max-height:calc(100vh - 64px);overflow:auto;
+  #apCard{width:min(460px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
     padding:20px;border-radius:14px;animation:confirmIn .2s ease}
   #apList{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
   .ap-agente{display:flex;align-items:center;gap:8px;text-align:left;font:inherit;font-size:.8rem;
@@ -2646,7 +2649,7 @@ const aurora=(function(){
     while(xx<256){
       let w=5+Math.floor(rnd()*11);
       const h=4+Math.floor(rnd()*9);
-      /* O casario tem de fechar exactamente aos 256: a tela dá a volta, e um
+      /* O casario tem de fechar exatamente aos 256: a tela dá a volta, e um
          último prédio serrado a meio deixava um degrau na junção. */
       if(xx+w>256){
         w=256-xx;
@@ -2703,7 +2706,7 @@ const aurora=(function(){
       const by=256*(b.py+Math.cos(tt*b.sy+i*1.4)*0.09);
       mancha(bx,by,b.r,b.rgb,b.a);
     });
-    /* Luz com direcção, feita de manchas em vez de um gradiente de bordo a
+    /* Luz com direção, feita de manchas em vez de um gradiente de bordo a
        bordo. O gradiente era o que punha o preto encostado ao quente na
        junção da tela; as manchas dão a volta e a junção deixa de existir.
        O clarão principal assenta pouco acima dos telhados, que é onde uma
@@ -9874,7 +9877,7 @@ function measureChrome(){
   set("--radar-w",rdVis?Math.round(rdEl.getBoundingClientRect().width)+14:0);
   /* A barra de localização é centrada e cresce com o caminho até ao nódulo
      escolhido. Publica-se o MÁXIMO que pode ocupar, e não a largura de agora:
-     senão o nome da organização mudava de tamanho a cada selecção. */
+     senão o nome da organização mudava de tamanho a cada seleção. */
   const wbEl=document.getElementById("whereBar");
   const wbVis=wbEl&&getComputedStyle(wbEl).display!=="none";
   set("--wb-w",wbVis?Math.round(Math.min(560,innerWidth*0.52)):0);
