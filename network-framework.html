@@ -157,6 +157,21 @@
   .pk-caixa text{fill:var(--ink);pointer-events:none}
   .pk-caixa.pk-hover rect{stroke:var(--gold);stroke-width:2;fill:rgba(127,127,127,0.16)}
   .pk-caixa.pk-origem rect{stroke:var(--gold);stroke-width:2.4}
+  /* Nódulos que já são etapa de algum procedimento: convergir para eles é o
+     gesto que junta fluxos, e tem de se ver quais são sem abrir listas. */
+  .pk-etapa .marca{fill:var(--steel)}
+  .pk-caixa.pk-etapa-deste .marca{fill:var(--gold)}
+  #npConv{margin-top:8px;flex:none}
+  #npConvTog{width:100%;text-align:left}
+  #npConvList{margin-top:6px;max-height:26vh;overflow:auto;display:flex;flex-direction:column;gap:3px}
+  #npConvList .conv-grupo{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-dim);margin:6px 0 2px;display:flex;align-items:center;gap:6px}
+  #npConvList .conv-item{display:flex;align-items:center;gap:8px;text-align:left;font:inherit;
+    font-size:.78rem;color:var(--ink);background:transparent;border:1px solid var(--hairline);
+    border-radius:8px;padding:6px 9px;cursor:pointer}
+  #npConvList .conv-item:hover{border-color:var(--gold)}
+  #npConvList .conv-item .de{margin-left:auto;font-size:.68rem;color:var(--ink-dim);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%}
   #apCard{width:min(460px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
     padding:20px;border-radius:14px;animation:confirmIn .2s ease}
   #apList{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
@@ -2195,6 +2210,12 @@
     <h3 id="npTitle">Nova tarefa — escolha o nódulo de origem</h3>
     <div class="sub" id="npSub">Clique num nódulo do organograma.</div>
     <div id="npScroll"></div>
+    <div id="npConv" hidden>
+      <button class="btn tiny" id="npConvTog" aria-expanded="false" aria-controls="npConvList">
+        ⇢ Convergir para uma etapa existente
+      </button>
+      <div id="npConvList" hidden></div>
+    </div>
     <div class="card-btns"><button class="btn" id="npCancel">Cancelar</button></div>
   </div>
 </div>
@@ -4784,6 +4805,7 @@ function comecarArrasto(){
   npState={modo:"drop",tipo:dragAtivo.tipo,dados:dragAtivo.dados,
     origem:dragAtivo.dados.ancora?byId(dragAtivo.dados.ancora):null};
   buildNodePick();
+  document.getElementById("npConv").hidden=true;   // a largar decide-se com a mão, não com a lista
   document.getElementById("npScroll").classList.add("np-fit");
   const svg=document.getElementById("npSvg");
   if(svg){svg.removeAttribute("width");svg.removeAttribute("height");
@@ -8352,6 +8374,16 @@ function buildNodePick(){
     svgEl("text",{x:2,y:-1,"text-anchor":"middle","font-size":10},g).textContent=nome;
     svgEl("text",{x:2,y:11,"text-anchor":"middle","font-size":8,opacity:0.7},g)
       .textContent=nodeAddress(n);
+    /* Ponto no canto: este nódulo já é etapa de algum procedimento. A dourado
+       quando é do procedimento em causa — aí, apontar-lhe é convergir. */
+    const eta=etapasDe(n.id);
+    if(eta.length){
+      g.classList.add("pk-etapa");
+      if(npState&&npState.p&&eta.some(x=>x.p===npState.p))g.classList.add("pk-etapa-deste");
+      svgEl("circle",{class:"marca",cx:BW/2-7,cy:-BH/2+7,r:2.6},g);
+      const tt=g.querySelector("title");
+      if(tt)tt.textContent+=" — etapa de: "+[...new Set(eta.map(x=>x.p.name))].join(", ");
+    }
     g.addEventListener("pointerenter",()=>{g.classList.add("pk-hover");pairado=n.id;aplicaTamanhos();});
     g.addEventListener("pointerleave",()=>{g.classList.remove("pk-hover");if(pairado===n.id){pairado=null;aplicaTamanhos();}});
     const escolhe=()=>{npPick(n,g,ancoraFio);aplicaTamanhos();};
@@ -8359,6 +8391,7 @@ function buildNodePick(){
     g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();escolhe();}});
   });
   aplicaTamanhos();
+  montaConvergencia();
   // origem pré-escolhida (veio do "+" de um vértice): marcar já a caixa
   if(npState&&npState.origem){
     const g=svg.querySelector('.pk-caixa[data-id="'+npState.origem.id+'"]');
@@ -8366,6 +8399,85 @@ function buildNodePick(){
     ancoraFio();
     aplicaTamanhos();
   }
+}
+/* Em que procedimentos este nódulo já é etapa, e por que tarefas lá chega. */
+function etapasDe(nodeId){
+  const out=[];
+  processes.forEach(p=>{
+    const entra=p.tasks.filter(x=>x.b===nodeId);
+    const sai=p.tasks.filter(x=>x.a===nodeId);
+    if(entra.length||sai.length)out.push({p,entra,sai});
+  });
+  return out;
+}
+/* A lista de etapas para onde se pode convergir. Só aparece quando se está a
+   escolher um DESTINO — convergir é sempre uma chegada. */
+function montaConvergencia(){
+  const cx=document.getElementById("npConv");
+  const lista=document.getElementById("npConvList");
+  const tog=document.getElementById("npConvTog");
+  if(!cx)return;
+  const escolheDestino=npState&&(npState.modo==="retarget"||(!npState.modo&&npState.origem));
+  if(!escolheDestino){cx.hidden=true;return;}
+  const origemId=npState.modo==="retarget"?npState.t.a:npState.origem.id;
+  const excluir=npState.modo==="retarget"?npState.t.b:null;
+  const pAtual=npState.p||null;
+  lista.innerHTML="";
+  let n=0;
+  const secao=(titulo,itens,cor)=>{
+    if(!itens.length)return;
+    const h=el("div","conv-grupo");
+    if(cor){const s=el("span","swatch");s.style.background=cor;h.append(s);}
+    h.append(document.createTextNode(titulo));
+    lista.append(h);
+    itens.forEach(it=>{
+      const b=el("button","conv-item");
+      b.dataset.nid=it.node.id;
+      b.append(el("span",null,it.node.name));
+      b.append(el("span","de",it.detalhe));
+      b.title="Convergir para esta etapa — a nova ligação chega a “"+it.node.name+"”";
+      b.onclick=()=>{
+        const alvo=byId(it.node.id);
+        if(!alvo)return;
+        const g=document.querySelector('#npSvg .pk-caixa[data-id="'+alvo.id+'"]');
+        npPick(alvo,g,null);
+      };
+      lista.append(b);
+      n++;
+    });
+  };
+  const junta=(p)=>{
+    const vistos=new Set();
+    const itens=[];
+    p.tasks.forEach(x=>{
+      [x.a,x.b].forEach(id=>{
+        if(id===origemId||id===excluir||vistos.has(id))return;
+        const nd=byId(id);if(!nd)return;
+        vistos.add(id);
+        const entra=p.tasks.filter(y=>y.b===id).length;
+        itens.push({node:nd,detalhe:entra?(entra+" chegada(s)"):"início da cadeia"});
+      });
+    });
+    return itens;
+  };
+  if(pAtual)secao("Neste procedimento — "+pAtual.name,junta(pAtual),hex(pAtual.color));
+  processes.forEach(p=>{
+    if(p===pAtual)return;
+    secao(p.name,junta(p),hex(p.color));
+  });
+  if(!n){
+    lista.append(el("div","empty-note","Ainda não há etapas noutros procedimentos para onde convergir."));
+  }
+  cx.hidden=false;
+  // fechada por omissão: o organograma é o caminho principal
+  lista.hidden=true;
+  tog.setAttribute("aria-expanded","false");
+  tog.textContent="⇢ Convergir para uma etapa existente"+(n?(" ("+n+")"):"");
+  tog.onclick=()=>{
+    const abrir=lista.hidden;
+    lista.hidden=!abrir;
+    tog.setAttribute("aria-expanded",String(abrir));
+  };
 }
 function npPick(n,gEl,ancoraFio){
   if(!npState)return;
@@ -8386,8 +8498,9 @@ function npPick(n,gEl,ancoraFio){
   }
   if(!npState.origem){
     npState.origem=n;
-    gEl.classList.add("pk-origem");
+    if(gEl)gEl.classList.add("pk-origem");
     npTitulos();
+    montaConvergencia();     // agora há destino a escolher: a convergência entra em jogo
     if(ancoraFio)ancoraFio();
     return;
   }
@@ -8432,9 +8545,16 @@ function apChoose(agentId){
     if(modalView&&modalView.type==="feynman")renderFeynman(st.p);
     return;
   }
+  /* Quantas chegadas já tinha o destino ANTES desta: se tinha, esta junta-se
+     a elas — e vale a pena dizê-lo, senão a convergência passa despercebida. */
+  const jaChegavam=st.p.tasks.filter(x=>x.b===st.destino.id).length;
   const t=createTask(processes.indexOf(st.p),st.origem.id,st.destino.id,undefined,agentId,undefined);
   if(!t){flash("Não foi possível criar a tarefa.",{type:"err"});return;}
-  flash(agentId?"Tarefa criada.":"Tarefa criada sem responsável — assinalada a amarelo.");
+  const noutros=processes.filter(pp=>pp!==st.p&&pp.tasks.some(x=>x.a===st.destino.id||x.b===st.destino.id))
+    .map(pp=>pp.name);
+  if(jaChegavam)flash("Convergiu em “"+st.destino.name+"” — "+(jaChegavam+1)+" chegadas nesta etapa.");
+  else if(noutros.length)flash("Tarefa criada — “"+st.destino.name+"” também é etapa de: "+noutros.join(", ")+".");
+  else flash(agentId?"Tarefa criada.":"Tarefa criada sem responsável — assinalada a amarelo.");
   if(modalView&&modalView.type==="feynman"&&modalView.layer===st.p)renderFeynman(st.p);
   else showFeynman(st.p);
 }
