@@ -1874,7 +1874,6 @@
   <details open id="secProc">
     <summary>Procedimentos</summary>
     <div class="sec-body">
-      <div id="procList"></div>
       <button id="addLayerBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
@@ -1885,9 +1884,9 @@
         </span>
         Novo procedimento
       </button>
+      <div id="procList"></div>
       <div class="foot-note">Clique no nome para abrir o fluxograma — é lá que se renomeia o procedimento e se atribui a grupos. O switch mostra/esconde (procedimentos escondidos saem da cena), o ponto isola, e ✕ apaga um procedimento sem tarefas.</div>
       <div class="mini-title">Grupos de procedimentos</div>
-      <div id="groupList"></div>
       <button id="addGroupBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
@@ -1898,6 +1897,7 @@
         </span>
         Novo grupo
       </button>
+      <div id="groupList"></div>
       <div class="foot-note">O interruptor de um grupo alterna todos os seus procedimentos de uma vez.</div>
     </div>
   </details>
@@ -1905,7 +1905,6 @@
   <details id="secUnidades">
     <summary>Unidades</summary>
     <div class="sec-body">
-      <div id="nodeList"></div>
       <button id="addNodeBtn" class="add-btn">
         <span class="gplus" aria-hidden="true">
           <svg width="14" height="14" viewBox="0 0 14 14">
@@ -1916,6 +1915,7 @@
         </span>
         Novo nódulo
       </button>
+      <div id="nodeList"></div>
       <div class="foot-note">Clique num nódulo para abrir o painel dele — é lá que se edita o nome, o nível, os agentes e as tarefas. Arraste um nódulo para cima de outro para o colocar sob esse nódulo na hierarquia.</div>
     </div>
   </details>
@@ -1923,6 +1923,16 @@
   <details id="secPessoas">
     <summary>Pessoas</summary>
     <div class="sec-body">
+      <button id="addAgentBtn" class="add-btn compact">
+        <span class="gplus small" aria-hidden="true">
+          <svg width="12" height="12" viewBox="0 0 14 14">
+            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
+            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
+            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+          </svg>
+        </span>
+        Nova pessoa
+      </button>
       <div id="agentList"></div>
       <div class="foot-note">Clique num agente para abrir o painel dele — é lá que estão o nome, a categoria e as tarefas atribuídas. Arraste um agente para o cabeçalho de um nódulo (ou para outro agente) para o mudar para esse nódulo. ★ assinala o responsável de cada nódulo.</div>
     </div>
@@ -1955,8 +1965,8 @@
       </div>
 
       <div class="mini-title">Vistas guardadas</div>
-      <div id="bookmarkList"></div>
       <button class="btn tiny" id="addBookmarkBtn" style="margin-bottom:8px">+ Guardar vista atual</button>
+      <div id="bookmarkList"></div>
 
       <div class="setup-btns">
         <button class="btn" id="installBtn" title="Guardar no ecrã principal e usar sem internet">
@@ -2642,41 +2652,56 @@ const aurora=(function(){
     silhouette:"rgba(2,5,10,0.55)"
   };
   const roof=[];
+  const roofFar=[];
   (function(){
     let seed=7;
     const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
-    let xx=0;
-    while(xx<256){
-      let w=5+Math.floor(rnd()*11);
-      const h=4+Math.floor(rnd()*9);
-      /* O casario tem de fechar exatamente aos 256: a tela dá a volta, e um
-         último prédio serrado a meio deixava um degrau na junção. */
-      if(xx+w>256){
-        w=256-xx;
-        if(w<3&&roof.length){roof[roof.length-1].w+=w;break;}
+    /* Uma fiada de prédios de bordo a bordo. As formas variam (casa com
+       telhado de duas águas, torre com pináculo, cúpula), as larguras são
+       curtas e as alturas irregulares — é o recorte, não o volume, que faz
+       uma silhueta parecer cidade. Fecha exatamente aos 256: a tela dá a
+       volta, e um prédio serrado a meio deixava um degrau na junção. */
+    function fiada(lista,wMin,wMax,hMin,hMax,comJanelas){
+      let xx=0;
+      while(xx<256){
+        let w=wMin+Math.floor(rnd()*(wMax-wMin+1));
+        const h=hMin+Math.floor(rnd()*(hMax-hMin+1));
+        if(xx+w>256){
+          w=256-xx;
+          if(w<3&&lista.length){lista[lista.length-1].w+=w;break;}
+        }
+        const kr=rnd();
+        const b={x:xx,w,h,
+          kind:kr<0.07?"tower":(kr<0.13?"dome":"house"),
+          cume:0.25+rnd()*0.5,          // cumeeira fora do centro: telhados tortos
+          cham:rnd()<0.45,              // chaminé nalgumas casas
+          jan:[]};
+        if(comJanelas){
+          /* Janelas acesas: é o que faz uma silhueta parecer uma cidade e não
+             um recorte de cartão. Poucas, e sempre as mesmas — sorteadas de
+             novo a cada fotograma, dariam um cintilar de árvore de Natal. */
+          const nj=(b.kind==="tower")?3:(b.w>=8?2:1);
+          for(let k=0;k<nj;k++){
+            if(rnd()<0.42)continue;
+            b.jan.push({dx:1+Math.floor(rnd()*Math.max(1,b.w-2)),
+                        dy:2+Math.floor(rnd()*Math.max(1,b.h-2))});
+          }
+        }
+        lista.push(b);
+        xx+=w;
+        if(w<=0)break;
       }
-      const b={x:xx,w,h,kind:rnd()<0.06?"tower":(rnd()<0.05?"dome":"house"),jan:[]};
-      /* Janelas acesas: é o que faz uma silhueta parecer uma cidade e não um
-         recorte de cartão. Poucas, e sempre as mesmas — desenhadas a cada
-         fotograma, sortear de novo daria um cintilar de árvore de Natal. */
-      const nj=(b.kind==="tower")?3:(b.w>=9?2:1);
-      for(let k=0;k<nj;k++){
-        if(rnd()<0.42)continue;
-        b.jan.push({dx:1+Math.floor(rnd()*Math.max(1,b.w-2)),
-                    dy:2+Math.floor(rnd()*Math.max(1,b.h-2))});
+      /* O primeiro e o último prédio são, na esfera, o mesmo prédio partido
+         pela junção da tela: mesma silhueta dos dois lados, ou fica lá um
+         degrau a prumo. */
+      if(lista.length>1){
+        const pri=lista[0], ult=lista[lista.length-1];
+        ult.h=pri.h; ult.kind=pri.kind; ult.cume=pri.cume;
+        ult.cham=false; ult.jan=[];
       }
-      roof.push(b);
-      xx+=w;
-      if(w<=0)break;
     }
-    /* O primeiro e o último prédio são, na esfera, o mesmo prédio partido pela
-       junção da tela. Com alturas diferentes ficava ali um degrau a prumo — a
-       risca vertical que se via no fundo. Dá-se ao último a silhueta do
-       primeiro e a linha dos telhados passa a dar a volta inteira. */
-    if(roof.length>1){
-      const pri=roof[0], ult=roof[roof.length-1];
-      ult.h=pri.h; ult.kind=pri.kind; ult.jan=[];
-    }
+    fiada(roofFar,6,14,3,8,false);   // fundo: mais largo, mais baixo, sem janelas
+    fiada(roof,4,9,4,14,true);       // frente: estreito e recortado
   })();
   const HORIZON=178;
   /* Mancha redonda que dá a volta à tela. Desenhada três vezes — uma volta
@@ -2742,19 +2767,46 @@ const aurora=(function(){
     x.fillStyle=grao;x.fillRect(0,0,SKY,SKY);
     x.setTransform(K,0,0,K,0,0);
     x.globalCompositeOperation="source-over";
+    /* As formas desenham-se por caminho, não por retângulo: é a diferença
+       entre "blocos" e telhados. A cumeeira das casas sai do centro, as
+       cúpulas são arcos com haste, as torres acabam em pináculo e antena. */
+    function casario(lista,base){
+      lista.forEach(r=>{
+        if(r.kind==="tower"){
+          const tw=Math.max(2.6,r.w*0.55), tx=r.x+(r.w-tw)/2;
+          x.fillRect(r.x,base-r.h*0.55,r.w,r.h*0.55);          // corpo baixo
+          x.fillRect(tx,base-r.h-6,tw,r.h+6);                  // a torre
+          x.beginPath();                                       // pináculo
+          x.moveTo(tx-0.5,base-r.h-6);
+          x.lineTo(tx+tw/2,base-r.h-11);
+          x.lineTo(tx+tw+0.5,base-r.h-6);
+          x.closePath();x.fill();
+          x.fillRect(tx+tw/2-0.35,base-r.h-14,0.7,3.4);        // antena
+        }else if(r.kind==="dome"){
+          x.fillRect(r.x,base-r.h,r.w,r.h);
+          const rd=Math.min(r.w/2-0.4,4.2);
+          x.beginPath();x.arc(r.x+r.w/2,base-r.h,rd,Math.PI,0);x.fill();
+          x.fillRect(r.x+r.w/2-0.3,base-r.h-rd-2.2,0.6,2.4);   // haste
+        }else{
+          x.fillRect(r.x,base-r.h,r.w,r.h);
+          x.beginPath();                                       // duas águas
+          x.moveTo(r.x-0.4,base-r.h);
+          x.lineTo(r.x+r.w*r.cume,base-r.h-2.8);
+          x.lineTo(r.x+r.w+0.4,base-r.h);
+          x.closePath();x.fill();
+          if(r.cham)x.fillRect(r.x+r.w*0.74,base-r.h-4.4,1.1,4.4);
+        }
+      });
+    }
+    /* A fiada do fundo primeiro, esbatida e um nada mais alta no horizonte:
+       é a profundidade que separa uma cidade de um friso colado ao vidro. */
+    x.save();
+    x.globalAlpha=0.42;
     x.fillStyle=pal.silhouette;
-    roof.forEach(r=>{
-      if(r.kind==="tower"){
-        x.fillRect(r.x,HORIZON-r.h-7,r.w,r.h+7);
-        x.fillRect(r.x+1,HORIZON-r.h-10,r.w-2,3);
-      }else if(r.kind==="dome"){
-        x.fillRect(r.x+1,HORIZON-r.h-3,r.w-2,3);
-        x.fillRect(r.x,HORIZON-r.h,r.w,r.h);
-      }else{
-        x.fillRect(r.x,HORIZON-r.h,r.w,r.h);
-        x.fillRect(r.x+Math.floor(r.w/4),HORIZON-r.h-2,Math.ceil(r.w/2),2);
-      }
-    });
+    casario(roofFar,HORIZON-4);
+    x.restore();
+    x.fillStyle=pal.silhouette;
+    casario(roof,HORIZON);
     x.fillRect(0,HORIZON,256,256-HORIZON);
     // Janelas acesas, por cima da silhueta já fechada
     x.globalCompositeOperation="lighter";
@@ -7502,6 +7554,10 @@ function showFlowIndex(){navigateTo({type:"flowindex"});}
 function renderFlowIndex(){
   modalTitle.textContent="Fluxogramas";
   modalBody.innerHTML="";
+  const nb=el("button","btn primary","+ Novo procedimento");
+  nb.style.marginBottom="8px";
+  nb.onclick=()=>{const np=createLayer();showFeynman(np);startAddTask(np,null);};
+  modalBody.append(nb);
   if(!processes.length){
     modalBody.append(el("div","empty-note","Ainda não há procedimentos."));
   }
@@ -7528,10 +7584,6 @@ function renderFlowIndex(){
     row.append(fw);
     modalBody.append(row);
   });
-  const nb=el("button","btn primary","+ Novo procedimento");
-  nb.style.marginTop="8px";
-  nb.onclick=()=>{const np=createLayer();showFeynman(np);startAddTask(np,null);};
-  modalBody.append(nb);
   modal.classList.add("open");
 }
 
@@ -7802,10 +7854,22 @@ function startAddTask(p,origem){
   buildNodePick();
   nodePickEl.classList.add("open");
 }
+/* "+ Nova pessoa": o mesmo organograma simplificado, mas a escolha é uma só —
+   o nódulo onde a pessoa entra. Criada, abre-se logo o painel dela para dar
+   o nome a sério. */
+function startAddAgent(){
+  npState={modo:"agente"};
+  buildNodePick();
+  nodePickEl.classList.add("open");
+}
+document.getElementById("addAgentBtn").onclick=()=>startAddAgent();
 function npTitulos(){
   const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
   if(!npState)return;
-  if(!npState.origem){
+  if(npState.modo==="agente"){
+    T.textContent="Nova pessoa — escolha o nódulo";
+    S.textContent="Clique no nódulo onde a pessoa vai trabalhar.";
+  }else if(!npState.origem){
     T.textContent="Nova tarefa — escolha o nódulo de origem";
     S.textContent="Clique no nódulo de onde a tarefa parte.";
   }else{
@@ -7885,6 +7949,13 @@ function buildNodePick(){
 }
 function npPick(n,gEl,ancoraFio){
   if(!npState)return;
+  if(npState.modo==="agente"){
+    closeNodePick();
+    const a=addAgent(n.id,false,null);
+    flash("“"+a.name+"” entrou em “"+n.name+"”. Renomeie no painel.");
+    selectAgent(a);
+    return;
+  }
   if(!npState.origem){
     npState.origem=n;
     gEl.classList.add("pk-origem");
