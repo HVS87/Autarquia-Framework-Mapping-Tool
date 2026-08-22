@@ -2008,7 +2008,7 @@
             <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
           </svg>
         </span>
-        Nova pessoa
+        Novo agente
       </button>
       <div id="agentList"></div>
       <div class="foot-note">Clique num agente para abrir o painel dele — é lá que estão o nome, a categoria e as tarefas atribuídas. Arraste um agente para o cabeçalho de um nódulo (ou para outro agente) para o mudar para esse nódulo. ★ assinala o responsável de cada nódulo.</div>
@@ -8226,8 +8226,8 @@ function startAddTask(p,origem){
   buildNodePick();
   nodePickEl.classList.add("open");
 }
-/* "+ Nova pessoa": o mesmo organograma simplificado, mas a escolha é uma só —
-   o nódulo onde a pessoa entra. Criada, abre-se logo o painel dela para dar
+/* "+ Novo agente": o mesmo organograma simplificado, mas a escolha é uma só —
+   o nódulo onde o agente entra. Criado, abre-se logo o painel dele para dar
    o nome a sério. */
 function startAddAgent(){
   npState={modo:"agente"};
@@ -8239,8 +8239,8 @@ function npTitulos(){
   const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
   if(!npState)return;
   if(npState.modo==="agente"){
-    T.textContent="Nova pessoa — escolha o nódulo";
-    S.textContent="Clique no nódulo onde a pessoa vai trabalhar.";
+    T.textContent="Novo agente — escolha o nódulo";
+    S.textContent="Clique no nódulo onde o agente vai trabalhar.";
   }else if(npState.modo==="retarget"){
     T.textContent="Novo destino da tarefa";
     S.textContent="De “"+npState.origem.name+"” até… clique no novo nódulo de chegada.";
