@@ -11,7 +11,7 @@ Obrigado por querer melhorar a Ferramenta de Mapeamento para Autarquias!
    cd Autarquia-Framework-Mapping-Tool
    ```
 3. **Edite** os ficheiros:
-   - **App logic**: `app.js` (em `/home/claude/` se for o dev local)
+   - **Lógica da app**: `app.js` (em `/home/claude/` se for o dev local)
    - **Estilos**: `<style>` tag dentro de `network-framework.html`
    - **Documentação**: `README.md`, `DEPLOY.md`
 4. **Teste** localmente:
@@ -36,17 +36,17 @@ Obrigado por querer melhorar a Ferramenta de Mapeamento para Autarquias!
 - Mantenha o ficheiro em **uma única página** (`network-framework.html`)
 
 ### Comentários
-- Escreva comentários em **inglês** para a lógica principal
-- PT-PT para labels de UI que aparecem na interface
+- Escreva comentários em **português** para a lógica principal
+- Português europeu (AO90) em tudo o que aparece na interface
 
 ### Pull Requests
-- **Uma feature por PR** (mais fácil de rever)
+- **Uma funcionalidade por PR** (mais fácil de rever)
 - Descreva o problema e a solução
-- Inclua screenshots se for mudança visual
+- Inclua capturas de ecrã se for mudança visual
 - Mencione issues relacionadas (`#123`)
 
 ### Issues
-- Procure issues existentes antes de abrir uma nova
+- Procure questões já abertas antes de abrir uma nova
 - Descreva os passos para reproduzir
 - Inclua versão do navegador e SO
 
@@ -54,55 +54,55 @@ Obrigado por querer melhorar a Ferramenta de Mapeamento para Autarquias!
 
 Bem-vindo para:
 
-- 🐛 **Bug fixes** — corrigir crashes, layouts quebrados, etc.
-- ✨ **Features** — novos temas, modos de visualização, export formats
-- 🎨 **UX melhorias** — animações, tooltips, gestos
+- 🐛 **Correção de defeitos** — falhas, layouts partidos, etc.
+- ✨ **Funcionalidades** — novos temas, modos de visualização, formatos de exportação
+- 🎨 **Melhorias de utilização** — animações, dicas, gestos
 - 🌐 **Internacionalização** — traduzir para outras línguas
 - 📖 **Documentação** — exemplos, tutoriais, README
 
 Evite:
 
 - ⚠️ Dependências externas (não bibliotecas, use CDN se necessário)
-- ⚠️ Grandes refactors sem discussão prévia
+- ⚠️ Grandes reestruturações sem discussão prévia
 - ⚠️ Mudanças arquitetónicas radicais
 
 ## Arquitetura do Projeto
 
 ```
 network-framework.html
-├── <meta> + PWA setup
+├── <meta> + preparação da PWA
 ├── <style> 
 │   ├── CSS variables (temas)
-│   ├── Layout (glass, panels, stepper)
-│   └── Animations (micro-interactions)
+│   ├── Layout (vidro, painéis, rodapé da visita)
+│   └── Animações (microinterações)
 ├── <body>
 │   ├── #stage (canvas 3D)
-│   ├── #header (org name + buttons)
-│   ├── #panel (left sidebar: Nodes, Agents, Procedimentos, Groups)
-│   ├── #detail (right sidebar: node/task/agent details)
-│   ├── #stepper (tour controls + progress)
+│   ├── #header (nome da organização + botões)
+│   ├── #panel (painel esquerdo: Nódulos, Agentes, Procedimentos, Grupos)
+│   ├── #detail (painel direito: detalhe de nódulo/tarefa/agente)
+│   ├── #stepper (comandos da visita + progresso)
 │   ├── #modal (fluxograma/organograma 2D)
-│   ├── #confirm (delete confirmations)
-│   └── #tip (hover tooltips)
+│   ├── #confirm (confirmações de remoção)
+│   └── #tip (dicas ao passar o rato)
 └── <script>
-    ├── Three.js initialization + scene setup
-    ├── Data model (nodes, agents, processes, groups, TIER)
-    ├── Rendering (3D visuals, labels, task flows)
-    ├── UI panels (left/right sidebars, modals)
-    ├── Interactions (click, drag, keyboard, tour)
-    ├── Business logic (mutations, validation)
-    ├── Themes (applyTheme, CSS variable swapping)
-    └── Exports (PDF, PPTX, JSON)
+    ├── Arranque do Three.js + montagem da cena
+    ├── Modelo de dados (nodes, agents, processes, groups, TIER)
+    ├── Desenho (visuais 3D, rótulos, fluxos de tarefas)
+    ├── Painéis (laterais esquerda e direita, modais)
+    ├── Interações (clique, arrasto, teclado, visita)
+    ├── Lógica de negócio (mutações, validação)
+    ├── Temas (applyTheme, troca de variáveis CSS)
+    └── Exportações (PDF, PPTX, JSON)
 ```
 
-## Testing
+## Testes
 
 Os testes são em `/home/claude/test/`:
-- `harness.js` — 1,121 assertions (core features)
-- `harness2.js` — 147 assertions (advanced features)
-- `three-stub.js` — Mock da biblioteca Three.js
+- `harness.js` — 1,121 asserções (funcionalidades base)
+- `harness2.js` — 147 asserções (funcionalidades avançadas)
+- `three-stub.js` — substituto da biblioteca Three.js para testes
 
-Para rodar:
+Para executar:
 ```bash
 cd test && node harness.js && node harness2.js
 ```

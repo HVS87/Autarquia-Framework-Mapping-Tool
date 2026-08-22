@@ -5,8 +5,8 @@ Um sistema interativo de 3D para visualização e gestão de estruturas organiza
 ## 🎯 Características
 
 ### Visualização 3D
-- **Rede organizacional em tempo real**: Quatro tiers de coordenação (Executivo, Geral, Setorial, Operacional) dispostos em anéis com cores por ramo
-- **Agentes orbitais**: Cada node exibe a sua equipa como esferas em órbita; a dourada é o responsável
+- **Rede organizacional em tempo real**: Quatro níveis de coordenação (Executivo, Geral, Setorial, Operacional) dispostos em anéis com cores por ramo
+- **Agentes orbitais**: Cada nódulo exibe a sua equipa como esferas em órbita; a dourada é o responsável
 - **Tarefas direcionais**: Correntes de energia percorrem cada procedimento (tarefa) da origem ao destino
 - **Modo imersivo**: Zoom, rotação livre e tour guiado com 8 cenas ilustrativas em português
 
@@ -19,23 +19,23 @@ Um sistema interativo de 3D para visualização e gestão de estruturas organiza
 Cada tema retinge toda a interface, aurora do céu, tesserae do chão, e as paletas de cores das divisões.
 
 ### Gestão de Dados
-- **Organograma interativo**: Criar/renomear/reorganizar nodes, mudar tiers, reparentar equipas
-- **Equipas e agentes**: Adicionar agentes aos nodes, designar responsáveis, reatribuir entre estruturas
+- **Organograma interativo**: Criar/renomear/reorganizar nódulos, mudar níveis, reparentar equipas
+- **Equipas e agentes**: Adicionar agentes aos nódulos, designar responsáveis, reatribuir entre estruturas
 - **Procedimentos**: Criar tarefas direcionais com descrições, durações, agentes responsáveis
-- **Fluxogramas 2D**: Cada procedimento desdobra-se num flowchart editável com visualização de cadeias
+- **Fluxogramas 2D**: Cada procedimento desdobra-se num fluxograma editável com visualização de cadeias
 - **Grupos de procedimentos**: Agrupar tarefas relacionadas em "Grupos de Procedimentos" para melhor navegação
 
 ### Experiência do Utilizador
 - **Tour guiado**: Reprodução automática (com ritmo adaptativo) ou navegação manual (←/→ ou clique)
-- **Pesquisa em tempo real**: Filtro rápido em todos os separadores (Procedimentos, Nodes, Agentes, Grupos)
-- **Suporte móvel**: Interface responsiva com gaveta lateral e bottom-sheets; controles otimizados para toque
+- **Pesquisa em tempo real**: Filtro rápido em todos os separadores (Procedimentos, Nódulos, Agentes, Grupos)
+- **Suporte móvel**: Interface responsiva com gaveta lateral e painéis inferiores; controlos otimizados para toque
 - **Lembretes de mudanças**: Aviso `beforeunload` se houver alterações não gravadas
 - **Exportação/Importação**: Guardar datasets em JSON, partilhar configurações; PDF e apresentações PPTX
 
 ### Segurança e Acessibilidade
 - `prefers-reduced-motion`: Animações pausam automaticamente para utilizadores com preferências
 - `prefers-color-scheme`: Deteta modo claro/escuro do sistema
-- ARIA labels e navegação por teclado: ←/→ mudam cenas, Espaço reproduz/pausa a tour
+- Rótulos ARIA e navegação por teclado: ←/→ mudam cenas, Espaço reproduz/pausa a tour
 - Tipografia clara (Avenir Next/Segoe UI) com alto contraste em todos os temas
 
 ## 🚀 Como Começar
@@ -60,14 +60,14 @@ cd Autarquia-Framework-Mapping-Tool
 ### Exploração 3D
 - **Clique + arraste**: Roda a câmara
 - **Scroll/Pinch**: Zoom in/out (raio da órbita)
-- **Clique numa esfera**: Seleciona o node ou tarefa — abre o painel de edição à direita
+- **Clique numa esfera**: Seleciona o nódulo ou a tarefa — abre o painel de edição à direita
 - **Espaço**: Reproduz/pausa o tour (quando não está num campo de texto)
 
 ### Edição de Dados
-1. **Nodes**: Clique em qualquer esfera para renomear, mudar tier, adicionar/remover agentes
-2. **Tarefas**: Clique num arco para editar endpoints (origem/destino), descrição, responsável, duração
-3. **Agentes**: Atribua a um node ou mude de responsável de uma tarefa
-4. **Grupos**: Agrupe procedimentos relacionados e controle visibilidade em conjunto
+1. **Nódulos**: Clique em qualquer esfera para renomear, mudar de nível, adicionar/remover agentes
+2. **Tarefas**: Clique num arco para editar as pontas (origem/destino), descrição, responsável, duração
+3. **Agentes**: Atribua a um nódulo ou mude de responsável de uma tarefa
+4. **Grupos**: Agrupe procedimentos relacionados e controle a visibilidade em conjunto
 
 ### Tour Guiado
 - Clique **Play tour** para reprodução automática (ritmo adaptativo por cena)
@@ -103,7 +103,7 @@ Mobile:
 
 ## 🎨 Desenvolvimento & Personalização
 
-O código está organizado em seções:
+O código está organizado em secções:
 - **Paletas de cores** (linhas ~110–180): Edite `THEMES` para adicionar novos temas
 - **Estrutura de dados** (linhas ~200–300): Seed inicial; edite `nodes`, `agents`, `processes`
 - **Renderização 3D** (linhas ~400–1200): Three.js cena, materiais, câmara, iluminação
