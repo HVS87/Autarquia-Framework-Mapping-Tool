@@ -35,6 +35,8 @@
        de separadores, e via-se o salto. */
     --tab-h:38px;
     --radar-h:0px;
+    --radar-w:0px;
+    --wb-w:0px;
     font-size:16px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -113,7 +115,10 @@
     background:transparent;border:none;border-bottom:1px solid transparent;
     color:var(--ink);font-family:inherit;font-weight:600;font-size:1.05rem;
     letter-spacing:.14em;text-transform:uppercase;padding:0 2px 2px;
-    width:min(420px,56vw);
+    /* Pára onde a barra de localização começa. Sem isto, a barra — que está
+       por cima — tapava a metade direita do campo e não se conseguia lá
+       escrever. --wb-w é 0 quando a barra não está à vista. */
+    width:min(420px,56vw,calc(50vw - (var(--wb-w,0px) / 2) - 42px));
   }
   #orgName:hover{border-bottom-color:var(--hairline)}
   #orgName:focus{outline:none;border-bottom-color:var(--gold)}
@@ -125,6 +130,14 @@
   .hint{
     font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
     text-align:right;line-height:1.7;flex:0 1 auto;min-width:0;
+    /* O radar ocupa o canto superior direito; sem esta margem a dica passava
+       por baixo dele. --radar-w é 0 quando o radar não está à vista. */
+    margin-right:var(--radar-w,0px);
+    /* E do lado de dentro fica a barra de localização, que é centrada e cresce
+       com o caminho até ao nódulo escolhido: no máximo ocupa 280px para cada
+       lado do meio. A dica é ajuda decorativa e é ela que cede — encolhe até
+       caber no que sobra, em vez de se sobrepor ao que informa. */
+    max-width:calc(50vw - 324px - var(--radar-w,0px));
   }
   @media (max-width:1500px){ .hint{display:none} }
 
@@ -997,7 +1010,11 @@
      cabeçalho passa de 74 para 170px — um quinto de um tablet ao baixo, gasto
      em cromo. Numa linha que desliza ficam todos alcançáveis e o mapa recupera
      o espaço. Em ecrã largo mantém-se a grelha, que lá cabe inteira. */
+  /* O radar vive no canto superior direito, à altura desta fila. Em ecrã largo
+     a fila nem lá chega e a margem não custa nada; num tablet deitado é o que
+     impede o radar de ficar por cima dos últimos botões. */
   .brand .head-actions{
+    margin-right:var(--radar-w,0px);
     flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
     padding-bottom:2px;max-width:calc(100vw - 150px);
     /* Num ecrã estreito nem todos os botões cabem. O esbatimento à direita diz
@@ -2511,6 +2528,10 @@ const aurora=(function(){
   const c=document.createElement("canvas");c.width=SKY;c.height=SKY;
   const x=c.getContext("2d");
   const tex=afinarTextura(new THREE.CanvasTexture(c));
+  /* A tela dá a volta à esfera: a filtragem tem de dar a volta com ela. Em
+     ClampToEdge, o bilinear na junção repete o texel do bordo em vez de
+     atravessar para o outro lado, e isso desenha lá uma risca. */
+  tex.wrapS=THREE.RepeatWrapping;
   /* Ruído estático de amplitude mínima. Um gradiente de 8 bits esticado por
      toda a abóbada dá degraus largos, que o olho lê como anéis de contorno;
      um pouco de grão por cima quebra a fronteira entre degraus e o gradiente
@@ -2548,13 +2569,53 @@ const aurora=(function(){
     const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
     let xx=0;
     while(xx<256){
-      const w=5+Math.floor(rnd()*11);
+      let w=5+Math.floor(rnd()*11);
       const h=4+Math.floor(rnd()*9);
-      roof.push({x:xx,w,h,kind:rnd()<0.06?"tower":(rnd()<0.05?"dome":"house")});
+      /* O casario tem de fechar exactamente aos 256: a tela dá a volta, e um
+         último prédio serrado a meio deixava um degrau na junção. */
+      if(xx+w>256){
+        w=256-xx;
+        if(w<3&&roof.length){roof[roof.length-1].w+=w;break;}
+      }
+      const b={x:xx,w,h,kind:rnd()<0.06?"tower":(rnd()<0.05?"dome":"house"),jan:[]};
+      /* Janelas acesas: é o que faz uma silhueta parecer uma cidade e não um
+         recorte de cartão. Poucas, e sempre as mesmas — desenhadas a cada
+         fotograma, sortear de novo daria um cintilar de árvore de Natal. */
+      const nj=(b.kind==="tower")?3:(b.w>=9?2:1);
+      for(let k=0;k<nj;k++){
+        if(rnd()<0.42)continue;
+        b.jan.push({dx:1+Math.floor(rnd()*Math.max(1,b.w-2)),
+                    dy:2+Math.floor(rnd()*Math.max(1,b.h-2))});
+      }
+      roof.push(b);
       xx+=w;
+      if(w<=0)break;
+    }
+    /* O primeiro e o último prédio são, na esfera, o mesmo prédio partido pela
+       junção da tela. Com alturas diferentes ficava ali um degrau a prumo — a
+       risca vertical que se via no fundo. Dá-se ao último a silhueta do
+       primeiro e a linha dos telhados passa a dar a volta inteira. */
+    if(roof.length>1){
+      const pri=roof[0], ult=roof[roof.length-1];
+      ult.h=pri.h; ult.kind=pri.kind; ult.jan=[];
     }
   })();
   const HORIZON=178;
+  /* Mancha redonda que dá a volta à tela. Desenhada três vezes — uma volta
+     atrás, no sítio, e uma volta à frente — para que o que sai por um bordo
+     entre pelo outro. As cópias que ficam fora da tela são descartadas antes
+     de custarem alguma coisa. */
+  function mancha(cx,cy,r,rgb,a){
+    for(let k=-1;k<=1;k++){
+      const px=cx+k*256;
+      if(px+r<0||px-r>256)continue;
+      const rg=x.createRadialGradient(px,cy,0,px,cy,r);
+      rg.addColorStop(0,"rgba("+rgb+","+a+")");
+      rg.addColorStop(1,"rgba("+rgb+",0)");
+      x.fillStyle=rg;
+      x.fillRect(px-r,cy-r,r*2,r*2);
+    }
+  }
   function draw(tt){
     x.setTransform(K,0,0,K,0,0);
     x.globalCompositeOperation="source-over";
@@ -2565,27 +2626,31 @@ const aurora=(function(){
     pal.blobs.forEach((b,i)=>{
       const bx=256*(b.px+Math.sin(tt*b.sx+i*2.1)*0.15);
       const by=256*(b.py+Math.cos(tt*b.sy+i*1.4)*0.09);
-      const rg=x.createRadialGradient(bx,by,0,bx,by,b.r);
-      rg.addColorStop(0,"rgba("+b.rgb+","+b.a+")");
-      rg.addColorStop(1,"rgba("+b.rgb+",0)");
-      x.fillStyle=rg;x.fillRect(0,0,256,256);
+      mancha(bx,by,b.r,b.rgb,b.a);
     });
-    /* Luz com direcção. Um céu de gradiente puro não tem lado nenhum; uma
-       cidade tem. Um véu do tom do primeiro halo entra de um lado e o outro
-       cai para a sombra — de leve, que isto é pano de fundo e não assunto. */
-    x.globalCompositeOperation="source-over";
-    const lat=x.createLinearGradient(0,40,256,HORIZON);
-    lat.addColorStop(0,   "rgba("+pal.blobs[0].rgb+",0.11)");
-    lat.addColorStop(0.5, "rgba("+pal.blobs[0].rgb+",0.02)");
-    lat.addColorStop(1,   "rgba(0,0,0,0.20)");
-    x.fillStyle=lat;x.fillRect(0,0,256,HORIZON+4);
-    /* E o clarão que uma cidade põe por cima dos telhados: sobe pouco, mas é
-       o que faz o casario deixar de ser uma tira preta e passar a recorte. */
+    /* Luz com direcção, feita de manchas em vez de um gradiente de bordo a
+       bordo. O gradiente era o que punha o preto encostado ao quente na
+       junção da tela; as manchas dão a volta e a junção deixa de existir.
+       O clarão principal assenta pouco acima dos telhados, que é onde uma
+       cidade tem a luz, e cai para a sombra meia volta adiante. */
     x.globalCompositeOperation="lighter";
-    const halo=x.createLinearGradient(0,HORIZON-30,0,HORIZON);
+    mancha(256*0.28,HORIZON-16,168,pal.blobs[0].rgb,0.13);
+    mancha(256*0.28,HORIZON-52,104,pal.blobs[0].rgb,0.06);
+    x.globalCompositeOperation="source-over";
+    mancha(256*0.80,HORIZON-70,150,"0,0,0",0.20);
+    mancha(256*0.06,HORIZON-96,110,"0,0,0",0.10);
+
+    /* O clarão rente aos telhados: uma faixa contínua (que é vertical, logo
+       não tem junção) mais três poças onde a cidade é mais densa. */
+    x.globalCompositeOperation="lighter";
+    const halo=x.createLinearGradient(0,HORIZON-32,0,HORIZON);
     halo.addColorStop(0,"rgba("+pal.blobs[1].rgb+",0)");
-    halo.addColorStop(1,"rgba("+pal.blobs[1].rgb+",0.19)");
-    x.fillStyle=halo;x.fillRect(0,HORIZON-30,256,30);
+    halo.addColorStop(0.55,"rgba("+pal.blobs[1].rgb+",0.06)");
+    halo.addColorStop(1,"rgba("+pal.blobs[1].rgb+",0.17)");
+    x.fillStyle=halo;x.fillRect(0,HORIZON-32,256,32);
+    [[0.17,0.10],[0.49,0.07],[0.83,0.09]].forEach(function(q){
+      mancha(256*q[0],HORIZON-3,40,pal.blobs[1].rgb,q[1]);
+    });
 
     /* Sem transformação: o grão tem de ter o tamanho do texel, não o tamanho
        a que o desenho foi escalado, senão deixa de ser grão e passa a ser
@@ -2613,6 +2678,13 @@ const aurora=(function(){
       }
     });
     x.fillRect(0,HORIZON,256,256-HORIZON);
+    // Janelas acesas, por cima da silhueta já fechada
+    x.globalCompositeOperation="lighter";
+    x.fillStyle="rgba("+pal.blobs[1].rgb+",0.5)";
+    roof.forEach(r=>{
+      r.jan.forEach(j=>{ x.fillRect(r.x+j.dx,HORIZON-j.dy,1,1); });
+    });
+    x.globalCompositeOperation="source-over";
     x.setTransform(1,0,0,1,0,0);
     tex.needsUpdate=true;
   }
@@ -2621,15 +2693,75 @@ const aurora=(function(){
 })();
 // Calçada portuguesa ground — concentric tesserae fading outward
 const GROUND_RES=1024;                      // o chão vê-se de raspão: pede definição
+
+/* Segunda passagem da calçada: pedra mais miúda, a meio caminho entre os anéis
+   da primeira. Uma calçada a sério não tem uma pedra só, e a 1024 já há texéis
+   para o mostrar — a 512 isto teria virado papa. Desenha-se em coordenadas de
+   512, como o resto, e recebe a cor do tema. */
+function calcadaMiuda(x,cor,alfa){
+  let anel=0;
+  for(let rr=22.5;rr<250;rr+=9,anel++){
+    const n=Math.max(18,Math.round(2*Math.PI*rr/6.1));
+    const salto=(anel*0.381)%1;
+    for(let i=0;i<n;i++){
+      const ang=(i/n+salto*0.05)*Math.PI*2;
+      const px=256+Math.cos(ang)*rr, py=256+Math.sin(ang)*rr;
+      const fade=Math.pow(Math.max(0,1-rr/252),1.9);
+      const vari=0.55+(((i*11+anel*7)%13)/13)*0.7;
+      x.fillStyle="rgba("+cor+","+(0.030*fade*vari*alfa)+")";
+      x.fillRect(px-1.3,py-1.3,2.6,2.6);
+    }
+  }
+}
+/* Grão de pedra. Sem ele o chão entre as tesseras é cor chapada, e a 1024
+   nota-se mais do que a 512.
+   O modo é "source-atop", e a razão é a única que interessa aqui: o chão
+   desvanece-se até ficar transparente no bordo, e é esse desvanecimento que
+   faz a passagem para o fundo não ter costura. Somar o grão ("lighter")
+   somava também o alfa e punha o chão opaco até 96% do raio, para cair a pique
+   no fim — precisamente o corte que se queria evitar. "source-atop" pinta só
+   onde já há chão e devolve o alfa do destino intacto, de modo que o grão
+   segue o desvanecimento em vez de o apagar. */
+let __graoChaoPat=null;
+function graoDoChao(x){
+  if(!__graoChaoPat){
+    const n=document.createElement("canvas");n.width=64;n.height=64;
+    const nx=n.getContext("2d");
+    const img=nx.createImageData(64,64);
+    let s=90210;
+    for(let i=0;i<img.data.length;i+=4){
+      s=(s*1103515245+12345)&0x7fffffff;
+      img.data[i]=img.data[i+1]=img.data[i+2]=255;   // pedra clara
+      img.data[i+3]=(s>>>16)&15;                     // e quase toda transparente
+    }
+    nx.putImageData(img,0,0);
+    __graoChaoPat=n;
+  }
+  x.save();
+  x.globalCompositeOperation="source-atop";
+  x.globalAlpha=0.55;
+  x.fillStyle=x.createPattern(__graoChaoPat,"repeat");
+  x.fillRect(0,0,512,512);
+  x.restore();
+}
 const ground=(function(){
   const c=document.createElement("canvas");c.width=c.height=GROUND_RES;
   const x=c.getContext("2d");
   // O desenho continua a pensar em 512; a escala poupa reescrever a calçada toda
   x.setTransform(GROUND_RES/512,0,0,GROUND_RES/512,0,0);
   const g=x.createRadialGradient(256,256,16,256,256,256);
-  g.addColorStop(0,"rgba(17,30,52,0.92)");
-  g.addColorStop(0.6,"rgba(10,20,36,0.78)");
-  g.addColorStop(1,"rgba(10,20,36,0)");
+  /* Saída suave. Dois pontos e uma recta davam um aro visível onde o chão
+     acabava; esta curva chega a zero um pouco antes do bordo da geometria,
+     de modo que a transição para o fundo não tem sítio nenhum onde pegar. */
+  g.addColorStop(0,   "rgba(17,30,52,0.92)");
+  g.addColorStop(0.42,"rgba(13,24,42,0.85)");
+  g.addColorStop(0.60,"rgba(10,20,36,0.74)");
+  g.addColorStop(0.72,"rgba(10,20,36,0.56)");
+  g.addColorStop(0.81,"rgba(10,20,36,0.37)");
+  g.addColorStop(0.885,"rgba(10,20,36,0.20)");
+  g.addColorStop(0.94,"rgba(10,20,36,0.087)");
+  g.addColorStop(0.975,"rgba(10,20,36,0.026)");
+  g.addColorStop(1,   "rgba(10,20,36,0)");
   x.fillStyle=g;x.fillRect(0,0,512,512);
   let ring=0;
   for(let rr=18;rr<250;rr+=9,ring++){
@@ -2639,13 +2771,15 @@ const ground=(function(){
     for(let i=0;i<count;i++){
       const ang=(i/count+jitter*0.04)*Math.PI*2;
       const px=256+Math.cos(ang)*rr,py=256+Math.sin(ang)*rr;
-      const fade=Math.pow(1-rr/258,1.35);
+      const fade=Math.pow(Math.max(0,1-rr/252),1.9);
       const vari=0.7+(((i*7+ring*13)%11)/11)*0.55;
       const a=(gold?0.052:0.06)*fade*vari;
       x.fillStyle=gold?("rgba(232,180,76,"+a+")"):("rgba(201,214,232,"+a+")");
       x.fillRect(px-2.3,py-2.3,4.6,4.6);
     }
   }
+  calcadaMiuda(x,"201,214,232",1);
+  graoDoChao(x);
   x.setTransform(1,0,0,1,0,0);
   const m=new THREE.Mesh(
     new THREE.CircleGeometry(18.5,128),
@@ -4278,7 +4412,11 @@ function setTab(id){
        A gaveta em si só se fecha onde ela existe como gaveta. */
     document.body.classList.remove("panel-open");
     menuBtn.classList.remove("active");
-    if(innerWidth<=980)panelEl.classList.remove("open");
+    /* `open` sai sempre, e não só em ecrã estreito. Em ecrã largo a classe não
+       faz diferença nenhuma — o painel é uma coluna permanente —, mas ficava
+       pendurada e depois bastava estreitar a janela, ou rodar o tablet, para a
+       gaveta se abrir sozinha por cima do cartão de arranque. */
+    panelEl.classList.remove("open");
   }else{
     document.body.dataset.tab=id;
     const sec=document.getElementById(TAB_SEC[id]);
@@ -8259,14 +8397,31 @@ const THEMES={
       [0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]]}
 };
 let themeId="nocturno";
+/* Mesma cor, outro alfa. Os tons do tema vêm como "rgba(r,g,b,a)"; a curva de
+   saída do chão precisa da mesma cor com o alfa a descer, e não de outra cor. */
+function esbater(cor,alfa){
+  const m=String(cor).match(/rgba?\(([^)]+)\)/);
+  if(!m)return cor;
+  const p=m[1].split(",");
+  return "rgba("+p[0].trim()+","+p[1].trim()+","+p[2].trim()+","+alfa+")";
+}
 function makeCalcadaTexture(T0){
   const c=document.createElement("canvas");c.width=c.height=GROUND_RES;
   const x=c.getContext("2d");
   x.setTransform(GROUND_RES/512,0,0,GROUND_RES/512,0,0);
   const g=x.createRadialGradient(256,256,16,256,256,256);
-  g.addColorStop(0,T0.groundBase[0]);
-  g.addColorStop(0.6,T0.groundBase[1]);
-  g.addColorStop(1,"rgba(0,0,0,0)");
+  /* Mesma curva de saída da versão inicial: sem ela ficava um aro no sítio
+     onde o chão acaba. Os tons intermédios saem de misturar os dois do tema
+     com transparência, para a curva ser do alfa e não da cor. */
+  g.addColorStop(0,    T0.groundBase[0]);
+  g.addColorStop(0.42, T0.groundBase[0]);
+  g.addColorStop(0.60, T0.groundBase[1]);
+  g.addColorStop(0.72, T0.groundBase[1]);
+  g.addColorStop(0.81, esbater(T0.groundBase[1],0.50));
+  g.addColorStop(0.885,esbater(T0.groundBase[1],0.27));
+  g.addColorStop(0.94, esbater(T0.groundBase[1],0.118));
+  g.addColorStop(0.975,esbater(T0.groundBase[1],0.035));
+  g.addColorStop(1,    "rgba(0,0,0,0)");
   x.fillStyle=g;x.fillRect(0,0,512,512);
   let ring=0;
   for(let rr=18;rr<250;rr+=9,ring++){
@@ -8276,13 +8431,15 @@ function makeCalcadaTexture(T0){
     for(let i=0;i<count;i++){
       const ang=(i/count+jitter*0.04)*Math.PI*2;
       const px=256+Math.cos(ang)*rr,py=256+Math.sin(ang)*rr;
-      const fade=Math.pow(1-rr/258,1.35);
+      const fade=Math.pow(Math.max(0,1-rr/252),1.9);
       const vari=0.7+(((i*7+ring*13)%11)/11)*0.55;
       const a=(gld?0.052:0.06)*fade*vari*T0.tessAlpha;
       x.fillStyle=gld?("rgba("+T0.tesseraGold+","+a+")"):("rgba("+T0.tessera+","+a+")");
       x.fillRect(px-2.3,py-2.3,4.6,4.6);
     }
   }
+  calcadaMiuda(x,T0.tessera,T0.tessAlpha);
+  graoDoChao(x);
   x.setTransform(1,0,0,1,0,0);
   return new THREE.CanvasTexture(c);
 }
@@ -9174,6 +9331,16 @@ function measureChrome(){
   // o painel sabe onde começar; escondido, a variável é zero e o painel sobe.
   const rdEl=document.getElementById("radarWrap");
   set("--radar-h",rdEl?h(rdEl,rdEl.getBoundingClientRect().height?10:0):0);
+  // E a largura, pela mesma razão: a dica do cabeçalho é texto alinhado à
+  // direita e ia parar debaixo do radar em ecrãs acima de 1500px.
+  const rdVis=rdEl&&getComputedStyle(rdEl).display!=="none";
+  set("--radar-w",rdVis?Math.round(rdEl.getBoundingClientRect().width)+14:0);
+  /* A barra de localização é centrada e cresce com o caminho até ao nódulo
+     escolhido. Publica-se o MÁXIMO que pode ocupar, e não a largura de agora:
+     senão o nome da organização mudava de tamanho a cada selecção. */
+  const wbEl=document.getElementById("whereBar");
+  const wbVis=wbEl&&getComputedStyle(wbEl).display!=="none";
+  set("--wb-w",wbVis?Math.round(Math.min(560,innerWidth*0.52)):0);
   // Em ecrã largo o painel da esquerda está sempre visível e partilha a coluna
   // com o cartão de arranque: um tem de parar onde o outro começa.
   set("--quest-h",h(document.getElementById("quest"),12));
