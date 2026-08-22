@@ -172,6 +172,28 @@
   #npConvList .conv-item:hover{border-color:var(--gold)}
   #npConvList .conv-item .de{margin-left:auto;font-size:.68rem;color:var(--ink-dim);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%}
+  #npConvList .conv-proc{font-weight:600}
+  #npConvList .conv-volta{color:var(--ink-dim);border-style:dashed}
+
+  /* ---- Ramos entre procedimentos, no fluxograma ---- */
+  .fc-ramos{margin:0 0 10px;display:flex;flex-direction:column;gap:4px}
+  .ramos-tit{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-dim);margin:6px 0 2px}
+  .ramo{border:1px solid var(--hairline);border-radius:8px;overflow:hidden}
+  .ramo-cab{display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+    font:inherit;font-size:.8rem;color:var(--ink);background:transparent;border:none;
+    padding:7px 10px;cursor:pointer}
+  .ramo-cab:hover{background:rgba(127,127,127,0.08)}
+  .ramo-cab .cv{color:var(--gold);flex:none}
+  .ramo-cab .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ramo-cab .count{margin-left:auto}
+  .ramo-corpo{display:flex;flex-direction:column;gap:4px;padding:2px 10px 10px}
+  .ramo-tarefa{display:flex;align-items:center;gap:8px;text-align:left;font:inherit;
+    font-size:.76rem;color:var(--ink);background:rgba(127,127,127,0.05);
+    border:1px solid var(--hairline);border-radius:7px;padding:5px 8px;cursor:pointer;min-width:0}
+  .ramo-tarefa:hover{border-color:var(--gold)}
+  .ramo-tarefa>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .ramo-tarefa .rota{margin-left:auto;font-size:.68rem;color:var(--ink-dim);white-space:nowrap}
   #apCard{width:min(460px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
     padding:20px;border-radius:14px;animation:confirmIn .2s ease}
   #apList{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
@@ -7560,6 +7582,55 @@ function renderFlowchart(p){
     modalBody.append(wrap);
   }
 
+  /* ---- ramos convergentes e divergentes ----
+     Os procedimentos que desaguam neste (ou que dele partem) aparecem em
+     faixas próprias, colapsadas por omissão: quem abre o fluxograma quer ver
+     a cadeia deste procedimento, e só depois de onde ela vem e para onde vai. */
+  const rr=ramosDe(p);
+  if(rr.convergentes.length||rr.divergentes.length){
+    const cxr=el("div","fc-ramos");
+    const faixa=(titulo,lista,tipo)=>{
+      if(!lista.length)return;
+      cxr.append(el("div","ramos-tit",titulo));
+      lista.forEach(r=>{
+        const chave=p.id+"|"+tipo+"|"+r.proc.id;
+        const aberto=!!ramoAberto[chave];
+        const cai=el("div","ramo"+(aberto?" aberto":""));
+        cai.style.borderLeft="3px solid "+hex(r.proc.color);
+        const cab=el("button","ramo-cab");
+        cab.setAttribute("aria-expanded",String(aberto));
+        cab.append(el("span","cv",aberto?"▾":"▸"));
+        cab.append(el("span","nm",r.proc.name));
+        cab.append(el("span","count",r.tasks.length+(tipo==="conv"?" chegada(s)":" saída(s)")));
+        const wr=el("span","warn-slot");wr.style.position="static";
+        wr.innerHTML=avisoHTML(procAvisos(r.proc));
+        cab.append(wr);
+        cab.onclick=()=>{ramoAberto[chave]=!ramoAberto[chave];renderFlowchart(p);};
+        cai.append(cab);
+        if(aberto){
+          const corpo=el("div","ramo-corpo");
+          r.tasks.forEach(x=>{
+            const A=byId(x.a),B=byId(x.b);
+            const ln=el("button","ramo-tarefa");
+            ln.append(el("span",null,x.nome||String(x.desc||"tarefa").slice(0,34)));
+            ln.append(el("span","rota",(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")));
+            ln.title="Abrir o painel desta tarefa";
+            ln.onclick=()=>selectTask(x);
+            corpo.append(ln);
+          });
+          const ir=el("button","btn tiny","Abrir “"+r.proc.name+"”");
+          ir.onclick=()=>showFlowchart(r.proc);
+          corpo.append(ir);
+          cai.append(corpo);
+        }
+        cxr.append(cai);
+      });
+    };
+    faixa("Ramos convergentes — desaguam neste procedimento",rr.convergentes,"conv");
+    faixa("Ramos divergentes — partem deste procedimento",rr.divergentes,"div");
+    modalBody.append(cxr);
+  }
+
   /* ---- graph canvas ---- */
   const main=el("div","fc-main");
   const canvas=el("div","fc-canvas");
@@ -8400,6 +8471,26 @@ function buildNodePick(){
     aplicaTamanhos();
   }
 }
+/* ============================================================
+   RAMOS ENTRE PROCEDIMENTOS
+   Derivados das tarefas, não guardados à parte: um procedimento cujo fluxo
+   desagua num nódulo deste é um ramo CONVERGENTE; um que arranque de um
+   nódulo deste é um ramo DIVERGENTE. Sendo derivado, não há segunda fonte
+   de verdade a apodrecer quando se apaga uma tarefa.
+============================================================ */
+function ramosDe(p){
+  const meus=new Set(procGraph(p).ids);
+  const conv=[],div=[];
+  processes.forEach(o=>{
+    if(o===p||!o.tasks.length)return;
+    const entra=o.tasks.filter(x=>meus.has(x.b)&&!meus.has(x.a));
+    const sai=o.tasks.filter(x=>meus.has(x.a)&&!meus.has(x.b));
+    if(entra.length)conv.push({proc:o,tasks:entra,nos:[...new Set(entra.map(x=>x.b))]});
+    if(sai.length)div.push({proc:o,tasks:sai,nos:[...new Set(sai.map(x=>x.a))]});
+  });
+  return {convergentes:conv,divergentes:div};
+}
+const ramoAberto={};    // "idProc|idRamo" -> true quando expandido
 /* Em que procedimentos este nódulo já é etapa, e por que tarefas lá chega. */
 function etapasDe(nodeId){
   const out=[];
@@ -8422,61 +8513,78 @@ function montaConvergencia(){
   const origemId=npState.modo==="retarget"?npState.t.a:npState.origem.id;
   const excluir=npState.modo==="retarget"?npState.t.b:null;
   const pAtual=npState.p||null;
-  lista.innerHTML="";
-  let n=0;
-  const secao=(titulo,itens,cor)=>{
-    if(!itens.length)return;
+  /* As etapas de um procedimento, sem repetir nódulos e sem oferecer a origem
+     nem o destino que já lá está. */
+  const etapasDoProc=(pp)=>{
+    const vistos=new Set(),itens=[];
+    pp.tasks.forEach(x=>{
+      [x.a,x.b].forEach(id=>{
+        if(id===origemId||id===excluir||vistos.has(id))return;
+        const nd=byId(id);if(!nd)return;
+        vistos.add(id);
+        const entra=pp.tasks.filter(y=>y.b===id).length;
+        const sai=pp.tasks.filter(y=>y.a===id).length;
+        itens.push({node:nd,detalhe:entra?(entra+" chegada(s)"):(sai?"início da cadeia":"—")});
+      });
+    });
+    return itens;
+  };
+  /* Dois passos: primeiro o procedimento, depois a etapa. Com uma dúzia de
+     procedimentos, a lista corrida de todas as etapas era uma parede. */
+  const desenhaProcs=()=>{
+    lista.innerHTML="";
+    const ordem=pAtual?[pAtual].concat(processes.filter(x=>x!==pAtual)):processes.slice();
+    let houve=0;
+    ordem.forEach(pp=>{
+      const itens=etapasDoProc(pp);
+      if(!itens.length)return;
+      houve++;
+      const b=el("button","conv-item conv-proc");
+      b.dataset.pid=pp.id;
+      const s=el("span","swatch");s.style.background=hex(pp.color);
+      b.append(s,el("span",null,pp.name+(pp===pAtual?" (este)":"")));
+      b.append(el("span","de",itens.length+" etapa(s) ›"));
+      b.title="Ver as etapas de “"+pp.name+"”";
+      b.onclick=()=>desenhaEtapas(pp);
+      lista.append(b);
+    });
+    if(!houve)lista.append(el("div","empty-note","Ainda não há etapas para onde convergir."));
+  };
+  const desenhaEtapas=(pp)=>{
+    lista.innerHTML="";
+    const volta=el("button","conv-item conv-volta","‹ Todos os procedimentos");
+    volta.onclick=()=>desenhaProcs();
+    lista.append(volta);
     const h=el("div","conv-grupo");
-    if(cor){const s=el("span","swatch");s.style.background=cor;h.append(s);}
-    h.append(document.createTextNode(titulo));
+    const s=el("span","swatch");s.style.background=hex(pp.color);
+    h.append(s,document.createTextNode("Etapas de "+pp.name));
     lista.append(h);
-    itens.forEach(it=>{
+    etapasDoProc(pp).forEach(it=>{
       const b=el("button","conv-item");
-      b.dataset.nid=it.node.id;
+      b.dataset.nid=it.node.id;b.dataset.pid=pp.id;
       b.append(el("span",null,it.node.name));
       b.append(el("span","de",it.detalhe));
       b.title="Convergir para esta etapa — a nova ligação chega a “"+it.node.name+"”";
       b.onclick=()=>{
         const alvo=byId(it.node.id);
         if(!alvo)return;
-        const g=document.querySelector('#npSvg .pk-caixa[data-id="'+alvo.id+'"]');
-        npPick(alvo,g,null);
+        npPick(alvo,document.querySelector('#npSvg .pk-caixa[data-id="'+alvo.id+'"]'),null);
       };
       lista.append(b);
-      n++;
     });
   };
-  const junta=(p)=>{
-    const vistos=new Set();
-    const itens=[];
-    p.tasks.forEach(x=>{
-      [x.a,x.b].forEach(id=>{
-        if(id===origemId||id===excluir||vistos.has(id))return;
-        const nd=byId(id);if(!nd)return;
-        vistos.add(id);
-        const entra=p.tasks.filter(y=>y.b===id).length;
-        itens.push({node:nd,detalhe:entra?(entra+" chegada(s)"):"início da cadeia"});
-      });
-    });
-    return itens;
-  };
-  if(pAtual)secao("Neste procedimento — "+pAtual.name,junta(pAtual),hex(pAtual.color));
-  processes.forEach(p=>{
-    if(p===pAtual)return;
-    secao(p.name,junta(p),hex(p.color));
-  });
-  if(!n){
-    lista.append(el("div","empty-note","Ainda não há etapas noutros procedimentos para onde convergir."));
-  }
+  const totalEtapas=processes.reduce((s,pp)=>s+etapasDoProc(pp).length,0);
+  desenhaProcs();
   cx.hidden=false;
   // fechada por omissão: o organograma é o caminho principal
   lista.hidden=true;
   tog.setAttribute("aria-expanded","false");
-  tog.textContent="⇢ Convergir para uma etapa existente"+(n?(" ("+n+")"):"");
+  tog.textContent="⇢ Convergir para uma etapa existente"+(totalEtapas?(" ("+totalEtapas+")"):"");
   tog.onclick=()=>{
     const abrir=lista.hidden;
     lista.hidden=!abrir;
     tog.setAttribute("aria-expanded",String(abrir));
+    if(abrir)desenhaProcs();     // reabrir volta sempre à lista de procedimentos
   };
 }
 function npPick(n,gEl,ancoraFio){
