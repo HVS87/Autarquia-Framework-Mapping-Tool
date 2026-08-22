@@ -173,6 +173,8 @@
   #npConvList .conv-item .de{margin-left:auto;font-size:.68rem;color:var(--ink-dim);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%}
   #npConvList .conv-proc{font-weight:600}
+  #npConvList .conv-grupo-item{font-weight:600}
+  #npConvList .gico{color:var(--gold);flex:none}
   #npConvList .conv-volta{color:var(--ink-dim);border-style:dashed}
 
   /* ---- Ramos entre procedimentos, no fluxograma ---- */
@@ -8529,31 +8531,74 @@ function montaConvergencia(){
     });
     return itens;
   };
-  /* Dois passos: primeiro o procedimento, depois a etapa. Com uma dúzia de
-     procedimentos, a lista corrida de todas as etapas era uma parede. */
-  const desenhaProcs=()=>{
+  /* Três níveis: grupo → procedimento → etapa. Os procedimentos que não
+     pertencem a nenhum grupo aparecem já no primeiro nível, a par dos grupos:
+     não há razão para os esconder atrás de um passo que, para eles, não
+     existe. O procedimento em causa vem sempre à cabeça, esteja em que grupo
+     estiver — é o mais provável destino de uma convergência. */
+  const temEtapas=pp=>etapasDoProc(pp).length>0;
+  const gruposDe=pp=>groups.filter(g=>g.layers.includes(pp.id));
+  const linhaProc=(pp,voltarPara)=>{
+    const itens=etapasDoProc(pp);
+    const b=el("button","conv-item conv-proc");
+    b.dataset.pid=pp.id;
+    const s=el("span","swatch");s.style.background=hex(pp.color);
+    b.append(s,el("span",null,pp.name+(pp===pAtual?" (este)":"")));
+    b.append(el("span","de",itens.length+" etapa(s) ›"));
+    b.title="Ver as etapas de “"+pp.name+"”";
+    b.onclick=()=>desenhaEtapas(pp,voltarPara);
+    return b;
+  };
+  const desenhaRaiz=()=>{
     lista.innerHTML="";
-    const ordem=pAtual?[pAtual].concat(processes.filter(x=>x!==pAtual)):processes.slice();
     let houve=0;
-    ordem.forEach(pp=>{
-      const itens=etapasDoProc(pp);
-      if(!itens.length)return;
+    if(pAtual&&temEtapas(pAtual)){
+      lista.append(el("div","conv-grupo","Procedimento em causa"));
+      lista.append(linhaProc(pAtual,desenhaRaiz));
       houve++;
-      const b=el("button","conv-item conv-proc");
-      b.dataset.pid=pp.id;
-      const s=el("span","swatch");s.style.background=hex(pp.color);
-      b.append(s,el("span",null,pp.name+(pp===pAtual?" (este)":"")));
-      b.append(el("span","de",itens.length+" etapa(s) ›"));
-      b.title="Ver as etapas de “"+pp.name+"”";
-      b.onclick=()=>desenhaEtapas(pp);
-      lista.append(b);
-    });
+    }
+    const gComEtapas=groups.filter(g=>g.layers.map(layerById).filter(Boolean).some(temEtapas));
+    if(gComEtapas.length){
+      lista.append(el("div","conv-grupo","Grupos de procedimentos"));
+      gComEtapas.forEach(g=>{
+        const membros=g.layers.map(layerById).filter(Boolean).filter(temEtapas);
+        const b=el("button","conv-item conv-grupo-item");
+        b.dataset.gid=g.id;
+        b.append(el("span","gico","▤"));
+        b.append(el("span",null,g.name));
+        b.append(el("span","de",membros.length+" procedimento(s) ›"));
+        b.title="Ver os procedimentos do grupo “"+g.name+"”";
+        b.onclick=()=>desenhaGrupo(g);
+        lista.append(b);
+        houve++;
+      });
+    }
+    const soltos=processes.filter(pp=>pp!==pAtual&&temEtapas(pp)&&!gruposDe(pp).length);
+    if(soltos.length){
+      lista.append(el("div","conv-grupo","Sem grupo"));
+      soltos.forEach(pp=>{lista.append(linhaProc(pp,desenhaRaiz));houve++;});
+    }
+    /* Um procedimento agrupado continua alcançável fora do grupo dele? Só se
+       não houver grupos — senão duplicava a lista. Aqui não: quem o quer,
+       entra pelo grupo. */
     if(!houve)lista.append(el("div","empty-note","Ainda não há etapas para onde convergir."));
   };
-  const desenhaEtapas=(pp)=>{
+  const desenhaGrupo=(g)=>{
     lista.innerHTML="";
-    const volta=el("button","conv-item conv-volta","‹ Todos os procedimentos");
-    volta.onclick=()=>desenhaProcs();
+    const volta=el("button","conv-item conv-volta","‹ Grupos e procedimentos");
+    volta.onclick=()=>desenhaRaiz();
+    lista.append(volta);
+    const h=el("div","conv-grupo");
+    h.append(el("span","gico","▤"),document.createTextNode(g.name));
+    lista.append(h);
+    const membros=g.layers.map(layerById).filter(Boolean).filter(temEtapas);
+    if(!membros.length)lista.append(el("div","empty-note","Nenhum procedimento deste grupo tem etapas."));
+    membros.forEach(pp=>lista.append(linhaProc(pp,()=>desenhaGrupo(g))));
+  };
+  const desenhaEtapas=(pp,voltarPara)=>{
+    lista.innerHTML="";
+    const volta=el("button","conv-item conv-volta","‹ Voltar");
+    volta.onclick=()=>(voltarPara||desenhaRaiz)();
     lista.append(volta);
     const h=el("div","conv-grupo");
     const s=el("span","swatch");s.style.background=hex(pp.color);
@@ -8573,8 +8618,9 @@ function montaConvergencia(){
       lista.append(b);
     });
   };
+  const desenhaProcs=desenhaRaiz;   // o botão de abrir volta sempre à raiz
   const totalEtapas=processes.reduce((s,pp)=>s+etapasDoProc(pp).length,0);
-  desenhaProcs();
+  desenhaRaiz();
   cx.hidden=false;
   // fechada por omissão: o organograma é o caminho principal
   lista.hidden=true;
