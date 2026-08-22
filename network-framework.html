@@ -28,6 +28,13 @@
     --hairline:rgba(33,26,16,0.24);
     --vignette:rgba(58,49,34,0.5);
     --scrim:rgba(188,177,152,0.85);
+    /* Alturas das peças fixas. measureChrome() reescreve-as com o valor
+       medido logo que o ecrã assenta; estes são os valores de partida,
+       para que o PRIMEIRO desenho já saia certo. Sem eles, a barra de
+       localização e o radar apareciam por um instante em cima da barra
+       de separadores, e via-se o salto. */
+    --tab-h:38px;
+    --radar-h:0px;
     font-size:16px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -78,7 +85,10 @@
   .tab:hover{color:var(--ink)}
   .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
   .tab:focus-visible{outline:2px solid var(--steel);outline-offset:-2px;border-radius:4px}
-  body.vp-phone .tab{font-size:.62rem;letter-spacing:.1em;padding:5px 9px 7px}
+  /* Em 360px cabem oito separadores em 616px de faixa; apertar o espacejamento
+     das maiúsculas, que a esta bitola come muito, traz mais um à vista sem
+     tirar legibilidade. O resto desliza. */
+  body.vp-phone .tab{font-size:.62rem;letter-spacing:.03em;padding:5px 7px 7px}
   body.vp-squat #tabbar{margin:0 0 4px}
   body.vp-squat .tab{padding:3px 9px 5px}
   /* Num ecrã tátil o separador precisa de altura de dedo, mesmo comprimido */
@@ -90,7 +100,8 @@
   body[data-tab="procedimentos"] #panel>#secProc,
   body[data-tab="agentes"] #panel>#secPessoas,
   body[data-tab="tarefas"] #panel>#secTarefas,
-  body[data-tab="dados"] #panel>#secDados{display:block}
+  body[data-tab="dados"] #panel>#secDados,
+  body[data-tab="definicoes"] #panel>#secDefinicoes{display:block}
   /* A lista de tarefas só existe como separador — no painel completo não entra */
   #secTarefas{display:none}
   body[data-tab="tarefas"] #panel>#secTarefas{display:block}
@@ -312,9 +323,11 @@
 
   /* ---------- Detail panel ---------- */
   #detail{
-    position:fixed;right:22px;top:calc(var(--hdr-h,118px) + 8px);width:304px;z-index:11;
+    position:fixed;right:22px;width:304px;z-index:11;
+    /* --radar-h é 0 quando o radar não está à vista, e então isto é o de sempre */
+    top:calc(var(--hdr-h,118px) + 8px + var(--radar-h,0px));
     padding:15px;display:none;
-    max-height:calc(100vh - var(--hdr-h,118px) - var(--step-h,120px) - 40px);overflow-y:auto;
+    max-height:calc(100vh - var(--hdr-h,118px) - var(--radar-h,0px) - var(--step-h,120px) - 40px);overflow-y:auto;
     scrollbar-width:thin;scrollbar-color:rgba(201,214,232,.25) transparent;
   }
   #detail.open{display:block}
@@ -593,10 +606,18 @@
       /* Termina acima do rodapé da visita, cuja altura também é medida */
       max-height:calc(100vh - var(--hdr-h,60px) - var(--step-h,120px) - 30px);
     }
-    #detail{right:12px;top:calc(var(--hdr-h,60px) + 6px);width:min(300px,calc(100vw - 24px))}
+    #detail{right:12px;top:calc(var(--hdr-h,60px) + 6px + var(--radar-h,0px));width:min(300px,calc(100vw - 24px))}
   }
   @media (max-width:640px){
-    header{padding:12px 110px 22px 14px}
+    /* Só no telemóvel: a reserva para o ☰ passa a ser do bloco do nome, que é
+       quem lhe fica ao lado, e a barra desce para linha própria. Partilhando a
+       primeira linha, sobravam-lhe 236px de 360 para oito separadores; sozinha
+       na linha fica com a largura toda. Acima dos 640px há espaço para as duas
+       coisas na mesma linha — e é preciso que assim seja, porque a partir daí
+       o radar reaparece encostado ao topo, logo abaixo da barra. */
+    header{padding:12px 14px 20px 14px}
+    header .brand{padding-right:96px}
+    #tabbar{order:3;margin:8px 0 0}
     #orgName{font-size:.9rem;width:min(50vw,calc(100vw - 140px))}
     .brand p{
       font-size:.6rem;max-width:calc(100vw - 136px);
@@ -648,7 +669,7 @@
      silenciosamente as regras acima, deixando o painel por cima do rodapé. */
   @supports (height:100dvh){
     #panel{max-height:calc(100dvh - var(--hdr-h,118px) - var(--step-h,120px) - var(--quest-h,0px) - 40px)}
-    #detail{max-height:calc(100dvh - var(--hdr-h,118px) - var(--step-h,120px) - 40px)}
+    #detail{max-height:calc(100dvh - var(--hdr-h,118px) - var(--radar-h,0px) - var(--step-h,120px) - 40px)}
     #modalCard{max-height:calc(100dvh - 80px)}
     @media (max-width:980px){
       #panel.open{max-height:calc(100dvh - var(--hdr-h,60px) - var(--step-h,120px) - 30px)}
@@ -746,7 +767,7 @@
   body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #radarWrap{display:flex!important}
   /* Só o cartão que está mesmo ativo: forçar #quest sem .on ressuscitava-o
      depois de dispensado, como uma caixa vazia a flutuar. */
-  body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting) #quest.on{display:block!important}
+  body.vp-tablet.vp-landscape:not(.vp-squat):not(.presenting):not(.panel-open) #quest.on{display:block!important}
   body.vp-tablet.vp-landscape #whereBar{max-width:min(460px,46vw)}
   body.vp-tablet.vp-landscape #radar{width:104px;height:104px}
   body.vp-squat #whereBar,body.vp-squat #radarWrap,body.vp-squat #quest{display:none!important}
@@ -1526,7 +1547,7 @@
 
   /* ---- Barra "Onde estou" ---- */
   #whereBar{
-    position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:13;
+    position:fixed;top:calc(14px + var(--tab-h,0px));left:50%;transform:translateX(-50%);z-index:13;
     display:flex;align-items:center;gap:9px;max-width:min(560px,52vw);
     padding:6px 11px;border-radius:10px;font-size:.7rem;white-space:nowrap;
   }
@@ -1544,7 +1565,7 @@
   #whereBar button:disabled{opacity:.3;cursor:default}
   #whereBar button:not(:disabled):hover{border-color:var(--gold);color:var(--gold)}
   #trailMenu{
-    position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:13;display:none;
+    position:fixed;top:calc(52px + var(--tab-h,0px));left:50%;transform:translateX(-50%);z-index:13;display:none;
     flex-direction:column;gap:3px;padding:7px;border-radius:10px;
     max-height:44vh;overflow:auto;min-width:min(300px,46vw);
   }
@@ -1558,7 +1579,7 @@
 
   /* ---- Bússola-Radar ---- */
   #radarWrap{
-    position:fixed;top:14px;right:14px;z-index:13;padding:7px;border-radius:12px;
+    position:fixed;top:calc(14px + var(--tab-h,0px));right:14px;z-index:13;padding:7px;border-radius:12px;
     display:flex;flex-direction:column;align-items:center;gap:4px;
   }
   #radar{display:block;cursor:pointer;border-radius:50%}
@@ -1686,14 +1707,14 @@
   <button id="wbBack" title="Voltar" aria-label="Voltar">‹</button>
   <button id="wbFwd" title="Avançar" aria-label="Avançar">›</button>
   <span class="wb-path" id="wbPath">Rede completa</span>
-  <span class="wb-addr" id="wbAddr" role="button" tabindex="0" title="Copiar ligação para esta unidade"></span>
+  <span class="wb-addr" id="wbAddr" role="button" tabindex="0" title="Copiar ligação para este nódulo"></span>
   <button id="wbTrail" title="Sítios por onde passou">Trilho</button>
 </div>
 <div id="trailMenu" class="glass" role="menu" aria-label="Trilho"></div>
 
 <div id="radarWrap" class="glass">
   <canvas id="radar" width="132" height="132" role="img"
-    aria-label="Radar da estrutura — clique para ir a uma unidade"></canvas>
+    aria-label="Radar da estrutura — clique para ir a um nódulo"></canvas>
   <span class="rlbl">RADAR</span>
 </div>
 
@@ -1706,11 +1727,12 @@
   <nav id="tabbar" role="tablist" aria-label="Navegação principal">
     <button class="tab on" role="tab" data-tab="home" aria-selected="true">Home</button>
     <button class="tab" role="tab" data-tab="organograma" aria-selected="false">Organograma</button>
-    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false">Nódulos</button>
+    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false">Unidades</button>
     <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false">Procedimentos</button>
-    <button class="tab" role="tab" data-tab="agentes" aria-selected="false">Agentes</button>
+    <button class="tab" role="tab" data-tab="agentes" aria-selected="false">Pessoas</button>
     <button class="tab" role="tab" data-tab="tarefas" aria-selected="false">Tarefas</button>
     <button class="tab" role="tab" data-tab="dados" aria-selected="false">Dados</button>
+    <button class="tab" role="tab" data-tab="definicoes" aria-selected="false">Definições</button>
   </nav>
   <div class="brand">
     <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
@@ -1722,7 +1744,7 @@
       <button class="btn tiny" id="flowIndexBtn" title="Abrir a lista de fluxogramas dos procedimentos">Fluxogramas</button>
       <button class="btn tiny" id="viewsBtn" title="Outras vistas da mesma informação (V)">Vistas</button>
       <button class="btn tiny" id="contBtn" title="Modo continuidade — quem assegura o quê quando alguém falta" aria-pressed="false">Continuidade</button>
-      <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de uma unidade para outra para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
+      <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de um nódulo para outro para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
       <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detetados">Estado</button>
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
       <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo">👁</button>
@@ -1731,7 +1753,7 @@
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
     </div>
   </div>
-  <div class="hint">Arraste para rodar · Roda do rato para aproximar<br>Clique num node ou num arco de tarefa para ver e editar</div>
+  <div class="hint">Arraste para rodar · Roda do rato para aproximar<br>Clique num nódulo ou num arco de tarefa para ver e editar</div>
 </header>
 
 <aside id="panel" class="glass" aria-label="Painel de controlo">
@@ -1739,17 +1761,17 @@
   <details id="secLegenda">
     <summary>Legenda da rede</summary>
     <div class="sec-body">
-      <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste tier"><span class="swatch" style="background:#FFFFFF"></span>Tier 0 · Executivo<span class="legend-note">topo</span></button>
-      <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Tier 1 · Coordenação Geral<span class="legend-note">cores primárias</span></button>
-      <button type="button" class="legend-row jump" data-tier="2" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#7FB2EC"></span><span style="background:#EC8B86"></span><span style="background:#F2DA84"></span></span>Tier 2 · Coordenação Setorial<span class="legend-note">tons do ramo</span></button>
-      <button type="button" class="legend-row jump" data-tier="3" title="Aproximar a câmara deste tier"><span class="tri"><span style="background:#AECFF4"></span><span style="background:#F4B7B3"></span><span style="background:#F8EAB4"></span></span>Tier 3 · Coordenação Operacional<span class="legend-note">tons mais claros</span></button>
+      <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste nível"><span class="swatch" style="background:#FFFFFF"></span>Nível 0 · Executivo<span class="legend-note">topo</span></button>
+      <button type="button" class="legend-row jump" data-tier="1" title="Aproximar a câmara deste nível"><span class="tri"><span style="background:#4A90E2"></span><span style="background:#E0554F"></span><span style="background:#E8C445"></span></span>Nível 1 · Coordenação Geral<span class="legend-note">cores primárias</span></button>
+      <button type="button" class="legend-row jump" data-tier="2" title="Aproximar a câmara deste nível"><span class="tri"><span style="background:#7FB2EC"></span><span style="background:#EC8B86"></span><span style="background:#F2DA84"></span></span>Nível 2 · Coordenação Setorial<span class="legend-note">tons do ramo</span></button>
+      <button type="button" class="legend-row jump" data-tier="3" title="Aproximar a câmara deste nível"><span class="tri"><span style="background:#AECFF4"></span><span style="background:#F4B7B3"></span><span style="background:#F8EAB4"></span></span>Nível 3 · Coordenação Operacional<span class="legend-note">tons mais claros</span></button>
       <div class="mini-title" style="margin-top:8px">Chave de codificação</div>
       <div id="codeKey"></div>
 
-      <div class="mini-title" style="margin-top:8px">Cor dos nodes</div>
-      <div class="seg" id="colorModeSeg" role="group" aria-label="Modo de cor dos nodes">
+      <div class="mini-title" style="margin-top:8px">Cor dos nódulos</div>
+      <div class="seg" id="colorModeSeg" role="group" aria-label="Modo de cor dos nódulos">
         <button type="button" data-cmode="struct" class="on" title="Cor por ramo da hierarquia">Estrutura</button>
-        <button type="button" data-cmode="load" title="Cor por número de tarefas que tocam o node">Carga</button>
+        <button type="button" data-cmode="load" title="Cor por número de tarefas que tocam o nódulo">Carga</button>
         <button type="button" data-cmode="team" title="Cor por dimensão da equipa">Equipa</button>
       </div>
       <div class="heat-scale" id="heatScale" style="display:none">
@@ -1772,10 +1794,10 @@
       <div class="density-row">
         <label for="densityRange" style="flex:none">Densidade</label>
         <input type="range" id="densityRange" min="0" max="3" step="1" value="3" aria-label="Profundidade visível da hierarquia">
-        <span class="density-val" id="densityVal">todos os tiers</span>
+        <span class="density-val" id="densityVal">todos os níveis</span>
       </div>
       <div class="legend-row"><span class="swatch line" style="background:var(--gold);opacity:.7"></span>Ligação hierárquica<span class="legend-note">vertical</span></div>
-      <div class="legend-row"><span class="swatch" style="background:#fff;width:5px;height:5px"></span>Agente (em órbita)<span class="legend-note">por node</span></div>
+      <div class="legend-row"><span class="swatch" style="background:#fff;width:5px;height:5px"></span>Agente (em órbita)<span class="legend-note">por nódulo</span></div>
       <div class="legend-row"><span class="swatch" style="background:#FFD84D;width:6px;height:6px"></span>Pulso de tarefa (pisca)<span class="legend-note">origem → destino</span></div>
     </div>
   </details>
@@ -1823,9 +1845,9 @@
             <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
           </svg>
         </span>
-        Novo node
+        Novo nódulo
       </button>
-      <div class="foot-note">Clique num node para abrir o painel dele — é lá que se edita o nome, o tier, os agentes e as tarefas. Arraste um node para cima de outro para o colocar sob esse node na hierarquia.</div>
+      <div class="foot-note">Clique num nódulo para abrir o painel dele — é lá que se edita o nome, o nível, os agentes e as tarefas. Arraste um nódulo para cima de outro para o colocar sob esse nódulo na hierarquia.</div>
     </div>
   </details>
 
@@ -1833,7 +1855,7 @@
     <summary>Pessoas</summary>
     <div class="sec-body">
       <div id="agentList"></div>
-      <div class="foot-note">Clique num agente para abrir o painel dele — é lá que estão o nome, a categoria e as tarefas atribuídas. Arraste um agente para o cabeçalho de um node (ou para outro agente) para o mudar para esse node. ★ assinala o responsável de cada node.</div>
+      <div class="foot-note">Clique num agente para abrir o painel dele — é lá que estão o nome, a categoria e as tarefas atribuídas. Arraste um agente para o cabeçalho de um nódulo (ou para outro agente) para o mudar para esse nódulo. ★ assinala o responsável de cada nódulo.</div>
     </div>
   </details>
 
@@ -1841,7 +1863,7 @@
     <summary>Tarefas</summary>
     <div class="sec-body">
       <div id="taskListAll"></div>
-      <div class="foot-note">Clique numa tarefa para abrir o painel dela — descrição, responsável, duração e pontas editam-se lá. Crie tarefas no modo ligar (L) — arraste de uma unidade para outra — ou dentro de um fluxograma.</div>
+      <div class="foot-note">Clique numa tarefa para abrir o painel dela — descrição, responsável, duração e pontas editam-se lá. Crie tarefas no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma.</div>
     </div>
   </details>
 
@@ -1879,7 +1901,7 @@
     <summary>Dados</summary>
     <div class="sec-body">
       <div class="setup-btns">
-        <button class="btn" id="pasteImportBtn" title="Criar unidades em massa a partir de colunas coladas do Excel">Colar do Excel</button>
+        <button class="btn" id="pasteImportBtn" title="Criar nódulos em massa a partir de colunas coladas do Excel">Colar do Excel</button>
         <button class="btn" id="newDatasetBtn">Nova rede</button>
         <button class="btn" id="exportBtn">Guardar dataset</button>
         <button class="btn" id="importBtn">Abrir dataset</button>
@@ -1908,7 +1930,7 @@
 <div id="palette" role="dialog" aria-modal="true" aria-label="Paleta de comandos">
   <div id="paletteCard" class="glass">
     <input id="paletteInput" type="text" autocomplete="off" spellcheck="false"
-      placeholder="Procurar nodes, agentes, procedimentos, grupos — ou executar uma ação…"
+      placeholder="Procurar nódulos, agentes, procedimentos, grupos — ou executar uma ação…"
       aria-label="Procurar ou executar comando">
     <div id="paletteList" role="listbox"></div>
   </div>
@@ -1937,15 +1959,15 @@
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">👆</span>
-      <span class="coach-txt"><b>Clique</b> numa esfera (node) ou num arco (tarefa) para inspecionar e editar.</span>
+      <span class="coach-txt"><b>Clique</b> numa esfera (nódulo) ou num arco (tarefa) para inspecionar e editar.</span>
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">⇧</span>
-      <span class="coach-txt"><b>Shift+clique</b> num arco isola todo o procedimento; <b>duplo clique</b> num node ativa o modo de foco.</span>
+      <span class="coach-txt"><b>Shift+clique</b> num arco isola todo o procedimento; <b>duplo clique</b> num nódulo ativa o modo de foco.</span>
     </div>
     <div class="coach-step">
       <span class="coach-ico" aria-hidden="true">☰</span>
-      <span class="coach-txt">O <b>painel</b> gere nodes, agentes, procedimentos e grupos — e exporta tudo.</span>
+      <span class="coach-txt">O <b>painel</b> gere nódulos, agentes, procedimentos e grupos — e exporta tudo.</span>
     </div>
     <div class="card-btns">
       <button class="btn" id="coachShortcuts">Ver atalhos</button>
@@ -1960,10 +1982,10 @@
     <h4>Navegação 3D</h4>
     <div class="kbd-row"><kbd>Arrastar</kbd><span>Rodar a câmara em torno da rede</span></div>
     <div class="kbd-row"><kbd>Roda / Pinça</kbd><span>Aproximar e afastar</span></div>
-    <div class="kbd-row"><kbd>Clique</kbd><span>Selecionar um node ou uma tarefa</span></div>
+    <div class="kbd-row"><kbd>Clique</kbd><span>Selecionar um nódulo ou uma tarefa</span></div>
     <div class="kbd-row"><kbd>Shift + clique</kbd><span>Isolar todo o procedimento de uma tarefa</span></div>
-    <div class="kbd-row"><kbd>Duplo clique</kbd><span>Modo de foco — destaca o node e esbate o resto</span></div>
-    <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o node e as suas ligações diretas</span></div>
+    <div class="kbd-row"><kbd>Duplo clique</kbd><span>Modo de foco — destaca o nódulo e esbate o resto</span></div>
+    <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o nódulo e as suas ligações diretas</span></div>
     <h4>Teclado</h4>
     <div class="kbd-row"><kbd>← / →</kbd><span>Cena anterior / seguinte do tour</span></div>
     <div class="kbd-row"><kbd>Espaço</kbd><span>Toque: reproduzir/pausar o tour · Manter: espreitar o todo</span></div>
@@ -1977,8 +1999,8 @@
     <div class="kbd-row"><kbd>Esc</kbd><span>Fechar janelas e libertar o foco</span></div>
     <div class="kbd-row"><kbd>Tab</kbd><span>Percorrer os controlos do painel</span></div>
     <h4>Gestão</h4>
-    <div class="kbd-row"><kbd>Arrastar node</kbd><span>Reorganizar a hierarquia no Organograma 2D</span></div>
-    <div class="kbd-row"><kbd>Arrastar agente</kbd><span>Transferir para outro node</span></div>
+    <div class="kbd-row"><kbd>Arrastar nódulo</kbd><span>Reorganizar a hierarquia no Organograma 2D</span></div>
+    <div class="kbd-row"><kbd>Arrastar agente</kbd><span>Transferir para outro nódulo</span></div>
     <div class="kbd-row"><kbd>Botões laterais</kbd><span>Voltar / avançar no histórico de seleção</span></div>
     <div class="card-btns">
       <button class="btn" id="helpReplay">Rever introdução</button>
@@ -2445,6 +2467,23 @@ try{
 }
 stage.appendChild(renderer.domElement);
 
+/* Filtragem anisotrópica para as telas grandes de fundo. Sem ela, uma
+   superfície vista de raspão — o chão, e a abóbada junto ao horizonte — faz o
+   GPU escolher o nível de mipmap pelo eixo mais comprimido: perde detalhe num
+   eixo e fica com degraus no outro, que é o serrilhado que se vê nos contornos
+   das manchas. Oito é o ponto em que deixa de se notar diferença; pedir mais
+   custaria largura de banda sem ganho. */
+const ANISO=(function(){
+  try{ return Math.min(8, renderer.capabilities.getMaxAnisotropy()||1); }
+  catch(e){ return 1; }
+})();
+function afinarTextura(tex){
+  if(!tex)return tex;
+  tex.anisotropy=ANISO;
+  tex.needsUpdate=true;
+  return tex;
+}
+
 const amb=new THREE.AmbientLight(0x8FA2BC,0.55);
 scene.add(amb);
 const key=new THREE.DirectionalLight(0xffffff,0.85);
@@ -2465,9 +2504,32 @@ function setMood(warmth,fogD){
 
 // Aurora sky dome — drifting colour fields over the base gradient
 const aurora=(function(){
-  const c=document.createElement("canvas");c.width=256;c.height=256;
+  /* A tela é de 512 mas o desenho continua a pensar em 256: uma escala fixa
+     poupa-nos reescrever cada coordenada do casario, e dobrar os texéis já
+     corta metade do serrilhado nos contornos. */
+  const SKY=512, K=SKY/256;
+  const c=document.createElement("canvas");c.width=SKY;c.height=SKY;
   const x=c.getContext("2d");
-  const tex=new THREE.CanvasTexture(c);
+  const tex=afinarTextura(new THREE.CanvasTexture(c));
+  /* Ruído estático de amplitude mínima. Um gradiente de 8 bits esticado por
+     toda a abóbada dá degraus largos, que o olho lê como anéis de contorno;
+     um pouco de grão por cima quebra a fronteira entre degraus e o gradiente
+     volta a parecer contínuo. Gera-se uma vez — por fotograma seria caro e,
+     pior, tremeluziria. */
+  const grao=(function(){
+    const n=document.createElement("canvas");n.width=64;n.height=64;
+    const nx=n.getContext("2d");
+    const img=nx.createImageData(64,64);
+    let s=1337;
+    for(let i=0;i<img.data.length;i+=4){
+      s=(s*1103515245+12345)&0x7fffffff;
+      const v=(s>>>16)&3;                 // 0 a 3 de 255: some-se, não se mistura
+      img.data[i]=img.data[i+1]=img.data[i+2]=v;
+      img.data[i+3]=255;
+    }
+    nx.putImageData(img,0,0);
+    return x.createPattern(n,"repeat");
+  })();
   const mat=new THREE.MeshBasicMaterial({map:tex,side:THREE.BackSide});
   mat.fog=false;
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(130,32,24),mat));
@@ -2494,6 +2556,7 @@ const aurora=(function(){
   })();
   const HORIZON=178;
   function draw(tt){
+    x.setTransform(K,0,0,K,0,0);
     x.globalCompositeOperation="source-over";
     const g=x.createLinearGradient(0,0,0,256);
     g.addColorStop(0,pal.sky[0]);g.addColorStop(0.45,pal.sky[1]);g.addColorStop(1,pal.sky[2]);
@@ -2507,6 +2570,34 @@ const aurora=(function(){
       rg.addColorStop(1,"rgba("+b.rgb+",0)");
       x.fillStyle=rg;x.fillRect(0,0,256,256);
     });
+    /* Luz com direcção. Um céu de gradiente puro não tem lado nenhum; uma
+       cidade tem. Um véu do tom do primeiro halo entra de um lado e o outro
+       cai para a sombra — de leve, que isto é pano de fundo e não assunto. */
+    x.globalCompositeOperation="source-over";
+    const lat=x.createLinearGradient(0,40,256,HORIZON);
+    lat.addColorStop(0,   "rgba("+pal.blobs[0].rgb+",0.11)");
+    lat.addColorStop(0.5, "rgba("+pal.blobs[0].rgb+",0.02)");
+    lat.addColorStop(1,   "rgba(0,0,0,0.20)");
+    x.fillStyle=lat;x.fillRect(0,0,256,HORIZON+4);
+    /* E o clarão que uma cidade põe por cima dos telhados: sobe pouco, mas é
+       o que faz o casario deixar de ser uma tira preta e passar a recorte. */
+    x.globalCompositeOperation="lighter";
+    const halo=x.createLinearGradient(0,HORIZON-30,0,HORIZON);
+    halo.addColorStop(0,"rgba("+pal.blobs[1].rgb+",0)");
+    halo.addColorStop(1,"rgba("+pal.blobs[1].rgb+",0.19)");
+    x.fillStyle=halo;x.fillRect(0,HORIZON-30,256,30);
+
+    /* Sem transformação: o grão tem de ter o tamanho do texel, não o tamanho
+       a que o desenho foi escalado, senão deixa de ser grão e passa a ser
+       textura visível. */
+    x.setTransform(1,0,0,1,0,0);
+    /* Aditivo, e não "overlay": o overlay escala com o fundo e daria quase
+       nada nas zonas escuras — que são precisamente onde as bandas se veem
+       melhor. Somar 0 a 3 níveis é uniforme em todo o céu e chega para
+       atravessar a fronteira entre dois degraus de 8 bits. */
+    x.globalCompositeOperation="lighter";
+    x.fillStyle=grao;x.fillRect(0,0,SKY,SKY);
+    x.setTransform(K,0,0,K,0,0);
     x.globalCompositeOperation="source-over";
     x.fillStyle=pal.silhouette;
     roof.forEach(r=>{
@@ -2522,15 +2613,19 @@ const aurora=(function(){
       }
     });
     x.fillRect(0,HORIZON,256,256-HORIZON);
+    x.setTransform(1,0,0,1,0,0);
     tex.needsUpdate=true;
   }
   draw(0);
   return {draw,pal};
 })();
 // Calçada portuguesa ground — concentric tesserae fading outward
+const GROUND_RES=1024;                      // o chão vê-se de raspão: pede definição
 const ground=(function(){
-  const c=document.createElement("canvas");c.width=c.height=512;
+  const c=document.createElement("canvas");c.width=c.height=GROUND_RES;
   const x=c.getContext("2d");
+  // O desenho continua a pensar em 512; a escala poupa reescrever a calçada toda
+  x.setTransform(GROUND_RES/512,0,0,GROUND_RES/512,0,0);
   const g=x.createRadialGradient(256,256,16,256,256,256);
   g.addColorStop(0,"rgba(17,30,52,0.92)");
   g.addColorStop(0.6,"rgba(10,20,36,0.78)");
@@ -2551,9 +2646,10 @@ const ground=(function(){
       x.fillRect(px-2.3,py-2.3,4.6,4.6);
     }
   }
+  x.setTransform(1,0,0,1,0,0);
   const m=new THREE.Mesh(
-    new THREE.CircleGeometry(18.5,64),
-    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true})
+    new THREE.CircleGeometry(18.5,128),
+    new THREE.MeshBasicMaterial({map:afinarTextura(new THREE.CanvasTexture(c)),transparent:true})
   );
   m.rotation.x=-Math.PI/2;m.position.y=-5.6;scene.add(m);
   return m;
@@ -3152,7 +3248,7 @@ function leastLoaded(tier,excludeId){
 let customNodeCounter=0;
 function createNode(opts){
   opts=opts||{};
-  // O ramo por omissão também tem de ser limitado: "+ Novo node" não passa
+  // O ramo por omissão também tem de ser limitado: "+ Novo nódulo" não passa
   // argumentos, e num dataset de um ou dois níveis o 2 fixo apontava para um
   // TIER[2] inexistente — nodePos devolvia NaN e o node desaparecia do mundo.
   const tier=Math.max(0,Math.min(TIER.length-1,
@@ -3167,7 +3263,7 @@ function createNode(opts){
     angle=(p?p.angle:0)+(sibs%2?1:-1)*Math.ceil(sibs/2)*0.22+0.11;
   }
   const n={id:opts.id||("x"+(++customNodeCounter)+"_"+Date.now().toString(36)),
-    name:opts.name||"Novo Node",tier,angle,parent,custom:true};
+    name:opts.name||"Novo Nódulo",tier,angle,parent,custom:true};
   n.pos=nodePos(n);
   nodes.push(n);
   applyRingRelax(tier);
@@ -3189,7 +3285,7 @@ function changeNodeTier(n,newTier){
   // Demoting the last apex would leave the organisation headless — and would be a
   // back door to deleting the Executivo, which must never be possible.
   if(n.tier===0&&newTier!==0&&nodes.filter(x=>x.tier===0).length<=1){
-    flash("O Executivo tem de permanecer no topo. Crie outro node de topo antes de o mover.",{type:"err"});
+    flash("O Executivo tem de permanecer no topo. Crie outro nódulo de topo antes de o mover.",{type:"err"});
     return;
   }
   n.tier=newTier;
@@ -3404,7 +3500,7 @@ function kbSiblings(n){
 function kbAnnounce(n){
   if(!kbStatusEl||!n)return;
   const sibs=kbSiblings(n),i=sibs.indexOf(n);
-  kbStatusEl.textContent=((TIER[n.tier]&&TIER[n.tier].label)||("Tier "+n.tier))+" · "+n.name+
+  kbStatusEl.textContent=((TIER[n.tier]&&TIER[n.tier].label)||("Nível "+n.tier))+" · "+n.name+
     (sibs.length>1?("  ·  "+(i+1)+" de "+sibs.length):"");
 }
 function kbMove(dir){
@@ -3557,7 +3653,7 @@ function renderFallbackSVG(){
       fill:n.tier<=1?ink:dim,"font-family":"Segoe UI,Helvetica,sans-serif",
       "font-size":n.tier<=1?"11":"9"}));
     const ttl=document.createElementNS(NS,"title");
-    ttl.textContent=n.name+" · "+k+" pessoa(s)";
+    ttl.textContent=n.name+" · "+k+" agente(s)";
     grp.append(ttl);
     grp.style.cursor="pointer";
     grp.addEventListener("click",()=>selectNode(n));
@@ -3597,7 +3693,7 @@ if(glRetry)glRetry.onclick=()=>{
 ============================================================ */
 const QUEST_KEY="of.quest.v1";
 const QUEST_STEPS=[
-  {k:"node",  t:"Criar uma unidade"},
+  {k:"node",  t:"Criar um nódulo"},
   {k:"agent", t:"Adicionar um agente"},
   {k:"resp",  t:"Definir um responsável"},
   {k:"task",  t:"Desenhar um procedimento"},
@@ -3674,7 +3770,7 @@ function renderQuest(){
    HUD — morada, barra "onde estou", radar, chave de codificação
 ============================================================ */
 function tierPrefix(i){
-  const lbl=String((TIER[i]&&TIER[i].label)||("T"+i)).trim();
+  const lbl=String((TIER[i]&&TIER[i].label)||("N"+i)).trim();
   const w=lbl.split(/\s+/).filter(Boolean);
   return (w.length>=2?(w[0][0]+w[1][0]):lbl.slice(0,2)).toUpperCase();
 }
@@ -3724,7 +3820,7 @@ function updateWhereBar(){
   if(wbBack)wbBack.disabled=!navStack.length;
   if(wbFwd)wbFwd.disabled=!fwdStack.length;
   if(!sel){
-    wbPath.textContent="Rede completa · "+nodes.length+" unidades";
+    wbPath.textContent="Rede completa · "+nodes.length+" nódulos";
     wbAddr.textContent="";
     return;
   }
@@ -3765,7 +3861,7 @@ if(wbTrail)wbTrail.onclick=()=>{
     if(!nodes.includes(n)||seen.has(n.id))return false;
     seen.add(n.id);return true;
   }).slice(0,10);
-  if(!list.length)trailMenu.append(el("div","empty-note","Ainda não visitou nenhuma unidade."));
+  if(!list.length)trailMenu.append(el("div","empty-note","Ainda não visitou nenhum nódulo."));
   list.forEach(n=>{
     const b=el("button",null,nodeAddress(n)+"  ·  "+n.name);
     b.onclick=()=>{trailMenu.classList.remove("open");locateNode(n);};
@@ -3860,7 +3956,7 @@ function renderCodeKey(){
     cell.append(dot,el("span",null,String(v)));
     sizes.append(cell);
   });
-  row1.append(sizes,el("span",null,"pessoas → tamanho"));
+  row1.append(sizes,el("span",null,"agentes → tamanho"));
   host.append(row1);
   // 2. ramos (modo estrutura) ou rampa (modos de calor)
   if(colorMode==="struct"){
@@ -3905,7 +4001,7 @@ function renderCodeKey(){
       (colorMode==="team"?"agentes":"tarefas")+" · mediana "+med+" · máximo "+hi));
   }
   // 3. o dourado
-  host.append(el("div","ck-row","★ dourado = responsável da unidade"));
+  host.append(el("div","ck-row","★ dourado = responsável do nódulo"));
 }
 
 /* ============================================================
@@ -4085,7 +4181,7 @@ function jumpToTier(i){
   rig.goal.phi=1.12;
   rig.auto=0;
   pingAt(new THREE.Vector3(0,t.y,0),Math.max(1.6,t.r*0.35));
-  flash("Tier "+i+" · "+t.label);
+  flash("Nível "+i+" · "+t.label);
 }
 /* Save the current 3D framing as a PNG — people want this for slides and email.
    The renderer keeps its drawing buffer, but we re-render first to be certain
@@ -4128,6 +4224,9 @@ const menuBtn=document.getElementById("menuBtn");
 menuBtn.setAttribute("aria-controls","panel");
 menuBtn.setAttribute("aria-expanded","false");
 menuBtn.onclick=()=>{
+  // Só há gaveta para abrir onde o botão se vê; em ecrã largo o painel é fixo
+  // e alternar-lhe o estado só serviria para esconder o cartão de arranque.
+  if(getComputedStyle(menuBtn).display==="none")return;
   // O menu abre o painel completo: qualquer recorte de separador sai primeiro
   delete document.body.dataset.tab;
   syncTabs();
@@ -4137,6 +4236,7 @@ menuBtn.onclick=()=>{
   // O estado tem de chegar a quem não vê o painel abrir
   menuBtn.setAttribute("aria-expanded",open?"true":"false");
   menuBtn.setAttribute("aria-label",(open?"Fechar":"Abrir")+" painel de controlo");
+  measureChrome();   // idem: o cartão de arranque entra e sai com o painel
 };
 
 /* ============================================================
@@ -4147,7 +4247,7 @@ menuBtn.onclick=()=>{
    Voltar a Home repõe tudo tal como estava.
 ============================================================ */
 const tabbar=document.getElementById("tabbar");
-const TAB_SEC={nodulos:"secUnidades",procedimentos:"secProc",agentes:"secPessoas",tarefas:"secTarefas",dados:"secDados"};
+const TAB_SEC={nodulos:"secUnidades",procedimentos:"secProc",agentes:"secPessoas",tarefas:"secTarefas",dados:"secDados",definicoes:"secDefinicoes"};
 function tabAtual(){
   if(modalView&&modalView.type==="orgchart")return "organograma";
   return document.body.dataset.tab||"home";
@@ -4171,11 +4271,14 @@ function setTab(id){
   }
   if(id==="home"){
     delete document.body.dataset.tab;
-    if(innerWidth<=980){
-      panelEl.classList.remove("open");
-      document.body.classList.remove("panel-open");
-      menuBtn.classList.remove("active");
-    }
+    /* `panel-open` quer dizer "o painel está a tapar a cena", e é isso que
+       esconde o cartão de arranque. Sai sempre — em ecrã largo o painel é uma
+       coluna permanente e nunca tapou nada, e deixá-lo pendurado fazia o
+       cartão desaparecer para sempre depois da primeira visita a um separador.
+       A gaveta em si só se fecha onde ela existe como gaveta. */
+    document.body.classList.remove("panel-open");
+    menuBtn.classList.remove("active");
+    if(innerWidth<=980)panelEl.classList.remove("open");
   }else{
     document.body.dataset.tab=id;
     const sec=document.getElementById(TAB_SEC[id]);
@@ -4186,6 +4289,10 @@ function setTab(id){
     menuBtn.classList.add("active");
     panelEl.scrollTop=0;
   }
+  /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
+     é o que diz ao painel onde parar. Sem remedir, o painel ficava dimensionado
+     para um cartão que entretanto voltou — e passava-lhe por cima. */
+  measureChrome();
   syncTabs();
 }
 if(tabbar)tabbar.querySelectorAll(".tab").forEach(b=>{b.onclick=()=>setTab(b.dataset.tab);});
@@ -4271,13 +4378,13 @@ stage.addEventListener("wheel",e=>{
 ============================================================ */
 const scenes=[
   {title:"A rede completa",
-   caption:"Quatro níveis — Executivo (o vértice branco), Coordenação Geral, Setorial e Operacional — com uma cor por ramo. Os pontos em órbita são as pessoas de cada unidade; a dourada é a responsável.",
+   caption:"Quatro níveis — Executivo (o vértice branco), Coordenação Geral, Setorial e Operacional — com uma cor por ramo. Os pontos em órbita são os agentes de cada nódulo; o dourado é o responsável.",
    cam:{phi:1.05,radius:31,targetY:2.6,auto:0.07},show:{hier:true,procs:true,isolate:null}},
-  {title:"Unidades e pessoas",
-   caption:"Cada unidade tem uma pessoa responsável (★, em funções) e a restante equipa. Clique numa esfera para lhe mudar o nível, a equipa e as tarefas.",
+  {title:"Nódulos e agentes",
+   caption:"Cada nódulo tem um agente responsável (★, em funções) e a restante equipa. Clique numa esfera para lhe mudar o nível, a equipa e as tarefas.",
    cam:{phi:1.22,radius:18,targetY:2.0,auto:0.10},show:{hier:false,procs:false,isolate:null}},
   {title:"Quem responde a quem",
-   caption:"As ligações douradas sobem: a Coordenação Operacional responde à Setorial, esta à Geral, e a Geral ao Executivo. Arraste uma unidade para outra no separador Nodes para redesenhar a hierarquia.",
+   caption:"As ligações douradas sobem: a Coordenação Operacional responde à Setorial, esta à Geral, e a Geral ao Executivo. Arraste um nódulo para outro no separador Nódulos para redesenhar a hierarquia.",
    cam:{phi:0.92,radius:24,targetY:4.4,auto:0.05},show:{hier:true,procs:false,isolate:null}},
   {title:"Procedimentos",
    caption:"Por baixo da estrutura, cada arco é uma tarefa com sentido (o cone aponta da origem para o destino). Os arcos à mesma profundidade formam um procedimento — clique num, no painel, para abrir o fluxograma.",
@@ -4285,8 +4392,8 @@ const scenes=[
   {title:"Tarefas com sentido",
    caption:"As correntes douradas percorrem cada tarefa da origem ao destino. Clique num arco para editar a descrição, quem responde, a duração — ou até as pontas e o procedimento a que pertence.",
    cam:{phi:1.32,radius:15,targetY:-2.2,auto:0.06},show:{hier:false,procs:true,isolate:null}},
-  {title:"Pessoas e responsabilidade",
-   caption:"As equipas vivem nas unidades: a esfera dourada é quem está em funções, e as tarefas que saem daí são atribuídas a pessoas dessa mesma unidade. Arraste pessoas entre unidades no separador Agentes.",
+  {title:"Agentes e responsabilidade",
+   caption:"As equipas vivem nos nódulos: a esfera dourada é quem está em funções, e as tarefas que saem daí são atribuídas a agentes desse mesmo nódulo. Arraste agentes entre nódulos no separador Agentes.",
    cam:{phi:1.12,radius:14,targetY:3.0,auto:0.08},show:{hier:true,procs:false,isolate:null}},
   {title:"Fluxogramas e organograma",
    caption:"Cada procedimento desdobra-se num fluxograma 2D que pode ir estendendo passo a passo, e o botão Organograma 2D mapeia a hierarquia inteira — ambos regressam a estes painéis 3D.",
@@ -4454,13 +4561,13 @@ let focusNodesOnProcs=true;
 (function(){
   const row=el("div","row");
   row.style.color="var(--gold)";
-  const lblSpan=el("span","row-name","Só mostrar nodes ativos");
-  lblSpan.title="Quando procedimentos estão visíveis, esbate os nodes inativos — um node hierárquico conta como ativo se algum node abaixo dele estiver ativo";
+  const lblSpan=el("span","row-name","Só mostrar nódulos ativos");
+  lblSpan.title="Quando procedimentos estão visíveis, esbate os nódulos inativos — um nódulo hierárquico conta como ativo se algum nódulo abaixo dele estiver ativo";
   const sw=el("button","switch on");
   sw.style.color="var(--gold)";
   sw.setAttribute("role","switch");
   sw.setAttribute("aria-checked","true");
-  sw.setAttribute("aria-label","Mostrar apenas nodes ativos nos procedimentos visíveis");
+  sw.setAttribute("aria-label","Mostrar apenas nódulos ativos nos procedimentos visíveis");
   sw.onclick=()=>{
     focusNodesOnProcs=!focusNodesOnProcs;
     sw.classList.toggle("on",focusNodesOnProcs);
@@ -4573,7 +4680,7 @@ function updateLayerCounts(){
       // Row tooltip doubles as a preview of the procedure's shape
       const st=procStats(p);
       p._nameEl.title="Abrir fluxograma de “"+p.name+"”\n"+
-        p.tasks.length+" tarefa(s) · "+st.graph.ids.length+" node(s)"+
+        p.tasks.length+" tarefa(s) · "+st.graph.ids.length+" nódulo(s)"+
         (st.forks?(" · "+st.forks+" ramificação(ões)"):"")+
         "\nCaminho crítico: "+fmtDays(st.total);
     }
@@ -4684,7 +4791,7 @@ document.getElementById("addGroupBtn").onclick=()=>{
 const nodeList=document.getElementById("nodeList");
 let nodeSearch="";
 nodeList.parentNode.insertBefore(
-  makeTabSearch("Pesquisar nodes…",v=>{nodeSearch=v;renderNodeList();}),
+  makeTabSearch("Pesquisar nódulos…",v=>{nodeSearch=v;renderNodeList();}),
   nodeList
 );
 function renderNodeList(){
@@ -4727,7 +4834,7 @@ function renderNodeList(){
 
     const name=el("span","row-name",n.name);
     const count=el("span","count",
-      "T"+n.tier+" · "+agentsOf(n.id).length+"ag"+
+      "N"+n.tier+" · "+agentsOf(n.id).length+"ag"+
       (n._collapsed&&kids.length?" · +"+kids.length:""));
 
     row.append(sp,name,count);
@@ -4772,7 +4879,7 @@ function renderNodeList(){
   if(flatQ){
     const hits=nodes.filter(n=>n.name.toLowerCase().includes(flatQ))
       .sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name));
-    if(!hits.length)nodeList.append(el("div","empty-note","Nenhum node com esse nome."));
+    if(!hits.length)nodeList.append(el("div","empty-note","Nenhum nódulo com esse nome."));
     hits.forEach(n=>addRow(n,0,true));
     return;
   }
@@ -4843,7 +4950,7 @@ function nodeDropHeader(n,expanded,count){
   h.append(tg);
 
   const nm=el("span","nm",n.name+" · "+TIER[n.tier].label);
-  nm.title="Abrir painel do node";
+  nm.title="Abrir painel do nódulo";
   nm.setAttribute("role","link");nm.tabIndex=0;
   nm.onclick=()=>selectNode(n);
   nm.onkeydown=e=>{if(e.key==="Enter")selectNode(n);};
@@ -4870,7 +4977,7 @@ const catExpanded={};
 function renderAgentsTab(){
   agentList.innerHTML="";
   const tog=el("div","layer-pick");
-  [["node","Por node"],["category","Por categoria"]].forEach(([m,lbl])=>{
+  [["node","Por nódulo"],["category","Por categoria"]].forEach(([m,lbl])=>{
     const b=el("button",agentGroupMode===m?"sel":"",lbl);
     b.style.color="var(--steel)";
     b.onclick=()=>{agentGroupMode=m;renderAgentsTab();};
@@ -5209,19 +5316,19 @@ function openReassign(a,imp){
     let primarySel=null;
 
     if(imp.isPrimary){
-      body.append(el("div","ra-sec","Responsável do node"));
+      body.append(el("div","ra-sec","Responsável do nódulo"));
       const cands=agentsOf(imp.node.id).filter(x=>x!==a);
       const row=el("div","ra-row first");
       const what=el("div","ra-what");
       what.append(el("div","t",imp.node.name));
-      what.append(el("div","s","Tier "+imp.node.tier+" · "+TIER[imp.node.tier].label));
+      what.append(el("div","s","Nível "+imp.node.tier+" · "+TIER[imp.node.tier].label));
       row.append(what);
       if(cands.length){
         primarySel=mkSelect([{label:"— deixar sem responsável",value:""}]
           .concat(cands.map(x=>({label:x.name+" ("+x.category+")",value:x.id}))),cands[0].id,()=>{});
         row.append(primarySel);
       }else{
-        row.append(el("div","ra-none","Sem outros agentes neste node"));
+        row.append(el("div","ra-none","Sem outros agentes neste nódulo"));
       }
       body.append(row);
     }
@@ -5285,12 +5392,12 @@ function openNodeReassign(n,imp){
   const bits=[];
   if(imp.agents.length)bits.push(imp.agents.length+" agente(s)");
   if(imp.tasks.length)bits.push(imp.tasks.length+" tarefa(s)");
-  if(imp.kids.length)bits.push(imp.kids.length+" sub-node(s)");
+  if(imp.kids.length)bits.push(imp.kids.length+" subnódulo(s)");
   const others=nodes.filter(m=>m!==n);
   return openReassignPanel({
     title:"Remover “"+n.name+"”",
-    sub:"Este node tem "+bits.join(", ")+". Nada é movido automaticamente — escolha o destino de cada item.",
-    confirm:"Remover node",
+    sub:"Este nódulo tem "+bits.join(", ")+". Nada é movido automaticamente — escolha o destino de cada item.",
+    confirm:"Remover nódulo",
     build:(body,quick)=>{
       const agRows=[],tkRows=[],kidRows=[];
       const nodeOpts=list=>list.map(m=>({label:m.name+" (T"+m.tier+")",value:m.id}));
@@ -5375,7 +5482,7 @@ function openNodeReassign(n,imp){
       }
 
       if(imp.kids.length){
-        body.append(el("div","ra-sec","Sub-nodes ("+imp.kids.length+")"));
+        body.append(el("div","ra-sec","Subnódulos ("+imp.kids.length+")"));
         const host=el("div");body.append(host);
         let offer=null;
         imp.kids.forEach((m,i)=>{
@@ -5383,7 +5490,7 @@ function openNodeReassign(n,imp){
           const row=el("div","ra-row undecided"+(i===0?" first":""));
           const what=el("div","ra-what");
           what.append(el("div","t",m.name));
-          what.append(el("div","s","Tier "+m.tier+" · "+agentsOf(m.id).length+" agente(s)"));
+          what.append(el("div","s","Nível "+m.tier+" · "+agentsOf(m.id).length+" agente(s)"));
           row.append(what);
           if(cands.length){
             const sel=mkSelect([{label:"— escolher novo pai…",value:""}].concat(nodeOpts(cands)),"",v=>{
@@ -5399,7 +5506,7 @@ function openNodeReassign(n,imp){
           }
           host.append(row);
         });
-        offer=makeBulkOffer(body,kidRows,"sub-node");
+        offer=makeBulkOffer(body,kidRows,"subnódulo");
       }
 
       const up=(n.parent&&byId(n.parent))?n.parent:null;
@@ -5431,7 +5538,7 @@ function openNodeReassign(n,imp){
         const missing=[]
           .concat(agRows.filter(r=>!r.sel.value).map(r=>"agente “"+r.a.name+"”"))
           .concat(tkRows.filter(r=>!r.sel.value).map(r=>"tarefa “"+shortDesc(r.t)+"”"))
-          .concat(kidRows.filter(r=>r.sel&&!r.sel.value).map(r=>"sub-node “"+r.m.name+"”"));
+          .concat(kidRows.filter(r=>r.sel&&!r.sel.value).map(r=>"subnódulo “"+r.m.name+"”"));
         if(missing.length){
           flash("Falta escolher destino para "+missing.length+" item(ns): "+
             missing.slice(0,2).join(", ")+(missing.length>2?"…":""),{type:"err",duration:6000});
@@ -5489,7 +5596,7 @@ async function removeNodeInteractive(n){
       {type:"err",duration:6000});
     return false;
   }
-  if(nodes.length<=1){flash("Não é possível remover o único node.",{type:"err"});return false;}
+  if(nodes.length<=1){flash("Não é possível remover o único nódulo.",{type:"err"});return false;}
   const imp=nodeImpact(n);
   // A sub-node whose own subtree is too deep to fit under any remaining node has
   // nowhere to go — typically when removing the apex. Say so up front instead of
@@ -5497,23 +5604,23 @@ async function removeNodeInteractive(n){
   const stuck=imp.kids.filter(m=>!nodes.some(o=>o!==n&&canReparent(m,o)));
   if(stuck.length){
     flash("Não é possível remover “"+n.name+"”: "+
-      (stuck.length===1?("“"+stuck[0].name+"” não tem"):(stuck.length+" sub-nodes não têm"))+
-      " outro node onde encaixar. Mova-os ou crie um tier antes.",{type:"err",duration:7000});
+      (stuck.length===1?("“"+stuck[0].name+"” não tem"):(stuck.length+" subnódulos não têm"))+
+      " outro nódulo onde encaixar. Mova-os ou crie um nível antes.",{type:"err",duration:7000});
     return false;
   }
   if(!imp.agents.length&&!imp.tasks.length&&!imp.kids.length){
-    if(!(await askConfirm("Apagar o node “"+n.name+"”? Esta ação não pode ser desfeita.",
+    if(!(await askConfirm("Apagar o nódulo “"+n.name+"”? Esta ação não pode ser desfeita.",
       {yes:"Apagar",danger:true})))return false;
     const ok=deleteNode(n);
-    flash(ok?"Node removido.":"Não foi possível remover o node.",ok?undefined:{type:"err"});
+    flash(ok?"Nódulo removido.":"Não foi possível remover o nódulo.",ok?undefined:{type:"err"});
     return ok;
   }
   const plan=await openNodeReassign(n,imp);
   if(!plan)return false;
   const ok=applyNodeRemoval(n,plan);
-  if(!ok){flash("Não foi possível remover o node.",{type:"err"});return false;}
+  if(!ok){flash("Não foi possível remover o nódulo.",{type:"err"});return false;}
   const moved=(plan.agents||[]).length,kept=(plan.tasks||[]).filter(x=>x.to).length;
-  flash("Node removido"+(moved?(" · "+moved+" agente(s) transferido(s)"):"")+
+  flash("Nódulo removido"+(moved?(" · "+moved+" agente(s) transferido(s)"):"")+
     (kept?(" · "+kept+" tarefa(s) religada(s)"):"")+".");
   return true;
 }
@@ -5617,7 +5724,7 @@ function buildCrumbs(n){
   while(cur&&guard++<12){chain.unshift(cur);cur=cur.parent?byId(cur.parent):null;}
   if(chain.length<2)return null;
   const wrap=el("div","crumbs");
-  wrap.setAttribute("aria-label","Hierarquia acima deste node");
+  wrap.setAttribute("aria-label","Hierarquia acima deste nódulo");
   chain.forEach((m,i)=>{
     if(i)wrap.append(el("span","sep","›"));
     if(m===n){
@@ -5638,7 +5745,7 @@ function renderNodeDetail(head,closeBtn){
   const n=selected.node;
   const titleIn=el("input","d-title-input");
   titleIn.value=n.name;titleIn.maxLength=40;
-  titleIn.setAttribute("aria-label","Nome da unidade");
+  titleIn.setAttribute("aria-label","Nome do nódulo");
   titleIn.addEventListener("change",()=>{
     const v=titleIn.value.trim();
     if(!v){titleIn.value=n.name;return;}
@@ -5649,7 +5756,7 @@ function renderNodeDetail(head,closeBtn){
   titleIn.addEventListener("keydown",e=>{if(e.key==="Enter")titleIn.blur();});
   head.append(titleIn,closeBtn);
   detail.append(head);
-  const sub=el("div","d-sub","Tier "+n.tier+" · "+TIER[n.tier].label);
+  const sub=el("div","d-sub","Nível "+n.tier+" · "+TIER[n.tier].label);
   detail.append(sub);
   const crumbs=buildCrumbs(n);
   if(crumbs)detail.append(crumbs);
@@ -5657,7 +5764,7 @@ function renderNodeDetail(head,closeBtn){
   // Tier + parent
   detail.append(el("h4",null,"Nível"));
   const tierSel=mkSelect(
-    TIER.map((t,i)=>({label:"Tier "+i+" — "+t.label,value:String(i)})),
+    TIER.map((t,i)=>({label:"Nível "+i+" — "+t.label,value:String(i)})),
     String(n.tier),
     v=>{changeNodeTier(n,parseInt(v,10));renderDetail();}
   );
@@ -5695,7 +5802,7 @@ function renderNodeDetail(head,closeBtn){
     const cat=el("span","count",a.category);
     row.draggable=true;
     row.style.cursor="grab";
-    row.title="Arraste para outro node (esfera, lista de nodes) para transferir";
+    row.title="Arraste para outro nódulo (esfera, lista de nódulos) para transferir";
     row.addEventListener("dragstart",e=>{
       dragPayload={kind:"agent",id:a.id};
       e.dataTransfer.effectAllowed="move";
@@ -5754,16 +5861,16 @@ function renderNodeDetail(head,closeBtn){
       detail.append(row);
     });
   });
-  if(!any)detail.append(el("div","empty-note","Nenhuma tarefa liga este node."));
+  if(!any)detail.append(el("div","empty-note","Nenhuma tarefa liga este nódulo."));
 
   // New task
-  detail.append(el("h4",null,"Nova tarefa a partir desta unidade"));
+  detail.append(el("h4",null,"Nova tarefa a partir deste nódulo"));
   if(!pendingTarget){
     const wrap=el("div","search-wrap");
     const input=el("input","search-input");
-    input.type="text";input.placeholder="Procurar node de destino…";
+    input.type="text";input.placeholder="Procurar nódulo de destino…";
     input.value=searchQuery;
-    input.setAttribute("aria-label","Procurar a unidade de destino");
+    input.setAttribute("aria-label","Procurar o nódulo de destino");
     const results=el("div","search-results");
     function renderResults(){
       results.innerHTML="";
@@ -5773,12 +5880,12 @@ function renderNodeDetail(head,closeBtn){
         .slice(0,5).forEach(m=>{
           const hit=el("button","search-hit");
           hit.innerHTML=`<span class="swatch" style="background:${hex(m.color)}"></span>${esc(m.name)}
-            <span class="layer-tag" style="margin-left:auto">T${m.tier}</span>`;
+            <span class="layer-tag" style="margin-left:auto">N${m.tier}</span>`;
           hit.onclick=()=>{pendingTarget=m;renderDetail();};
           results.append(hit);
         });
       if(!results.children.length)
-        results.append(el("div","empty-note","Nenhum node com esse nome."));
+        results.append(el("div","empty-note","Nenhum nódulo com esse nome."));
     }
     input.addEventListener("input",()=>{searchQuery=input.value;renderResults();});
     wrap.append(input);
@@ -5790,7 +5897,7 @@ function renderNodeDetail(head,closeBtn){
     chosen.innerHTML=`<span class="swatch" style="background:${hex(pendingTarget.color)}"></span>
       ${esc(n.name)} → <b>${esc(pendingTarget.name)}</b>`;
     const clear=el("button","clear","✕");
-    clear.setAttribute("aria-label","Limpar a unidade escolhida");
+    clear.setAttribute("aria-label","Limpar o nódulo escolhido");
     clear.onclick=()=>{pendingTarget=null;searchQuery="";renderDetail();};
     chosen.append(clear);
     detail.append(chosen);
@@ -5848,7 +5955,7 @@ function renderNodeDetail(head,closeBtn){
   const isApex=isApexNode(n);
   const encumbered=hasAgents||hasKids||hasTasks;
   const deletable=nodes.length>1&&!isApex;
-  const delBtn=el("button","btn tiny",(encumbered&&deletable)?"Apagar node…":"Apagar node");
+  const delBtn=el("button","btn tiny",(encumbered&&deletable)?"Apagar nódulo…":"Apagar nódulo");
   delBtn.style.marginTop="16px";
   delBtn.style.borderColor=deletable?"#E0554F":"var(--hairline)";
   delBtn.style.color=deletable?"#E0554F":"var(--ink-dim)";
@@ -5857,12 +5964,12 @@ function renderNodeDetail(head,closeBtn){
   delBtn.title=isApex
     ?"O Executivo é permanente — pode renomeá-lo e mudar a equipa, mas não removê-lo"
     :(!deletable
-      ?"Não é possível remover o único node"
+      ?"Não é possível remover o único nódulo"
       :(encumbered
         ?("Abre um painel para reatribuir "+
-          [hasAgents?"agentes":null,hasTasks?"tarefas":null,hasKids?"sub-nodes":null]
+          [hasAgents?"agentes":null,hasTasks?"tarefas":null,hasKids?"subnódulos":null]
             .filter(Boolean).join(", ")+" antes de apagar")
-        :"Apagar este node"));
+        :"Apagar este nódulo"));
   delBtn.onclick=()=>removeNodeInteractive(n);
   detail.append(delBtn);
   if(isApex)detail.append(el("div","foot-note",
@@ -5875,7 +5982,7 @@ function renderAgentDetail(head,closeBtn){
 
   const titleIn=el("input","d-title-input");
   titleIn.value=a.name;titleIn.maxLength=30;
-  titleIn.setAttribute("aria-label","Nome da pessoa");
+  titleIn.setAttribute("aria-label","Nome do agente");
   titleIn.addEventListener("change",()=>{
     const v=titleIn.value.trim();
     if(!v){titleIn.value=a.name;return;}
@@ -5908,7 +6015,7 @@ function renderAgentDetail(head,closeBtn){
     const opts=substituteOptions(a);
     contRow.append(el("label",null,"Quem assegura"));
     if(!opts.length){
-      contRow.append(el("div","empty-note","Sem ninguém disponível nas unidades vizinhas."));
+      contRow.append(el("div","empty-note","Sem ninguém disponível nos nódulos vizinhos."));
     }else{
       const sel=mkSelect([{label:"— ninguém —",value:""}].concat(opts.map(o=>{
         const on=byId(o.nodeId);
@@ -5927,7 +6034,7 @@ function renderAgentDetail(head,closeBtn){
   cat.style.width="100%";
   detail.append(cat);
 
-  detail.append(el("h4",null,"Unidade onde está"));
+  detail.append(el("h4",null,"Nódulo onde está"));
   if(n){
     const row=el("button","conn-row");
     row.style.color=hex(n.color);
@@ -5935,11 +6042,11 @@ function renderAgentDetail(head,closeBtn){
     row.style.cursor="pointer";row.style.width="100%";
     row.innerHTML=`<span class="swatch" style="background:currentColor"></span>
       <span style="color:var(--ink)">${esc(n.name)}</span>
-      <span class="layer-tag">T${n.tier} · ${esc(TIER[n.tier].label)}</span>`;
+      <span class="layer-tag">N${n.tier} · ${esc(TIER[n.tier].label)}</span>`;
     row.onclick=()=>selectNode(n);
     detail.append(row);
   }else{
-    detail.append(el("div","empty-note","Sem node atribuído."));
+    detail.append(el("div","empty-note","Sem nódulo atribuído."));
   }
 
   detail.append(el("h4",null,"Tarefas à sua responsabilidade"));
@@ -6131,7 +6238,7 @@ function renderTaskDetail(head,closeBtn){
   const A=byId(t.a),B=byId(t.b);
   head.append(el("div","d-title",(A?A.name:"?")+" → "+(B?B.name:"?")),closeBtn);
   detail.append(head);
-  const sub=el("div","d-sub","Task · "+p.name);
+  const sub=el("div","d-sub","Tarefa · "+p.name);
   sub.style.color=hex(p.color);
   detail.append(sub);
 
@@ -6159,7 +6266,7 @@ function renderTaskDetail(head,closeBtn){
 
   grid.append(el("label",null,"Duração"));
   const dur=el("input");dur.type="text";dur.value=t.duration;dur.maxLength=20;
-  dur.setAttribute("aria-label","Task duration");
+  dur.setAttribute("aria-label","Duração da tarefa");
   dur.addEventListener("change",()=>{t.duration=dur.value.trim()||"—";markDirty();});
   grid.append(dur);
 
@@ -6168,7 +6275,7 @@ function renderTaskDetail(head,closeBtn){
   detail.append(el("h4",null,"Descrição"));
   const box=el("textarea","desc-box");
   box.value=t.desc;box.maxLength=400;
-  box.setAttribute("aria-label","Task description");
+  box.setAttribute("aria-label","Descrição da tarefa");
   const saved=el("div","saved-note","");
   let saveTimer=null;
   box.addEventListener("input",()=>{
@@ -6308,7 +6415,7 @@ stage.addEventListener("pointermove",e=>{
   if(hit&&hit.type==="node"){
     const n=hit.node,prim=primaryOf(n.id);
     tip.querySelector(".t-name").textContent=n.name;
-    tip.querySelector(".t-role").textContent="Tier "+n.tier+" · "+TIER[n.tier].label;
+    tip.querySelector(".t-role").textContent="Nível "+n.tier+" · "+TIER[n.tier].label;
     tip.querySelector(".t-agents").textContent=
       (prim?("★ "+prim.name+" ("+prim.category+") · "):"")+
       agentsOf(n.id).length+" agente(s) · clique para editar";
@@ -6317,7 +6424,7 @@ stage.addEventListener("pointermove",e=>{
     const t=hit.task,p=processes[t.proc];
     const A=byId(t.a),B=byId(t.b),ag=t.agent?agentById(t.agent):null;
     tip.querySelector(".t-name").textContent=(A?A.name:"?")+" → "+(B?B.name:"?");
-    tip.querySelector(".t-role").textContent="Task · "+p.name+" · "+t.duration;
+    tip.querySelector(".t-role").textContent="Tarefa · "+p.name+" · "+t.duration;
     tip.querySelector(".t-agents").textContent=(ag?("Resp.: "+ag.name+" · "):"")+"clique para editar · shift+clique isola o procedimento";
     tip.style.display="block";
   }else tip.style.display="none";
@@ -6513,13 +6620,13 @@ function procWarnings(p){
   const g=procGraph(p);
   const w=[];
   if(g.cyclic)w.push({sev:"warn",msg:"O fluxo tem um ciclo — volta a um passo anterior."});
-  if(g.tasks.length&&!g.starts.length)w.push({sev:"warn",msg:"Não há passo inicial: todos os nodes recebem entrada."});
+  if(g.tasks.length&&!g.starts.length)w.push({sev:"warn",msg:"Não há passo inicial: todos os nódulos recebem entrada."});
   if(g.starts.length>1)w.push({sev:"info",msg:g.starts.length+" pontos de partida independentes."});
   p.tasks.forEach(t=>{
     if(!t.agent)return;
     const a=agentById(t.agent);
     if(!a)w.push({sev:"warn",msg:"“"+shortDesc(t)+"” tem um responsável que já não existe.",task:t});
-    else if(a.nodeId!==t.a)w.push({sev:"warn",msg:"O responsável de “"+shortDesc(t)+"” já não pertence ao node de origem.",task:t});
+    else if(a.nodeId!==t.a)w.push({sev:"warn",msg:"O responsável de “"+shortDesc(t)+"” já não pertence ao nódulo de origem.",task:t});
   });
   return w;
 }
@@ -6713,7 +6820,7 @@ function renderFlowchart(p){
   const MODES=[{k:"flow",l:"Fluxo"},{k:"lanes",l:"Pistas"},{k:"gantt",l:"Cronograma"}];
   const nextMode=MODES[(Math.max(0,MODES.findIndex(m=>m.k===fcMode))+1)%MODES.length];
   const modeBtn=el("button","btn tiny","Ver: "+nextMode.l);
-  modeBtn.title="Alternar entre fluxo ramificado, pistas por node e cronograma";
+  modeBtn.title="Alternar entre fluxo ramificado, pistas por nódulo e cronograma";
   modeBtn.onclick=()=>{fcMode=nextMode.k;renderFlowchart(p);};
   const playBtn=el("button","btn tiny","▶ Reproduzir");
   playBtn.title="Percorrer o procedimento passo a passo, em 2D e no 3D";
@@ -6739,7 +6846,7 @@ function renderFlowchart(p){
   /* ---- stats ---- */
   const chips=el("div","fc-chips");
   chips.append(el("span","fc-chip",g.tasks.length+" tarefa(s)"));
-  chips.append(el("span","fc-chip",g.ids.length+" node(s)"));
+  chips.append(el("span","fc-chip",g.ids.length+" nódulo(s)"));
   if(st.forks)chips.append(el("span","fc-chip",st.forks+" ramificação(ões)"));
   if(st.joins)chips.append(el("span","fc-chip",st.joins+" convergência(s)"));
   if(g.tasks.length){
@@ -6830,7 +6937,7 @@ function renderFlowchart(p){
       box.append(el("div","n",n?abbrev(n.name):"?"));
       const prim=n?primaryOf(n.id):null;
       box.append(el("div","a",prim?("★ "+prim.name):"sem responsável"));
-      box.title=(n?n.name:"?")+" — abrir painel do node";
+      box.title=(n?n.name:"?")+" — abrir painel do nódulo";
       box.onclick=()=>selectNode(n);
       plane.append(box);
       const fork=el("button","fc-mini","⑂");
@@ -6955,11 +7062,11 @@ function renderFlowchart(p){
   function buildInsertForm(t){
     const oldB=t.b;
     side.append(el("h5",null,"Inserir passo"));
-    side.append(el("div","side-note","Divide “"+shortDesc(t)+"” em dois passos, passando por um node intermédio."));
+    side.append(el("div","side-note","Divide “"+shortDesc(t)+"” em dois passos, passando por um nódulo intermédio."));
     const fg=el("div","field-grid");
-    fg.append(el("label",null,"Node intermédio"));
+    fg.append(el("label",null,"Nódulo intermédio"));
     let midId="";
-    fg.append(mkSelect([{label:"— escolher node…",value:""}]
+    fg.append(mkSelect([{label:"— escolher nódulo…",value:""}]
       .concat(nodes.filter(m=>m.id!==t.a&&m.id!==oldB).map(m=>({label:m.name+" (T"+m.tier+")",value:m.id}))),
       "",v=>{midId=v;}));
     fg.append(el("label",null,"Nome do novo passo"));
@@ -6971,7 +7078,7 @@ function renderFlowchart(p){
     side.append(fg);
     const go=el("button","btn primary","Inserir");
     go.onclick=()=>{
-      if(!midId){flash("Escolha o node intermédio.",{type:"err"});return;}
+      if(!midId){flash("Escolha o nódulo intermédio.",{type:"err"});return;}
       const tail=createTask(idx,midId,oldB,d.value.trim()||undefined,
         (primaryOf(midId)||{}).id||null,du.value.trim()||undefined);
       // Only rewire the original once the second half actually exists
@@ -6994,7 +7101,7 @@ function renderFlowchart(p){
     if(fcNewFrom){
       const n=byId(fcNewFrom);
       side.append(el("div","side-note",
-        "Nova saída a partir de “"+(n?n.name:"?")+"”. Um node pode ter várias tarefas de saída — é assim que o fluxo ramifica."));
+        "Nova saída a partir de “"+(n?n.name:"?")+"”. Um nódulo pode ter várias tarefas de saída — é assim que o fluxo ramifica."));
     }
     const fg=el("div","field-grid");
     fg.append(el("label",null,"Origem"));
@@ -7293,7 +7400,7 @@ function renderTaskListAll(){
   });
   if(!total){
     host.append(el("div","foot-note",
-      "Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de uma unidade para outra — ou dentro de um fluxograma."));
+      "Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma."));
   }
 }
 /* O separador só se redesenha quando está à vista, e no máximo uma vez por
@@ -7321,16 +7428,16 @@ function renderOrgChart(){
   modalBody.append(tog);
 
   // --- Tier management ---
-  const tTitle=el("div","fc-chain-title","Tiers — renomear ou criar");
+  const tTitle=el("div","fc-chain-title","Níveis — renomear ou criar");
   tTitle.style.margin="0 0 6px";
   modalBody.append(tTitle);
   const tWrap=el("div","tier-list");
   TIER.forEach((t,i)=>{
     const row=el("div","tier-row");
-    row.append(el("span","tier-num","T"+i));
+    row.append(el("span","tier-num","N"+i));
     const inp=el("input");
     inp.type="text";inp.value=t.label;inp.maxLength=28;
-    inp.setAttribute("aria-label","Nome do tier "+i);
+    inp.setAttribute("aria-label","Nome do nível "+i);
     inp.addEventListener("change",()=>{
       const v=inp.value.trim();
       if(!v){inp.value=t.label;return;}
@@ -7341,20 +7448,20 @@ function renderOrgChart(){
     inp.addEventListener("keydown",e=>{if(e.key==="Enter")inp.blur();});
     row.append(inp);
     const nCount=nodes.filter(n=>n.tier===i).length;
-    const cnt=el("span","count",nCount+" nodes");
+    const cnt=el("span","count",nCount+" nódulos");
     row.append(cnt);
     const del=el("button","icon-btn","✕");
     const deletable=nCount===0&&TIER.length>2;
     del.disabled=!deletable;
     del.style.opacity=deletable?"":"0.22";
     del.style.cursor=deletable?"pointer":"default";
-    del.title=deletable?"Apagar tier (sem nodes)":(nCount?"Só é possível apagar tiers sem nodes":"São necessários pelo menos 2 tiers");
-    del.setAttribute("aria-label","Apagar tier "+i);
+    del.title=deletable?"Apagar nível (sem nódulos)":(nCount?"Só é possível apagar níveis sem nódulos":"São necessários pelo menos 2 níveis");
+    del.setAttribute("aria-label","Apagar nível "+i);
     del.onclick=()=>deleteTier(i);
     row.append(del);
     tWrap.append(row);
   });
-  const addT=el("button","btn tiny","+ Novo tier");
+  const addT=el("button","btn tiny","+ Novo nível");
   // O snapshot e a importação truncam a 8 tiers; deixar criar o nono seria
   // prometer uma estrutura que o primeiro "anular" apagava sem aviso.
   const TIER_MAX=8;
@@ -7366,7 +7473,7 @@ function renderOrgChart(){
       return;
     }
     const last=TIER[TIER.length-1];
-    TIER.push({label:"Tier "+TIER.length,y:lowestTierY()-3,r:last.r+2.4,size:0.24});
+    TIER.push({label:"Nível "+TIER.length,y:lowestTierY()-3,r:last.r+2.4,size:0.24});
     markDirty();
     rebuildTierRings();
     relayoutLayers();
@@ -7387,7 +7494,7 @@ function renderOrgChart(){
   function buildCard(n,kids){
     const card=el("div","org-card");
     card.style.cursor="pointer";
-    card.title="Abrir painel do node · arraste para reorganizar";
+    card.title="Abrir painel do nódulo · arraste para reorganizar";
     // O organograma 2D inteiro era intocável pelo teclado: cartões clicáveis
     // sem foco nem ativação. Cada um passa a ser um alvo a sério.
     clickable(card,"Abrir "+n.name,()=>selectNode(n));
@@ -7426,7 +7533,7 @@ function renderOrgChart(){
     }
     nameRow.append(document.createTextNode(n.name+(n._orgCollapsed&&kids.length?"  (+"+kids.length+")":"")));
     card.append(nameRow);
-    card.append(el("div","t","Tier "+n.tier+" · "+TIER[n.tier].label));
+    card.append(el("div","t","Nível "+n.tier+" · "+TIER[n.tier].label));
 
     const prim=primaryOf(n.id);
     const pLine=el("div","p");
@@ -7645,7 +7752,7 @@ importFile.onchange=()=>{
           // e a app ficava sem um único nível, que é um estado do qual não sai.
           if(!t||typeof t!=="object")return;
           const num=(v,d,lo,hi)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):d;
-          TIER.push({label:String(t.label||("Tier "+i)).slice(0,28),
+          TIER.push({label:String(t.label||("Nível "+i)).slice(0,28),
             y:num(t.y,9-i*3,-200,200),
             r:num(t.r,i*2.5,0,400),
             size:num(t.size,0.28,0.02,4)});
@@ -8004,7 +8111,7 @@ function showTourEnd(){
   tourEndSeen=true;
   // Os números reais, para se perceber ao certo o que está em cima da mesa
   const st=document.getElementById("teStats");
-  if(st)st.textContent=nodes.length+" unidades · "+agents.length+" pessoas · "+
+  if(st)st.textContent=nodes.length+" nódulos · "+agents.length+" agentes · "+
     processes.length+" procedimentos";
   rememberFocus();
   tourEndEl.classList.add("open");
@@ -8061,7 +8168,7 @@ if(tourEndEl){
     // "Cancelar" a devolver o foco a um botão que já não estava no ecrã.
     const ok=await askConfirm(
       "Apagar a demonstração e começar a sua autarquia? Fica só o Executivo — "+
-      "todas as unidades, pessoas, procedimentos e grupos da demonstração são apagados. "+
+      "todos os nódulos, agentes, procedimentos e grupos da demonstração são apagados. "+
       "Se quiser guardar esta cópia, cancele e use “Guardar dataset” primeiro.",
       {yes:"Apagar e começar",danger:true});
     closeTourEnd();
@@ -8076,7 +8183,7 @@ if(tourEndEl){
 
 document.getElementById("newDatasetBtn").onclick=async()=>{
   const ok=await askConfirm(
-    "Criar uma nova rede? Todos os nodes, agentes, procedimentos e grupos atuais serão apagados — só fica o Executivo. Exporte antes se quiser guardar.",
+    "Criar uma nova rede? Todos os nódulos, agentes, procedimentos e grupos atuais serão apagados — só fica o Executivo. Exporte antes se quiser guardar.",
     {yes:"Criar nova rede",danger:true});
   if(!ok)return;
   newDataset();
@@ -8153,8 +8260,9 @@ const THEMES={
 };
 let themeId="nocturno";
 function makeCalcadaTexture(T0){
-  const c=document.createElement("canvas");c.width=c.height=512;
+  const c=document.createElement("canvas");c.width=c.height=GROUND_RES;
   const x=c.getContext("2d");
+  x.setTransform(GROUND_RES/512,0,0,GROUND_RES/512,0,0);
   const g=x.createRadialGradient(256,256,16,256,256,256);
   g.addColorStop(0,T0.groundBase[0]);
   g.addColorStop(0.6,T0.groundBase[1]);
@@ -8175,6 +8283,7 @@ function makeCalcadaTexture(T0){
       x.fillRect(px-2.3,py-2.3,4.6,4.6);
     }
   }
+  x.setTransform(1,0,0,1,0,0);
   return new THREE.CanvasTexture(c);
 }
 function applyTheme(id,opts){
@@ -8194,7 +8303,7 @@ function applyTheme(id,opts){
   aurora.pal.blobs.forEach((b,i)=>{if(T0.aurora[i]){b.rgb=T0.aurora[i][0];b.a=T0.aurora[i][1];}});
   aurora.draw(0);
   const oldMap=ground.material.map;
-  ground.material.map=makeCalcadaTexture(T0);
+  ground.material.map=afinarTextura(makeCalcadaTexture(T0));
   if(oldMap&&oldMap.dispose)oldMap.dispose();
   scene.background.setHex(T0.fog);
   scene.fog.color.setHex(T0.fog);
@@ -8515,7 +8624,7 @@ async function __exportPPTX(){
     const ov=slideWithHeader("Estrutura em números","Visão geral do modelo");
     const tierCounts=TIER.map((t,i)=>nodes.filter(n=>n.tier===i).length);
     const stats=[
-      [String(nodes.length),"Nodes"],
+      [String(nodes.length),"Nódulos"],
       [String(agents.length),"Agentes"],
       [String(processes.length),"Procedimentos"],
       [String(processes.reduce((a,p)=>a+p.tasks.length,0)),"Tarefas"]
@@ -8532,7 +8641,7 @@ async function __exportPPTX(){
       if(y>5)return;
       ov.addText("TIER "+i,{x:0.5,y,w:0.9,h:0.3,fontFace:FONT,fontSize:9,bold:true,color:C.GOLD});
       ov.addText(t.label,{x:1.45,y,w:5,h:0.3,fontFace:FONT,fontSize:11,color:C.INK});
-      ov.addText(tierCounts[i]+" node(s)",{x:7.5,y,w:2,h:0.3,align:"right",fontFace:FONT,fontSize:9,color:C.DIM});
+      ov.addText(tierCounts[i]+" nódulo(s)",{x:7.5,y,w:2,h:0.3,align:"right",fontFace:FONT,fontSize:9,color:C.DIM});
     });
 
     /* ---- Organograma slides: Executivo + one per tier-1 branch ---- */
@@ -9055,6 +9164,16 @@ function measureChrome(){
   const hdr=document.querySelector("header");
   if(hdr)set("--hdr-h",Math.round(hdr.getBoundingClientRect().height));
   set("--step-h",h(document.getElementById("stepper")));
+  // A barra de separadores é a primeira faixa do topo. Quem lá estava antes
+  // dela — localização, trilho e radar — está preso ao topo do ecrã e tem de
+  // descer o que ela ocupar; escondida (apresentação, ecrã deitado curto),
+  // a variável vai a zero e tudo volta ao sítio de origem.
+  const tbEl=document.getElementById("tabbar");
+  set("--tab-h",tbEl?h(tbEl,tbEl.getBoundingClientRect().height?8:0):0);
+  // O radar divide o canto superior direito com o painel de detalhe. Medido,
+  // o painel sabe onde começar; escondido, a variável é zero e o painel sobe.
+  const rdEl=document.getElementById("radarWrap");
+  set("--radar-h",rdEl?h(rdEl,rdEl.getBoundingClientRect().height?10:0):0);
   // Em ecrã largo o painel da esquerda está sempre visível e partilha a coluna
   // com o cartão de arranque: um tem de parar onde o outro começa.
   set("--quest-h",h(document.getElementById("quest"),12));
@@ -9288,7 +9407,7 @@ function applyDensity(){
   const v=THREE.MathUtils.clamp(parseInt(densityRange.value,10)||0,0,maxT);
   densityMax=(v>=maxT)?99:v;
   densityVal.textContent=(densityMax>=99)
-    ? "todos os tiers"
+    ? "todos os níveis"
     : ("até T"+densityMax+" · "+((TIER[densityMax]&&TIER[densityMax].label)||""));
 }
 function syncDensityRange(){
@@ -9532,9 +9651,9 @@ function orgIssues(){
   const out=[];
   nodes.forEach(n=>{
     if(!primaryOf(n.id))
-      out.push({sev:"warn",kind:"Node",msg:"“"+n.name+"” não tem responsável.",go:()=>selectNode(n)});
+      out.push({sev:"warn",kind:"Nódulo",msg:"“"+n.name+"” não tem responsável.",go:()=>selectNode(n)});
     if(n.tier>0&&!n.parent)
-      out.push({sev:"warn",kind:"Node",msg:"“"+n.name+"” não está ligado à hierarquia.",go:()=>selectNode(n)});
+      out.push({sev:"warn",kind:"Nódulo",msg:"“"+n.name+"” não está ligado à hierarquia.",go:()=>selectNode(n)});
   });
   agents.forEach(a=>{
     if(a.primary)return;
@@ -9566,7 +9685,7 @@ function renderHealth(){
   ring.style.border="3px solid "+(score>85?"#5CC46A":(score>60?hex(GOLD3D):"#E0554F"));
   const sum=el("div","hx-sum");
   sum.append(el("div",null,warns+" problema(s) a corrigir · "+infos+" sugestão(ões)"));
-  sum.append(el("div",null,nodes.length+" nodes · "+agents.length+" agentes · "+processes.length+" procedimentos"));
+  sum.append(el("div",null,nodes.length+" nódulos · "+agents.length+" agentes · "+processes.length+" procedimentos"));
   head.append(ring,sum);
   modalBody.append(head);
 
@@ -9602,13 +9721,13 @@ document.getElementById("healthBtn").onclick=showHealth;
 ============================================================ */
 const VIEWS=[
   {id:"matrix",  ico:"▦", t:"Matriz Nó × Procedimento",
-   d:"Que unidades entram em que procedimentos, e quanto pesam."},
+   d:"Que nódulos entram em que procedimentos, e quanto pesam."},
   {id:"sankey",  ico:"⇉", t:"Mapa de fluxo (Sankey)",
-   d:"Para onde corre o trabalho entre unidades, com a espessura do caudal."},
+   d:"Para onde corre o trabalho entre nódulos, com a espessura do caudal."},
   {id:"mural",   ico:"▤", t:"Mural de procedimentos",
    d:"Todos os fluxogramas lado a lado, em miniatura."},
   {id:"metro",   ico:"⊕", t:"Mapa de metro",
-   d:"Cada procedimento é uma linha; as unidades partilhadas são interfaces."},
+   d:"Cada procedimento é uma linha; os nódulos partilhados são interfaces."},
   {id:"oficial", ico:"▣", t:"Organograma oficial",
    d:"Versão documento, pronta a imprimir ou anexar a uma deliberação."},
   {id:"municipe",ico:"☺", t:"Vista do munícipe",
@@ -9679,7 +9798,7 @@ function renderMatrix(){
   modalBody.innerHTML="";
   const D=matrixData();
   modalBody.append(viewBar(
-    D.involved.length+" unidade(s) × "+D.procs.length+" procedimento(s) — o número é quantas vezes a unidade aparece numa tarefa."));
+    D.involved.length+" nódulo(s) × "+D.procs.length+" procedimento(s) — o número é quantas vezes o nódulo aparece numa tarefa."));
   if(!D.procs.length||!D.involved.length){
     modalBody.append(el("div","empty-note","Ainda não há tarefas para cruzar. Crie um procedimento primeiro."));
     modal.classList.add("open");
@@ -9690,7 +9809,7 @@ function renderMatrix(){
   tb.className="mx";
   const thead=document.createElement("thead");
   const hr=document.createElement("tr");
-  hr.append(el("th","mxrow","Unidade"));
+  hr.append(el("th","mxrow","Nódulo"));
   D.procs.forEach((p,pi)=>{
     const th=el("th","mxcol");
     const s=el("span",null,p.name);
@@ -9708,7 +9827,7 @@ function renderMatrix(){
     const n=byId(id);
     const tr=document.createElement("tr");
     const th=el("th","mxrow",abbrev(n.name));
-    th.title=n.name+" — abrir o painel desta unidade";
+    th.title=n.name+" — abrir o painel deste nódulo";
     th.style.cursor="pointer";
     clickable(th,"Abrir o painel de "+n.name,()=>{closeModalSilent();selectNode(n);});
     tr.append(th);
@@ -9768,7 +9887,7 @@ function renderSankey(){
   modalBody.append(viewBar(
     "Quem entrega a quem, somando todos os procedimentos visíveis. A espessura é o número de tarefas."));
   if(!D.links.length){
-    modalBody.append(el("div","empty-note","Nenhuma tarefa entre unidades distintas nos procedimentos visíveis."));
+    modalBody.append(el("div","empty-note","Nenhuma tarefa entre nódulos distintos nos procedimentos visíveis."));
     modal.classList.add("open");
     return;
   }
@@ -9991,7 +10110,7 @@ function renderOficial(){
   const kidsOf=id=>nodes.filter(n=>n.parent===id).sort((a,b)=>a.angle-b.angle);
   const draw=(n,host,depth)=>{
     const box=el("div","doc-box");
-    box.append(el("div","dc",(TIER[n.tier]||{}).label||("Tier "+n.tier)));
+    box.append(el("div","dc",(TIER[n.tier]||{}).label||("Nível "+n.tier)));
     box.append(el("div","dn",n.name));
     const pr=primaryOf(n.id);
     box.append(el("div","dp",pr?(pr.name+" — "+pr.category):"(sem responsável designado)"));
@@ -10005,7 +10124,7 @@ function renderOficial(){
     wrap.append(lvl);
   };
   const roots=nodes.filter(n=>!n.parent||!byId(n.parent));
-  if(!roots.length)tree.append(el("div","empty-note","Sem unidades."));
+  if(!roots.length)tree.append(el("div","empty-note","Sem nódulos."));
   roots.forEach(r=>draw(r,tree,0));
   // Uma hierarquia funda é mais larga do que um telemóvel: desliza aqui dentro
   // em vez de arrastar a página inteira para o lado.
@@ -10018,14 +10137,14 @@ function renderOficial(){
   tb.className="doc-t";
   const th=document.createElement("thead");
   const hr=document.createElement("tr");
-  ["Unidade","Nível","Responsável","Efetivos"].forEach(h=>hr.append(el("th",null,h)));
+  ["Nódulo","Nível","Responsável","Efetivos"].forEach(h=>hr.append(el("th",null,h)));
   th.append(hr);tb.append(th);
   const tbody=document.createElement("tbody");
   nodes.slice().sort((a,b)=>(a.tier-b.tier)||a.name.localeCompare(b.name,"pt")).forEach(n=>{
     const tr=document.createElement("tr");
     const pr=primaryOf(n.id);
     tr.append(el("td",null,n.name));
-    tr.append(el("td",null,(TIER[n.tier]||{}).label||("Tier "+n.tier)));
+    tr.append(el("td",null,(TIER[n.tier]||{}).label||("Nível "+n.tier)));
     tr.append(el("td",null,pr?pr.name:"—"));
     tr.append(el("td",null,String(agentsOf(n.id).length)));
     tbody.append(tr);
@@ -10038,7 +10157,7 @@ function renderOficial(){
     const pt=document.createElement("table");
     pt.className="doc-t";
     const pth=document.createElement("thead"),phr=document.createElement("tr");
-    ["Procedimento","Tarefas","Unidades","Duração estimada"].forEach(h=>phr.append(el("th",null,h)));
+    ["Procedimento","Tarefas","Nódulos","Duração estimada"].forEach(h=>phr.append(el("th",null,h)));
     pth.append(phr);pt.append(pth);
     const ptb=document.createElement("tbody");
     processes.forEach(p=>{
@@ -10053,7 +10172,7 @@ function renderOficial(){
     pt.append(ptb);
     doc.append(pt);
   }
-  doc.append(el("div","doc-foot",nodes.length+" unidades · "+agents.length+" agentes · "+
+  doc.append(el("div","doc-foot",nodes.length+" nódulos · "+agents.length+" agentes · "+
     processes.length+" procedimentos · documento gerado automaticamente a partir do modelo."));
   modalBody.append(doc);
   modal.classList.add("open");
@@ -10158,7 +10277,7 @@ function setLinkMode(on){
   const b=document.getElementById("linkBtn");
   if(b){b.classList.toggle("active",linkMode);b.setAttribute("aria-pressed",linkMode?"true":"false");}
   flash(linkMode
-    ? "Modo ligar: arraste de uma unidade para outra para criar uma tarefa."
+    ? "Modo ligar: arraste de um nódulo para outro para criar uma tarefa."
     : "Modo ligar desligado.",{key:"link"});
 }
 function cancelComet(){
@@ -10275,7 +10394,7 @@ function anchorMap(p,hi){
   wrap.append(el("div","fc-anchor-t","Onde acontece"));
   wrap.append(svg);
   const legend=el("div","fc-anchor-l",
-    inProc.size+" de "+nodes.length+" unidades · clique num ponto para ir lá");
+    inProc.size+" de "+nodes.length+" nódulos · clique num ponto para ir lá");
   wrap.append(legend);
   return wrap;
 }
@@ -10340,7 +10459,7 @@ function setContinuity(on){
   if(continuityOn){
     const un=uncoveredNodes();
     flash(absentAgents().length+" ausência(s)"+
-      (un.length?(" · "+un.length+" unidade(s) sem cobertura"):" · tudo coberto"),
+      (un.length?(" · "+un.length+" nódulo(s) sem cobertura"):" · tudo coberto"),
       {key:"cont",type:un.length?"err":undefined});
   }else flash("Modo continuidade desligado.",{key:"cont"});
 }
@@ -10437,7 +10556,7 @@ function renderContinuity(){
       const opts=substituteOptions(chosen);
       subWrap.append(el("label",null,"Quem assegura"));
       if(!opts.length){
-        subWrap.append(el("div","empty-note","Sem ninguém disponível nas unidades vizinhas."));
+        subWrap.append(el("div","empty-note","Sem ninguém disponível nos nódulos vizinhos."));
         subWrap.dataset.val="";
         return;
       }
@@ -10631,17 +10750,17 @@ function renderScenario(){
     if(items.length>40)g.append(el("div","empty-note","+ "+(items.length-40)+" não mostradas."));
     modalBody.append(g);
   };
-  sec("Unidades criadas",d.nodesAdded,x=>x.name,x=>{closeModalSilent();locateNode(x);});
-  sec("Unidades removidas",d.nodesRemoved,x=>x.name);
-  sec("Unidades renomeadas",d.nodesRenamed,x=>x.from+" → "+x.node.name,x=>{closeModalSilent();locateNode(x.node);});
-  sec("Unidades reposicionadas",d.nodesMoved,x=>{
+  sec("Nódulos criados",d.nodesAdded,x=>x.name,x=>{closeModalSilent();locateNode(x);});
+  sec("Nódulos removidos",d.nodesRemoved,x=>x.name);
+  sec("Nódulos renomeados",d.nodesRenamed,x=>x.from+" → "+x.node.name,x=>{closeModalSilent();locateNode(x.node);});
+  sec("Nódulos reposicionados",d.nodesMoved,x=>{
     const p=x.fromParent?byId(x.fromParent):null;
     return x.node.name+" (nível "+x.fromTier+" → "+x.node.tier+
       (p?(", antes sob "+p.name):"")+")";
   },x=>{closeModalSilent();locateNode(x.node);});
-  sec("Pessoas admitidas",d.agentsAdded,x=>x.name+" — "+((byId(x.nodeId)||{}).name||"?"),x=>{closeModalSilent();selectAgent(x);});
-  sec("Pessoas removidas",d.agentsRemoved,x=>x.name);
-  sec("Pessoas transferidas",d.agentsMoved,x=>{
+  sec("Agentes admitidos",d.agentsAdded,x=>x.name+" — "+((byId(x.nodeId)||{}).name||"?"),x=>{closeModalSilent();selectAgent(x);});
+  sec("Agentes removidos",d.agentsRemoved,x=>x.name);
+  sec("Agentes transferidos",d.agentsMoved,x=>{
     const f=byId(x.from),t=byId(x.agent.nodeId);
     return x.agent.name+": "+(f?abbrev(f.name):"?")+" → "+(t?abbrev(t.name):"?");
   },x=>{closeModalSilent();selectAgent(x.agent);});
@@ -10671,7 +10790,7 @@ function parsePasted(text){
      que a coluna do nível não seja um número (se for, é uma linha de dados). */
   const norm=s=>String(s==null?"":s).toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
-  const FIRST=["unidade","nome","servico","servicos","divisao","designacao","orgao","estrutura"];
+  const FIRST=["nodulo","unidade","nome","servico","servicos","divisao","designacao","orgao","estrutura"];
   const OTHER=["nivel","tier","escalao","grau","responsavel","chefe","categoria","cargo","funcao"];
   const head=rows[0].map(norm);
   const looksNumeric=head.length>1&&/^\d+$/.test(head[1]);
@@ -10697,7 +10816,7 @@ function renderPaste(){
   modalTitle.textContent="Colar do Excel";
   modalBody.innerHTML="";
   modalBody.append(viewBar(
-    "Cole as colunas: Unidade · Nível (1–"+(TIER.length-1)+") · Responsável · Categoria. Uma linha por unidade."));
+    "Cole as colunas: Nódulo · Nível (1–"+(TIER.length-1)+") · Responsável · Categoria. Uma linha por nódulo."));
   const ta=document.createElement("textarea");
   ta.className="paste-area";
   ta.rows=8;
@@ -10708,7 +10827,7 @@ function renderPaste(){
   const preview=el("div");
   modalBody.append(preview);
   const bar=el("div","vw-bar");
-  const applyBtn=el("button","btn primary","Criar as unidades");
+  const applyBtn=el("button","btn primary","Criar os nódulos");
   applyBtn.type="button";
   applyBtn.disabled=true;
   bar.append(applyBtn);
@@ -10724,12 +10843,12 @@ function renderPaste(){
       preview.append(el("div","empty-note","Nada reconhecido ainda — cole as linhas acima."));
       return;
     }
-    preview.append(el("h4",null,parsed.rows.length+" unidade(s) a criar"+
+    preview.append(el("h4",null,parsed.rows.length+" nódulo(s) a criar"+
       (parsed.skipped?(" · "+parsed.skipped+" linha(s) ignorada(s)"):"")));
     const tb=document.createElement("table");
     tb.className="doc-t paste-t";
     const th=document.createElement("thead"),hr=document.createElement("tr");
-    ["Unidade","Nível","Responsável","Categoria"].forEach(h=>hr.append(el("th",null,h)));
+    ["Nódulo","Nível","Responsável","Categoria"].forEach(h=>hr.append(el("th",null,h)));
     th.append(hr);tb.append(th);
     const tbody=document.createElement("tbody");
     parsed.rows.slice(0,50).forEach(r=>{
@@ -10763,7 +10882,7 @@ function renderPaste(){
     });
     pasteText="";
     renderNodeList();renderAgentsTab();renderDetail();
-    flash(made+" unidade(s) criada(s) a partir da folha.");
+    flash(made+" nódulo(s) criado(s) a partir da folha.");
     closeModalSilent();
   };
   modal.classList.add("open");
@@ -10792,7 +10911,7 @@ function paletteActions(){
     {kind:"Ação",label:"Vista: Vista do munícipe",run:()=>showView("municipe")},
     {kind:"Ação",label:"Modo continuidade — ausências e substituições",run:showContinuity},
     {kind:"Ação",label:"Comparar cenários (atual → proposta)",run:showScenario},
-    {kind:"Ação",label:"Colar do Excel — criar unidades em massa",run:showPaste},
+    {kind:"Ação",label:"Colar do Excel — criar nódulos em massa",run:showPaste},
     {kind:"Ação",label:"Modo ligar (arrastar para criar tarefas)",run:()=>setLinkMode(!linkMode)},
     {kind:"Ação",label:"Modo apresentação",run:()=>togglePresent(true)},
     {kind:"Ação",label:"Um dia na Junta — reproduzir tudo",
@@ -10810,7 +10929,7 @@ function paletteActions(){
 }
 function buildPaletteItems(){
   const out=paletteActions();
-  nodes.forEach(n=>out.push({kind:"Node",label:n.name,sub:"T"+n.tier,run:()=>selectNode(n)}));
+  nodes.forEach(n=>out.push({kind:"Nódulo",label:n.name,sub:"N"+n.tier,run:()=>selectNode(n)}));
   agents.forEach(a=>{
     const n=byId(a.nodeId);
     out.push({kind:"Agente",label:a.name,sub:(n?abbrev(n.name):"")+" · "+a.category,run:()=>selectAgent(a)});
@@ -11052,7 +11171,7 @@ function restoreState(json){
       if(!t||typeof t!=="object")return;
       const num=(v,d,lo,hi)=>Number.isFinite(v)?Math.max(lo,Math.min(hi,v)):d;
       TIER.push({
-        label:String(t.label||("Tier "+i)).slice(0,28),
+        label:String(t.label||("Nível "+i)).slice(0,28),
         y:num(t.y,9-i*3,-200,200),
         r:num(t.r,i*2.5,0,400),
         size:num(t.size,0.28,0.02,4)});
