@@ -120,10 +120,16 @@
   .fey-aresta:hover .tr{stroke-width:3.4}
   .fey-vert{cursor:default}
   .fey-mais{cursor:pointer}
-  .fey-mais circle{fill:var(--panel);stroke:var(--gold);stroke-width:1.2}
-  .fey-mais text{fill:var(--gold);font-size:11px;font-weight:700}
-  .fey-mais:hover circle{fill:var(--gold)}
-  .fey-mais:hover text{fill:var(--bg-deep)}
+  .fey-mais .halo{fill:transparent;stroke:none}
+  .fey-mais .disco{fill:var(--panel);stroke:var(--gold);stroke-width:1.2}
+  .fey-mais .sinal{fill:var(--gold);font-size:12px;font-weight:700}
+  /* num remate da cadeia, continuar é o gesto principal: disco cheio */
+  .fey-mais.continua .disco{fill:var(--gold)}
+  .fey-mais.continua .sinal{fill:var(--bg-deep)}
+  .fey-mais:hover .disco,.fey-mais:focus-visible .disco{fill:var(--gold);stroke-width:2}
+  .fey-mais:hover .sinal,.fey-mais:focus-visible .sinal{fill:var(--bg-deep)}
+  .fey-mais .rotulo{fill:var(--gold);opacity:0;transition:opacity .15s;pointer-events:none}
+  .fey-mais:hover .rotulo,.fey-mais:focus-visible .rotulo{opacity:1}
   .fey-menos{cursor:pointer}
   .fey-menos circle{fill:var(--panel);stroke:#E0554F;stroke-width:1.2}
   .fey-menos text{fill:#E0554F;font-size:12px;font-weight:700}
@@ -159,6 +165,45 @@
     padding:8px 10px;cursor:pointer}
   .ap-agente:hover{border-color:var(--gold)}
   .ap-agente .cat{margin-left:auto;font-size:.68rem;color:var(--ink-dim)}
+
+  /* ---- Páginas de separador ---- */
+  #page{position:fixed;left:0;right:0;bottom:0;top:calc(var(--hdr-h,118px));
+    z-index:12;display:none;padding:6px 22px 16px;overflow:hidden}
+  body.page-open #page{display:block}
+  #pageBody{max-width:960px;margin:0 auto;height:100%;overflow-y:auto;
+    padding:6px 18px 18px;scrollbar-width:thin}
+  /* A página cobre a cena: o resto da mobília 3D sai de cena com ela */
+  body.page-open #panel,body.page-open #stepper,body.page-open #quest,
+  body.page-open #whereBar,body.page-open #radarWrap,body.page-open #trailMenu,
+  body.page-open #emptyHint{display:none!important}
+  /* O painel de detalhe sobe acima da página: clicar numa linha abre o editor completo */
+  body.page-open #detail{z-index:40}
+  /* Secções mudadas para a página: o título vira cabeçalho, a lista respira */
+  #pageBody>details.page-mode{border-bottom:none}
+  #pageBody>details.page-mode>summary{font-size:.82rem;letter-spacing:.24em;padding:14px 2px 10px;cursor:default}
+  #pageBody>details.page-mode>summary::before{display:none}
+  #pageBody .row{padding:10px 12px}
+  @media (max-width:640px){ #page{padding:4px 8px 10px} #pageBody{padding:4px 10px 12px} }
+  /* Cartões do explorador de procedimentos */
+  .pp-card{border:1px solid var(--hairline);border-radius:10px;padding:10px 12px;margin:0 0 10px;position:relative}
+  .pp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pp-head .nm{font-weight:600;cursor:pointer;background:none;border:none;color:inherit;font:inherit}
+  .pp-head .nm:hover{color:var(--gold)}
+  .pp-tarefas{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .pp-chip{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink);
+    border:1px solid var(--hairline);border-radius:8px;padding:6px 9px;cursor:grab;
+    background:rgba(127,127,127,0.05);text-align:left;max-width:100%;min-width:0}
+  .pp-chip:hover{border-color:var(--gold)}
+  .pp-chip>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  /* Num ecrã estreito a rota cede primeiro: corta com reticências em vez de
+     empurrar o cartão para fora da página. */
+  .pp-chip .rota{color:var(--ink-dim);font-size:.7rem;margin-left:auto;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;max-width:52%;flex:0 1 auto}
+  .drag-ghost{position:fixed;z-index:200;pointer-events:none;transform:translate(-50%,-120%);
+    font-size:.76rem;color:var(--ink);background:var(--panel);border:1px solid var(--gold);
+    border-radius:8px;padding:5px 10px;box-shadow:0 8px 22px rgba(0,0,0,0.35);white-space:nowrap}
+  #npScroll.np-fit{overflow:hidden;display:grid;place-items:center}
+  #npScroll.np-fit svg{width:100%;height:100%;max-height:56vh}
 
   /* ---- Editor rápido de tarefa e pergunta de cascata ---- */
   #taskEdit{position:fixed;inset:0;z-index:46;display:none;background:var(--scrim);
@@ -2026,6 +2071,8 @@
   </details>
 
 </aside>
+
+<div id="page" aria-label="Página do separador"><div id="pageBody" class="glass"></div></div>
 
 <aside id="detail" class="glass" aria-label="Detalhe da seleção"></aside>
 
@@ -4557,7 +4604,8 @@ menuBtn.onclick=()=>{
   // Só há gaveta para abrir onde o botão se vê; em ecrã largo o painel é fixo
   // e alternar-lhe o estado só serviria para esconder o cartão de arranque.
   if(getComputedStyle(menuBtn).display==="none")return;
-  // O menu abre o painel completo: qualquer recorte de separador sai primeiro
+  // O menu abre o painel completo: página e recorte saem primeiro
+  closePage();
   delete document.body.dataset.tab;
   syncTabs();
   const open=panelEl.classList.toggle("open");
@@ -4596,11 +4644,13 @@ function setTab(id){
   if(modalView)closeModalSilent();
   if(id==="organograma"){
     delete document.body.dataset.tab;
+    closePage();
     showOrgChart();               // applyView remata e sincroniza a barra
     return;
   }
   if(id==="home"){
     delete document.body.dataset.tab;
+    closePage();
     /* `panel-open` quer dizer "o painel está a tapar a cena", e é isso que
        esconde o cartão de arranque. Sai sempre — em ecrã largo o painel é uma
        coluna permanente e nunca tapou nada, e deixá-lo pendurado fazia o
@@ -4615,13 +4665,8 @@ function setTab(id){
     panelEl.classList.remove("open");
   }else{
     document.body.dataset.tab=id;
-    const sec=document.getElementById(TAB_SEC[id]);
-    if(sec)sec.open=true;         // o recorte só faz sentido com a secção aberta
     if(id==="tarefas")renderTaskListAll();
-    panelEl.classList.add("open");
-    document.body.classList.add("panel-open");
-    menuBtn.classList.add("active");
-    panelEl.scrollTop=0;
+    showPage(id);
   }
   /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
      é o que diz ao painel onde parar. Sem remedir, o painel ficava dimensionado
@@ -4630,6 +4675,212 @@ function setTab(id){
   syncTabs();
 }
 if(tabbar)tabbar.querySelectorAll(".tab").forEach(b=>{b.onclick=()=>setTab(b.dataset.tab);});
+
+/* ============================================================
+   PÁGINAS DE SEPARADOR
+   As secções do painel MUDAM-SE para dentro da página — o DOM vai com os
+   listeners, as pesquisas e os botões — e voltam ao sítio quando se sai.
+   Nada é duplicado; a página é o mesmo conteúdo com espaço para trabalhar.
+============================================================ */
+const pageEl=document.getElementById("page");
+const pageBody=document.getElementById("pageBody");
+const casaDasSeccoes={};       // secId -> marcador da posição original no painel
+function levaParaPagina(secId){
+  const sec=document.getElementById(secId);
+  if(!sec)return;
+  if(!casaDasSeccoes[secId]){
+    const marca=document.createComment("casa de "+secId);
+    sec.parentNode.insertBefore(marca,sec);
+    casaDasSeccoes[secId]=marca;
+  }
+  sec.classList.add("page-mode");
+  sec.open=true;
+  pageBody.appendChild(sec);
+}
+function devolveSeccoes(){
+  [...pageBody.querySelectorAll(":scope>details.page-mode")].forEach(sec=>{
+    sec.classList.remove("page-mode");
+    const marca=casaDasSeccoes[sec.id];
+    if(marca&&marca.parentNode)marca.parentNode.insertBefore(sec,marca.nextSibling);
+  });
+  pageBody.innerHTML="";
+}
+function showPage(tab){
+  devolveSeccoes();
+  const mapa={nodulos:["secUnidades"],agentes:["secPessoas"],tarefas:["secTarefas"],
+    dados:["secDados"],definicoes:["secDefinicoes"],procedimentos:["secProc"]};
+  (mapa[tab]||[]).forEach(levaParaPagina);
+  if(tab==="procedimentos")renderPageProcs();
+  document.body.classList.add("page-open");
+  document.body.dataset.page=tab;
+  pageBody.scrollTop=0;
+  measureChrome();
+}
+function closePage(){
+  if(!document.body.classList.contains("page-open"))return;
+  devolveSeccoes();
+  document.body.classList.remove("page-open");
+  delete document.body.dataset.page;
+  measureChrome();
+}
+/* Explorador de procedimentos: cada procedimento com as suas tarefas à vista,
+   para editar e ARRASTAR — uma tarefa larga-se no organograma simplificado
+   para lhe mudar o destino. */
+function renderPageProcs(){
+  const host=el("div");
+  host.id="procExplore";
+  host.append(el("div","mini-title","Tarefas por procedimento — arraste uma tarefa para lhe mudar o destino"));
+  processes.forEach(p=>{
+    const card=el("div","pp-card");
+    card.style.borderLeft="3px solid "+hex(p.color);
+    const head=el("div","pp-head");
+    const nm=el("button","nm",p.name);
+    nm.title="Abrir o diagrama de interações";
+    nm.onclick=()=>showFeynman(p);
+    const wr=el("span","warn-slot");wr.style.position="static";
+    wr.innerHTML=avisoHTML(procAvisos(p));
+    const cnt=el("span","count",p.tasks.length+" tarefa(s)");
+    const bMais=el("button","btn tiny","+ tarefa");
+    bMais.title="Nova tarefa neste procedimento";
+    bMais.onclick=()=>startAddTask(p,null);
+    head.append(nm,wr,cnt,bMais);
+    card.append(head);
+    if(p.tasks.length){
+      const lista=el("div","pp-tarefas");
+      p.tasks.forEach(tk=>{
+        const chip=el("button","pp-chip");
+        chip.dataset.tid=tk.id;chip.dataset.pid=p.id;
+        const A=byId(tk.a),B=byId(tk.b);
+        chip.append(el("span",null,tk.nome||String(tk.desc||"").slice(0,26)));
+        if(!tk.agent){const w=el("span");w.innerHTML=triSVG("yellow",11);chip.append(w);}
+        chip.append(el("span","rota",(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")+" · "+tk.duration));
+        chip.title="Clique: editar · Arraste: mudar o destino no organograma";
+        chip.onclick=()=>{if(!dragFoi)openTaskEdit(p,tk);};
+        lista.append(chip);
+      });
+      card.append(lista);
+    }
+    host.append(card);
+  });
+  pageBody.append(host);
+}
+
+/* ============================================================
+   ARRASTAR E LARGAR NO ORGANOGRAMA
+   O arrasto arma-se no pointerdown de uma linha com dados; passa a arrasto
+   a sério aos 7px de movimento — abaixo disso continua a ser um clique.
+   Ao armar-se, abre o organograma simplificado em modo "largar": um
+   fantasma com o nome segue o cursor, as caixas acendem e promovem à
+   passagem, e o pointerup sobre uma caixa aplica a ação.
+============================================================ */
+let dragArmado=null,dragAtivo=null,dragGhost=null,dragFoi=false;
+function armarArrasto(tipo,dados,rotulo,ev){
+  dragArmado={tipo,dados,rotulo,x0:ev.clientX,y0:ev.clientY};
+}
+function comecarArrasto(){
+  dragAtivo=dragArmado;dragArmado=null;dragFoi=true;
+  dragGhost=el("div","drag-ghost",dragAtivo.rotulo);
+  document.body.append(dragGhost);
+  npState={modo:"drop",tipo:dragAtivo.tipo,dados:dragAtivo.dados,
+    origem:dragAtivo.dados.ancora?byId(dragAtivo.dados.ancora):null};
+  buildNodePick();
+  document.getElementById("npScroll").classList.add("np-fit");
+  const svg=document.getElementById("npSvg");
+  if(svg){svg.removeAttribute("width");svg.removeAttribute("height");
+    svg.setAttribute("preserveAspectRatio","xMidYMid meet");}
+  const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
+  if(dragAtivo.tipo==="agente"){T.textContent="Largar “"+dragAtivo.rotulo+"” em…";S.textContent="Solte sobre o nódulo onde a pessoa passa a trabalhar.";}
+  else if(dragAtivo.tipo==="tarefa"){T.textContent="Novo destino de “"+dragAtivo.rotulo+"”";S.textContent="Solte sobre o nódulo de chegada da tarefa.";}
+  else{T.textContent="Mudar “"+dragAtivo.rotulo+"” de lugar";S.textContent="Solte sobre o novo superior hierárquico.";}
+  nodePickEl.classList.add("open");
+}
+addEventListener("pointermove",e=>{
+  if(dragArmado&&Math.hypot(e.clientX-dragArmado.x0,e.clientY-dragArmado.y0)>7)comecarArrasto();
+  if(!dragAtivo||!dragGhost)return;
+  dragGhost.style.left=e.clientX+"px";
+  dragGhost.style.top=e.clientY+"px";
+});
+addEventListener("pointerup",e=>{
+  dragArmado=null;
+  if(!dragAtivo)return;
+  const alvoEl=document.elementFromPoint(e.clientX,e.clientY);
+  const caixa=alvoEl&&alvoEl.closest?alvoEl.closest(".pk-caixa"):null;
+  const st=dragAtivo;
+  dragAtivo=null;
+  if(dragGhost){dragGhost.remove();dragGhost=null;}
+  closeNodePick();
+  setTimeout(()=>{dragFoi=false;},0);   // engole o click que o browser compõe a seguir
+  if(!caixa)return;                     // largou fora: cancela sem drama
+  const alvo=byId(caixa.getAttribute("data-id"));
+  if(!alvo)return;
+  if(st.tipo==="agente"){
+    const a=agentById(st.dados.id);
+    if(!a)return;
+    if(a.nodeId===alvo.id){flash("Já está nessa equipa.");return;}
+    moveAgentToNode(a,alvo.id);
+    flash("“"+a.name+"” passou para “"+alvo.name+"”.");
+  }else if(st.tipo==="tarefa"){
+    const pr=layerById(st.dados.pid);
+    const tk=pr&&pr.tasks.find(x=>x.id===st.dados.tid);
+    if(!tk)return;
+    if(alvo.id===tk.a){flash("O destino não pode ser a própria origem.");return;}
+    if(alvo.id===tk.b){flash("Já é o destino desta tarefa.");return;}
+    retargetAplica(pr,tk,alvo).then(()=>{
+      if(document.body.dataset.page==="procedimentos"){devolveSeccoes();showPage("procedimentos");}
+      if(document.body.dataset.page==="tarefas")renderTaskListAll();
+    });
+  }else if(st.tipo==="nodulo"){
+    const n=byId(st.dados.id);
+    if(!n)return;
+    if(n.parent===alvo.id){flash("Já responde a “"+alvo.name+"”.");return;}
+    if(!canReparent(n,alvo)){flash("Não pode: ou é descendente, ou o único Executivo, ou não há níveis que cheguem.",{type:"err"});return;}
+    reparentNode(n,alvo);
+    flash("“"+n.name+"” passou a responder a “"+alvo.name+"”.");
+  }
+});
+addEventListener("pointercancel",()=>{
+  dragArmado=null;
+  if(dragGhost){dragGhost.remove();dragGhost=null;}
+  if(dragAtivo){dragAtivo=null;closeNodePick();}
+  setTimeout(()=>{dragFoi=false;},0);
+});
+/* Depois de um arrasto, o browser ainda compõe um click na linha de origem:
+   engole-se em captura para não abrir o painel de quem só quis arrastar. */
+addEventListener("click",e=>{
+  if(dragFoi){e.stopPropagation();e.preventDefault();}
+},true);
+/* Armar: delegado nas listas, para sobreviver aos re-render. */
+(function(){
+  const nl=document.getElementById("nodeList");
+  if(nl)nl.addEventListener("pointerdown",e=>{
+    const r=e.target.closest(".row[data-nid]");
+    if(!r||e.target.closest(".tree-toggle"))return;
+    const n=byId(r.dataset.nid);
+    if(n)armarArrasto("nodulo",{id:n.id,ancora:n.parent||n.id},n.name,e);
+  });
+  const al=document.getElementById("agentList");
+  if(al)al.addEventListener("pointerdown",e=>{
+    const r=e.target.closest(".row[data-aid]");
+    if(!r)return;
+    const a=agentById(r.dataset.aid);
+    if(a)armarArrasto("agente",{id:a.id,ancora:a.nodeId},a.name,e);
+  });
+  const tl=document.getElementById("taskListAll");
+  if(tl)tl.addEventListener("pointerdown",e=>{
+    const r=e.target.closest(".row[data-tid]");
+    if(!r)return;
+    const pr=layerById(r.dataset.pid);
+    const tk=pr&&pr.tasks.find(x=>x.id===r.dataset.tid);
+    if(tk)armarArrasto("tarefa",{tid:tk.id,pid:pr.id,ancora:tk.a},tk.nome||String(tk.desc||"tarefa").slice(0,24),e);
+  });
+  document.getElementById("pageBody").addEventListener("pointerdown",e=>{
+    const c=e.target.closest(".pp-chip[data-tid]");
+    if(!c)return;
+    const pr=layerById(c.dataset.pid);
+    const tk=pr&&pr.tasks.find(x=>x.id===c.dataset.tid);
+    if(tk)armarArrasto("tarefa",{tid:tk.id,pid:pr.id,ancora:tk.a},tk.nome||String(tk.desc||"tarefa").slice(0,24),e);
+  });
+})();
 
 stage.addEventListener("pointerdown",e=>{
   if(innerWidth<=980&&panelEl.classList.contains("open")){
@@ -5189,6 +5440,7 @@ function renderNodeList(){
       .sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name));
 
     const row=el("button","row");
+    row.dataset.nid=n.id;
     row.style.color=hex(n.color);
     if(depth>0){
       row.style.marginLeft=(depth*14)+"px";
@@ -5291,6 +5543,7 @@ agentList.parentNode.insertBefore(
 );
 function agentRowBtn(a,tagText){
   const row=el("button","row");
+  row.dataset.aid=a.id;
   row.style.color=a.primary?"var(--gold)":"var(--steel)";
   row.setAttribute("aria-label","Abrir o painel de "+a.name);
   const star=el("span",null,a.primary?"★":"·");
@@ -6934,6 +7187,8 @@ addEventListener("keydown",e=>{
   if(tourEndEl&&tourEndEl.classList.contains("open")){closeTourEnd();spotlightNewDataset();return;}
   if(document.body.classList.contains("presenting")){togglePresent(false);return;}
   if(play){stopPlayback();return;}
+  if(modal.classList.contains("open")){closeModalSilent();return;}
+  if(document.body.classList.contains("page-open")){setTab("home");return;}
   closeModalSilent();
 });
 async function confirmAddToGroup(p,targetName){
@@ -7844,12 +8099,18 @@ function renderFeynman(p){
     const nome=n.name.length>16?n.name.slice(0,15)+"…":n.name;
     svgEl("text",{x:q.x,y:q.y+24,"text-anchor":"middle","font-size":10.5,fill:ink},gv).textContent=nome;
     svgEl("text",{x:q.x,y:q.y+37,"text-anchor":"middle","font-size":8.5,fill:dim},gv).textContent=nodeAddress(n);
-    // o "+" — nova tarefa a partir deste nódulo
-    const mais=svgEl("g",{class:"fey-mais",transform:"translate("+(q.x+14)+","+(q.y-14)+")",
-      tabindex:0,role:"button"},svg);
-    svgEl("title",{},mais).textContent="Nova tarefa a partir de "+n.name;
-    svgEl("circle",{cx:0,cy:0,r:8},mais);
-    svgEl("text",{x:0,y:3.6,"text-anchor":"middle"},mais).textContent="+";
+    // o "+" de cada etapa: continuar a cadeia (disco cheio) ou bifurcar (contorno)
+    const nSaidas=(L.g.outOf[id]||[]).length;
+    const mais=svgEl("g",{class:"fey-mais "+(nSaidas?"ramifica":"continua"),
+      transform:"translate("+(q.x+14)+","+(q.y-14)+")",tabindex:0,role:"button"},svg);
+    svgEl("title",{},mais).textContent=nSaidas
+      ?"Bifurcar a partir de "+n.name+" — nova tarefa em paralelo à"+(nSaidas>1?"s ":" ")+nSaidas+" existente"+(nSaidas>1?"s":"")
+      :"Continuar a cadeia a partir de "+n.name;
+    svgEl("circle",{class:"halo",cx:0,cy:0,r:13},mais);      // alvo de dedo
+    svgEl("circle",{class:"disco",cx:0,cy:0,r:9},mais);
+    svgEl("text",{class:"sinal",x:0,y:3.8,"text-anchor":"middle"},mais).textContent="+";
+    svgEl("text",{class:"rotulo",x:16,y:3.5,"font-size":8.5},mais)
+      .textContent=nSaidas?"bifurcar":"continuar";
     const go=()=>startAddTask(p,n);
     mais.addEventListener("pointerdown",e=>e.stopPropagation());
     mais.addEventListener("click",e=>{e.stopPropagation();go();});
@@ -7995,6 +8256,7 @@ function buildNodePick(){
   npTitulos();
   const scroll=document.getElementById("npScroll");
   scroll.innerHTML="";
+  scroll.classList.remove("np-fit");   // o modo largar volta a pô-la se for o caso
   const BW=104,BH=32,GX=12,GY=30;
   const porTier=TIER.map((t,i)=>nodes.filter(n=>n.tier===i).sort((a,b)=>a.angle-b.angle));
   const maxN=Math.max(1,...porTier.map(r=>r.length));
@@ -8107,6 +8369,7 @@ function buildNodePick(){
 }
 function npPick(n,gEl,ancoraFio){
   if(!npState)return;
+  if(npState.modo==="drop")return;   // no modo largar decide o pointerup, não o click
   if(npState.modo==="agente"){
     closeNodePick();
     const a=addAgent(n.id,false,null);
@@ -8475,6 +8738,7 @@ function renderTaskListAll(){
       const A=byId(t.a),B=byId(t.b);
       const ag=t.agent?agentById(t.agent):null;
       const row=el("button","row task-row");
+      row.dataset.tid=t.id;row.dataset.pid=p.id;
       row.type="button";
       row.title="Abrir o painel desta tarefa";
       row.append(el("span","t-desc",t.nome||t.desc||"(sem descrição)"));
