@@ -54,11 +54,50 @@
   /* ---------- Header ---------- */
   header{
     position:fixed;top:0;left:0;right:0;
-    display:flex;justify-content:space-between;align-items:flex-start;
-    padding:16px 28px 22px;pointer-events:none;z-index:10;
+    display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;
+    padding:12px 28px 22px;pointer-events:none;z-index:10;
     background:linear-gradient(180deg,var(--scrim),transparent 78%);
   }
   header .brand,header .hint{pointer-events:auto}
+
+  /* ---------- Barra de separadores (navegação principal) ----------
+     Home é o ecrã de sempre. Os outros separadores não têm estado próprio:
+     ou abrem o organograma 2D, ou recortam o painel numa única secção —
+     tudo o que mostram já existia, só muda o enquadramento. */
+  #tabbar{
+    flex:1 1 100%;display:flex;gap:2px;margin:0 0 8px;
+    overflow-x:auto;pointer-events:auto;scrollbar-width:none;
+  }
+  #tabbar::-webkit-scrollbar{display:none}
+  .tab{
+    font:inherit;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-dim);background:transparent;border:none;
+    border-bottom:2px solid transparent;padding:6px 12px 8px;
+    cursor:pointer;white-space:nowrap;
+  }
+  .tab:hover{color:var(--ink)}
+  .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+  .tab:focus-visible{outline:2px solid var(--steel);outline-offset:-2px;border-radius:4px}
+  body.vp-phone .tab{font-size:.62rem;letter-spacing:.1em;padding:5px 9px 7px}
+  body.vp-squat #tabbar{margin:0 0 4px}
+  body.vp-squat .tab{padding:3px 9px 5px}
+  /* Num ecrã tátil o separador precisa de altura de dedo, mesmo comprimido */
+  body.vp-touch .tab{min-height:28px}
+
+  /* Com um separador ativo, o painel mostra só a secção dele; Home mostra tudo */
+  body[data-tab] #panel>details{display:none}
+  body[data-tab="nodulos"] #panel>#secUnidades,
+  body[data-tab="procedimentos"] #panel>#secProc,
+  body[data-tab="agentes"] #panel>#secPessoas,
+  body[data-tab="tarefas"] #panel>#secTarefas,
+  body[data-tab="dados"] #panel>#secDados{display:block}
+  /* A lista de tarefas só existe como separador — no painel completo não entra */
+  #secTarefas{display:none}
+  body[data-tab="tarefas"] #panel>#secTarefas{display:block}
+
+  .task-row{display:block;text-align:left}
+  .task-row .t-desc{display:block}
+  .task-row .t-route{display:block;font-size:.68rem;color:var(--ink-dim);margin-top:2px}
   #orgName{
     background:transparent;border:none;border-bottom:1px solid transparent;
     color:var(--ink);font-family:inherit;font-weight:600;font-size:1.05rem;
@@ -1660,10 +1699,19 @@
 
 <div id="emptyHint" class="glass" aria-hidden="true">
   <div class="eh-t">Rede vazia — só o Executivo</div>
-  <div class="eh-s">Abra <b>Nodes</b> no painel e crie a primeira divisão para começar a construir o organograma.</div>
+  <div class="eh-s">Abra o separador <b>Nódulos</b> e crie a primeira divisão para começar a construir o organograma.</div>
 </div>
 
 <header>
+  <nav id="tabbar" role="tablist" aria-label="Navegação principal">
+    <button class="tab on" role="tab" data-tab="home" aria-selected="true">Home</button>
+    <button class="tab" role="tab" data-tab="organograma" aria-selected="false">Organograma</button>
+    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false">Nódulos</button>
+    <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false">Procedimentos</button>
+    <button class="tab" role="tab" data-tab="agentes" aria-selected="false">Agentes</button>
+    <button class="tab" role="tab" data-tab="tarefas" aria-selected="false">Tarefas</button>
+    <button class="tab" role="tab" data-tab="dados" aria-selected="false">Dados</button>
+  </nav>
   <div class="brand">
     <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
     <p>Executivo · Coordenação · Processos · Agentes</p>
@@ -1688,7 +1736,7 @@
 
 <aside id="panel" class="glass" aria-label="Painel de controlo">
 
-  <details>
+  <details id="secLegenda">
     <summary>Legenda da rede</summary>
     <div class="sec-body">
       <button type="button" class="legend-row jump" data-tier="0" title="Aproximar a câmara deste tier"><span class="swatch" style="background:#FFFFFF"></span>Tier 0 · Executivo<span class="legend-note">topo</span></button>
@@ -1732,7 +1780,7 @@
     </div>
   </details>
 
-  <details open>
+  <details open id="secProc">
     <summary>Procedimentos</summary>
     <div class="sec-body">
       <div id="procList"></div>
@@ -1763,7 +1811,7 @@
     </div>
   </details>
 
-  <details>
+  <details id="secUnidades">
     <summary>Unidades</summary>
     <div class="sec-body">
       <div id="nodeList"></div>
@@ -1781,7 +1829,7 @@
     </div>
   </details>
 
-  <details>
+  <details id="secPessoas">
     <summary>Pessoas</summary>
     <div class="sec-body">
       <div id="agentList"></div>
@@ -1789,7 +1837,15 @@
     </div>
   </details>
 
-  <details>
+  <details id="secTarefas" open>
+    <summary>Tarefas</summary>
+    <div class="sec-body">
+      <div id="taskListAll"></div>
+      <div class="foot-note">Clique numa tarefa para abrir o painel dela — descrição, responsável, duração e pontas editam-se lá. Crie tarefas no modo ligar (L) — arraste de uma unidade para outra — ou dentro de um fluxograma.</div>
+    </div>
+  </details>
+
+  <details id="secDefinicoes">
     <summary>Definições</summary>
     <div class="sec-body">
       <div class="mini-title">Tema</div>
@@ -1815,6 +1871,15 @@
         <button class="btn" id="installBtn" title="Guardar no ecrã principal e usar sem internet">
           <span class="ib-ico" aria-hidden="true">⬇</span><span>Guardar como app</span>
         </button>
+      </div>
+    </div>
+  </details>
+
+  <details id="secDados">
+    <summary>Dados</summary>
+    <div class="sec-body">
+      <div class="setup-btns">
+        <button class="btn" id="pasteImportBtn" title="Criar unidades em massa a partir de colunas coladas do Excel">Colar do Excel</button>
         <button class="btn" id="newDatasetBtn">Nova rede</button>
         <button class="btn" id="exportBtn">Guardar dataset</button>
         <button class="btn" id="importBtn">Abrir dataset</button>
@@ -4063,6 +4128,9 @@ const menuBtn=document.getElementById("menuBtn");
 menuBtn.setAttribute("aria-controls","panel");
 menuBtn.setAttribute("aria-expanded","false");
 menuBtn.onclick=()=>{
+  // O menu abre o painel completo: qualquer recorte de separador sai primeiro
+  delete document.body.dataset.tab;
+  syncTabs();
   const open=panelEl.classList.toggle("open");
   menuBtn.classList.toggle("active",open);
   document.body.classList.toggle("panel-open",open);
@@ -4071,11 +4139,64 @@ menuBtn.onclick=()=>{
   menuBtn.setAttribute("aria-label",(open?"Fechar":"Abrir")+" painel de controlo");
 };
 
+/* ============================================================
+   BARRA DE SEPARADORES — navegação principal
+   Home é o ecrã de sempre: o 3D com o painel completo. Os restantes
+   separadores não guardam estado próprio: Organograma abre a vista 2D
+   que já existia, e os outros recortam o painel numa única secção.
+   Voltar a Home repõe tudo tal como estava.
+============================================================ */
+const tabbar=document.getElementById("tabbar");
+const TAB_SEC={nodulos:"secUnidades",procedimentos:"secProc",agentes:"secPessoas",tarefas:"secTarefas",dados:"secDados"};
+function tabAtual(){
+  if(modalView&&modalView.type==="orgchart")return "organograma";
+  return document.body.dataset.tab||"home";
+}
+function syncTabs(){
+  if(!tabbar)return;
+  const cur=tabAtual();
+  tabbar.querySelectorAll(".tab").forEach(b=>{
+    const on=b.dataset.tab===cur;
+    b.classList.toggle("on",on);
+    b.setAttribute("aria-selected",on?"true":"false");
+  });
+}
+function setTab(id){
+  // Um separador novo fecha o que o anterior tinha aberto
+  if(modalView)closeModalSilent();
+  if(id==="organograma"){
+    delete document.body.dataset.tab;
+    showOrgChart();               // applyView remata e sincroniza a barra
+    return;
+  }
+  if(id==="home"){
+    delete document.body.dataset.tab;
+    if(innerWidth<=980){
+      panelEl.classList.remove("open");
+      document.body.classList.remove("panel-open");
+      menuBtn.classList.remove("active");
+    }
+  }else{
+    document.body.dataset.tab=id;
+    const sec=document.getElementById(TAB_SEC[id]);
+    if(sec)sec.open=true;         // o recorte só faz sentido com a secção aberta
+    if(id==="tarefas")renderTaskListAll();
+    panelEl.classList.add("open");
+    document.body.classList.add("panel-open");
+    menuBtn.classList.add("active");
+    panelEl.scrollTop=0;
+  }
+  syncTabs();
+}
+if(tabbar)tabbar.querySelectorAll(".tab").forEach(b=>{b.onclick=()=>setTab(b.dataset.tab);});
+
 stage.addEventListener("pointerdown",e=>{
   if(innerWidth<=980&&panelEl.classList.contains("open")){
     panelEl.classList.remove("open");
     document.body.classList.remove("panel-open");
     menuBtn.classList.remove("active");
+    delete document.body.dataset.tab;
+    syncTabs();
   }
   touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(touchPts.size===2){
@@ -4292,6 +4413,7 @@ function updateDirtyUI(){
 }
 function markDirty(){
   recordHistory();          // snapshots the state as it was before this change
+  refreshTaskTab();         // o separador Tarefas, se estiver à vista, acompanha
   // `booted` primeiro: markDirty corre durante a semente, antes de `noGL` existir (TDZ)
   if(booted&&noGL)renderFallbackSVG();   // Plano B: manter o SVG a par dos dados
   if(!booted||dirty)return;
@@ -4859,6 +4981,7 @@ function closeModalSilent(){
   modal.classList.remove("open");
   modal.classList.remove("from-3d");
   modalView=null;
+  if(booted)syncTabs();
 }
 function applySelection(sel){
   // Uma seleção sem alvo (node apagado, id inválido) é tratada como "nada selecionado"
@@ -4909,6 +5032,7 @@ function applyView(v){
   else{closeModalSilent();applySelection(v||null);}
   if(modal.classList.contains("open"))labelFields(modalBody);
   updateModalNav();
+  if(booted)syncTabs();
 }
 function navigateTo(v){
   const cur=snapshotView();
@@ -7136,6 +7260,51 @@ async function __exportProcPDF(p){
 }
 
 let orgOrient="v";
+/* ---- Separador Tarefas: todas as tarefas, agrupadas por procedimento ---- */
+function renderTaskListAll(){
+  const host=document.getElementById("taskListAll");
+  if(!host)return;
+  host.innerHTML="";
+  let total=0;
+  processes.forEach(p=>{
+    if(!p.tasks.length)return;
+    const head=el("div","mini-title");
+    const dot=el("span","swatch");
+    dot.style.background=hex(p.color);
+    dot.style.display="inline-block";
+    dot.style.marginRight="6px";
+    head.append(dot,document.createTextNode(p.name+" · "+p.tasks.length));
+    host.append(head);
+    p.tasks.forEach(t=>{
+      total++;
+      const A=byId(t.a),B=byId(t.b);
+      const ag=t.agent?agentById(t.agent):null;
+      const row=el("button","row task-row");
+      row.type="button";
+      row.title="Abrir o painel desta tarefa";
+      row.append(el("span","t-desc",t.desc||"(sem descrição)"));
+      row.append(el("span","t-route",
+        (A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")
+        +(ag?(" · "+ag.name):"")
+        +(t.duration?(" · "+t.duration+" dia"+(t.duration===1?"":"s")):"")));
+      row.onclick=()=>selectTask(t);
+      host.append(row);
+    });
+  });
+  if(!total){
+    host.append(el("div","foot-note",
+      "Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de uma unidade para outra — ou dentro de um fluxograma."));
+  }
+}
+/* O separador só se redesenha quando está à vista, e no máximo uma vez por
+   frame — uma importação faz centenas de mutações e não precisa de centenas
+   de redesenhos. */
+let taskTabRaf=0;
+function refreshTaskTab(){
+  if(document.body.dataset.tab!=="tarefas")return;
+  cancelAnimationFrame(taskTabRaf);
+  taskTabRaf=requestAnimationFrame(renderTaskListAll);
+}
 function showOrgChart(){navigateTo({type:"orgchart"});}
 function renderOrgChart(){
   modalTitle.textContent="Organograma — "+orgName;
@@ -7441,6 +7610,7 @@ document.getElementById("exportBtn").onclick=()=>{
 
 const importFile=document.getElementById("importFile");
 document.getElementById("importBtn").onclick=()=>importFile.click();
+document.getElementById("pasteImportBtn").onclick=()=>showPaste();
 importFile.onchange=()=>{
   const f=importFile.files[0];
   if(!f)return;
@@ -8047,7 +8217,7 @@ function applyTheme(id,opts){
   nodes.forEach(applyNodeColor);
   rebuildHierLinks();
   processes.forEach(p=>{if(p.refreshLabel)p.refreshLabel();});
-  renderNodeList();renderAgentsTab();renderGroups();renderDetail();
+  renderNodeList();renderAgentsTab();renderGroups();renderDetail();refreshTaskTab();
   if(!opts.silent)markDirty();
 }
 document.querySelectorAll("#themeRow .theme-btn").forEach(btn=>{
@@ -10948,7 +11118,7 @@ function restoreState(json){
     relayoutLayers();
     updateGround();
     updateLayerCounts();syncLayerRows();
-    renderNodeList();renderAgentsTab();renderGroups();renderDetail();
+    renderNodeList();renderAgentsTab();renderGroups();renderDetail();refreshTaskTab();
     if(s.theme&&THEMES[s.theme]&&s.theme!==themeId){applyTheme(s.theme,{silent:true});syncThemeButtons();}
     syncDensityRange();updateEmptyHint();
   }catch(e){
