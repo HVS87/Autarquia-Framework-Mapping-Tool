@@ -215,6 +215,13 @@
   .ap-agente:hover{border-color:var(--gold)}
   .ap-agente .cat{margin-left:auto;font-size:.68rem;color:var(--ink-dim)}
 
+  /* Num dedo, 26px de altura não são alvo nenhum: em apontadores grossos os
+     controlos do cabeçalho e os separadores sobem para 34px. O cabeçalho é
+     medido em tempo real (measureChrome), por isso crescer não desalinha. */
+  @media (pointer:coarse){
+    header button,#tabbar .tab{min-height:34px}
+    #undoBtn,#redoBtn{min-width:34px}
+  }
   /* ---- Páginas de separador ----
      Uma página é o ecrã inteiro, não uma janela a flutuar sobre a cena: a
      superfície é opaca de canto a canto e a cena só volta quando se sai. O
@@ -1554,13 +1561,13 @@
     background:rgba(4,8,16,0.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
   }
   #tourEnd.open{display:flex}
-  #teCard{
+  #tourCard{
     width:min(520px,100%);max-height:calc(100vh - 44px);overflow-y:auto;
     border-radius:14px;padding:22px 24px;
   }
-  #teCard h3{margin:0 0 6px;font-size:1rem;font-weight:600;color:var(--ink)}
-  #teCard .sub{font-size:.78rem;line-height:1.55;color:var(--ink-dim);margin-bottom:10px}
-  #teCard .sub b{color:var(--ink);font-weight:600}
+  #tourCard h3{margin:0 0 6px;font-size:1rem;font-weight:600;color:var(--ink)}
+  #tourCard .sub{font-size:.78rem;line-height:1.55;color:var(--ink-dim);margin-bottom:10px}
+  #tourCard .sub b{color:var(--ink);font-weight:600}
   .te-stats{
     font-size:.68rem;color:var(--gold);letter-spacing:.04em;
     border:1px solid var(--hairline);border-radius:8px;padding:6px 10px;margin-bottom:14px;
@@ -1582,9 +1589,9 @@
   .te-how b{color:var(--ink);font-weight:600}
   @media (max-width:640px){
     #tourEnd{padding:12px}
-    #teCard{padding:16px 16px}
+    #tourCard{padding:16px 16px}
   }
-  body.vp-squat #teCard{max-height:calc(100vh - 16px);padding:14px 16px}
+  body.vp-squat #tourCard{max-height:calc(100vh - 16px);padding:14px 16px}
   body.vp-squat .te-how{margin-top:10px;padding-top:8px}
 
   /* Holofote sobre um controlo que se está a indicar ao utilizador */
@@ -2359,9 +2366,9 @@
   </div>
 </div>
 
-<div id="tourEnd" role="dialog" aria-modal="true" aria-labelledby="teTitle">
-  <div id="teCard" class="glass">
-    <h3 id="teTitle">Fim da visita</h3>
+<div id="tourEnd" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div id="tourCard" class="glass">
+    <h3 id="tourTitle">Fim da visita</h3>
     <div class="sub">
       A rede que acabou de ver é uma <b>demonstração</b> — uma junta de freguesia
       inventada, para mostrar o que a ferramenta faz.
