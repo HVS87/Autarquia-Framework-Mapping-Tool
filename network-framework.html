@@ -121,15 +121,19 @@
   .fey-vert{cursor:default}
   .fey-mais{cursor:pointer}
   .fey-mais .halo{fill:transparent;stroke:none}
-  .fey-mais .disco{fill:var(--panel);stroke:var(--gold);stroke-width:1.2}
-  .fey-mais .sinal{fill:var(--gold);font-size:12px;font-weight:700}
-  /* num remate da cadeia, continuar é o gesto principal: disco cheio */
-  .fey-mais.continua .disco{fill:var(--gold)}
-  .fey-mais.continua .sinal{fill:var(--bg-deep)}
-  .fey-mais:hover .disco,.fey-mais:focus-visible .disco{fill:var(--gold);stroke-width:2}
-  .fey-mais:hover .sinal,.fey-mais:focus-visible .sinal{fill:var(--bg-deep)}
+  /* O disco é sempre claro — o quadricolor precisa de fundo neutro para as
+     quatro cores se lerem. A intenção passa pela grossura do aro: num remate
+     da cadeia (continuar) o aro é forte; num vértice com saídas (bifurcar) é
+     fino. O rótulo ao pairar continua a dizer qual é qual por extenso. */
+  .fey-mais .disco{fill:#FFFFFF;stroke:var(--gold);stroke-width:1.1;
+    filter:drop-shadow(0 1px 1.5px rgba(0,0,0,0.28))}
+  .fey-mais.continua .disco{stroke-width:2.6}
+  .fey-mais:hover .disco,.fey-mais:focus-visible .disco{stroke-width:3}
   .fey-mais .rotulo{fill:var(--gold);opacity:0;transition:opacity .15s;pointer-events:none}
   .fey-mais:hover .rotulo,.fey-mais:focus-visible .rotulo{opacity:1}
+  /* Botões HTML com o quadricolor dentro: ícone e texto na mesma linha */
+  .com-gplus{display:inline-flex;align-items:center;gap:6px}
+  .com-gplus .gplus{display:inline-flex;flex:none}
   .fey-menos{cursor:pointer}
   .fey-menos circle{fill:var(--panel);stroke:#E0554F;stroke-width:1.2}
   .fey-menos text{fill:#E0554F;font-size:12px;font-weight:700}
@@ -4836,7 +4840,8 @@ function renderPageProcs(){
     const wr=el("span","warn-slot");wr.style.position="static";
     wr.innerHTML=avisoHTML(procAvisos(p));
     const cnt=el("span","count",p.tasks.length+" tarefa(s)");
-    const bMais=el("button","btn tiny","+ tarefa");
+    const bMais=el("button","btn tiny com-gplus");
+    bMais.innerHTML=gplusHTML(12)+"Nova tarefa";
     bMais.title="Nova tarefa neste procedimento";
     bMais.onclick=()=>startAddTask(p,null);
     const bFey=el("button","btn tiny","Ver em diagrama de Feynman");
@@ -5306,6 +5311,16 @@ function triSVG(cor,s){
     '<path d="M6 0.8 L11.4 11.2 L0.6 11.2 Z" fill="'+fill+'" stroke="rgba(0,0,0,0.35)" stroke-width="0.7"/>'+
     '<rect x="5.35" y="4.1" width="1.3" height="3.6" rx="0.6" fill="'+ink+'"/>'+
     '<rect x="5.35" y="8.6" width="1.3" height="1.4" rx="0.6" fill="'+ink+'"/></svg>';
+}
+/* O "+" da casa: o quadricolor que os botões "Novo …" do painel sempre
+   usaram. Uma só definição para HTML e para dentro dos SVG, para que
+   adicionar — seja o quê — tenha a mesma cara em todo o lado. */
+const GPLUS_RECTS=[["6","0","2","6","#EA4335"],["8","6","6","2","#4285F4"],
+  ["6","8","2","6","#34A853"],["0","6","6","2","#FBBC05"],["6","6","2","2","#4285F4"]];
+function gplusHTML(s){
+  return '<span class="gplus small" aria-hidden="true"><svg width="'+s+'" height="'+s+
+    '" viewBox="0 0 14 14">'+GPLUS_RECTS.map(r=>'<rect x="'+r[0]+'" y="'+r[1]+
+    '" width="'+r[2]+'" height="'+r[3]+'" fill="'+r[4]+'"/>').join("")+'</svg></span>';
 }
 function avisoHTML(av){
   let h="";
@@ -8121,7 +8136,8 @@ function renderFeynman(p){
   const bRedo=el("button","btn tiny icon-round","↷");
   bRedo.title="Refazer (Ctrl+Shift+Z)";bRedo.setAttribute("aria-label","Refazer");
   bRedo.onclick=()=>redoAction();
-  const bNova=el("button","btn tiny primary","+ Nova tarefa");
+  const bNova=el("button","btn tiny primary com-gplus");
+  bNova.innerHTML=gplusHTML(12)+"Nova tarefa";
   bNova.title="Criar uma tarefa escolhendo origem e destino no organograma";
   bNova.onclick=()=>startAddTask(p,null);
   const bDone=el("button","btn tiny fey-done-btn"+(p.done?" done":""),
@@ -8283,7 +8299,8 @@ function renderFeynman(p){
       :"Continuar a cadeia a partir de "+n.name;
     svgEl("circle",{class:"halo",cx:0,cy:0,r:13},mais);      // alvo de dedo
     svgEl("circle",{class:"disco",cx:0,cy:0,r:9},mais);
-    svgEl("text",{class:"sinal",x:0,y:3.8,"text-anchor":"middle"},mais).textContent="+";
+    const gp=svgEl("g",{class:"sinal",transform:"translate(-5.25,-5.25) scale(0.75)"},mais);
+    GPLUS_RECTS.forEach(r=>svgEl("rect",{x:r[0],y:r[1],width:r[2],height:r[3],fill:r[4]},gp));
     svgEl("text",{class:"rotulo",x:16,y:3.5,"font-size":8.5},mais)
       .textContent=nSaidas?"bifurcar":"continuar";
     const go=()=>startAddTask(p,n);
