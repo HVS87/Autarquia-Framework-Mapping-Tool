@@ -28,6 +28,12 @@
     --hairline:rgba(33,26,16,0.24);
     --vignette:rgba(58,49,34,0.5);
     --scrim:rgba(188,177,152,0.85);
+    /* O "+" quadricolor da casa: quatro cores que cada tema redefine com
+       tons da sua própria paleta, para o símbolo não destoar. */
+    --gp-a:#E0554F;
+    --gp-b:#4A90E2;
+    --gp-c:#5CC46A;
+    --gp-d:#E8C445;
     /* Alturas das peças fixas. measureChrome() reescreve-as com o valor
        medido logo que o ecrã assenta; estes são os valores de partida,
        para que o PRIMEIRO desenho já saia certo. Sem eles, a barra de
@@ -114,6 +120,110 @@
   #feySvg{display:block;width:100%;height:min(58vh,520px);cursor:grab}
   #feySvg.arrastando{cursor:grabbing}
   .fey-acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+  .fey-stats{display:inline-flex;gap:10px;align-items:center;margin-left:auto;
+    font-size:.72rem;color:var(--ink-dim);white-space:nowrap}
+  .fey-stats .fs-tot{font-weight:600;color:var(--ink)}
+  .fs-prazo{display:inline-flex;gap:5px;align-items:center}
+  .fs-prazo input{width:52px;font:inherit;color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);border-radius:6px;padding:2px 5px;text-align:center}
+  .fs-prazo input:focus{outline:none;border-color:var(--gold)}
+  .fs-excede{color:#E0554F;font-weight:600;border:1px solid rgba(224,85,79,.5);
+    border-radius:999px;padding:1px 8px}
+  .fey-volta{margin-right:10px}
+  /* Realce de cadeia: pairar num nódulo esbate o que não está a montante nem
+     a jusante, e o que está ganha um fluxo tracejado a correr — o sentido do
+     movimento que um procedimento tem. */
+  .fey-cadeia .fey-aresta,.fey-cadeia .fey-vert,.fey-cadeia .fey-resp{opacity:.2;transition:opacity .14s}
+  .fey-cadeia .fey-menos{opacity:.2}
+  .fey-cadeia .na-cadeia{opacity:1}
+  .fey-cadeia .fey-aresta.na-cadeia .tr{stroke-dasharray:7 5;animation:feyFluir .8s linear infinite}
+  @keyframes feyFluir{to{stroke-dashoffset:-12}}
+  @media (prefers-reduced-motion:reduce){
+    .fey-cadeia .fey-aresta.na-cadeia .tr{animation:none;stroke-dasharray:none}
+  }
+  .fey-link{cursor:pointer}
+  .fey-link:hover circle{stroke:var(--gold)}
+  #feyMini{position:absolute;right:12px;bottom:12px;width:148px;
+    background:var(--panel);border:1px solid var(--hairline);border-radius:9px;
+    padding:5px;opacity:.94;cursor:crosshair;z-index:3}
+  #feyMini svg{display:block;width:100%;height:auto}
+  /* Barra de rascunho — o modo-padrão de alterar um procedimento */
+  .fey-rascunho{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    margin:0 0 10px;padding:7px 12px;border:1px solid var(--gold);border-radius:10px;
+    background:rgba(232,180,76,0.07)}
+  .fey-rascunho .fr-tit{font-size:.74rem;font-weight:700;color:var(--gold)}
+  .fey-rascunho .fr-cmp{font-size:.74rem;color:var(--ink-dim)}
+  .fey-rascunho .fr-cmp.pior{color:#E0554F;font-weight:600}
+  .fey-rascunho .fr-cmp.melhor{color:#5CC46A;font-weight:600}
+  .fey-rascunho .fr-nota{font-size:.66rem;color:var(--ink-dim);margin-left:auto}
+  .fey-acts .btn[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+  /* Pairar no responsável: só as tarefas da mesma pessoa ficam acesas */
+  .fey-mesmo .fey-aresta,.fey-mesmo .fey-vert,.fey-mesmo .fey-resp{opacity:.25;transition:opacity .14s}
+  .fey-mesmo .mesmo-resp,.fey-mesmo .fey-terminal{opacity:1}
+  /* O Fim carimba quando a cadeia se dá por finalizada */
+  .fey-terminal.carimba circle{transform-box:fill-box;transform-origin:center;
+    animation:feyCarimbo .55s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes feyCarimbo{from{transform:scale(2.1);opacity:0}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.fey-terminal.carimba circle{animation:none}}
+  body.fey-sem-anim .fey-cadeia .fey-aresta.na-cadeia .tr{animation:none;stroke-dasharray:none}
+  .fey-cheg{cursor:pointer}
+  .fey-cheg:hover circle,.fey-cheg:focus-visible circle{stroke-width:2}
+  /* Barra tricolor de progresso do levantamento no cartão */
+  .pp-prog{display:flex;height:4px;border-radius:999px;overflow:hidden;
+    background:var(--hairline);margin:2px 0 6px}
+  .pp-prog .pa{background:var(--gold)}
+  .pp-prog .pv{background:var(--steel)}
+  #feyPrefsRow .row{display:flex;align-items:center;gap:8px}
+  #feyPrefsRow .row-name{flex:1}
+  /* Foco de teclado no diagrama */
+  #feySvg:focus{outline:none}
+  #feySvg:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;border-radius:10px}
+  .fey-vert.focado>circle{stroke:var(--gold);stroke-width:3}
+  /* Campo de renomear pousado na aresta */
+  .ren-aresta{position:absolute;z-index:5;width:180px;background:var(--panel)}
+  /* Percurso: futuro esbatido, em-curso tracejado, ponto no caminho crítico */
+  .fs-perc{display:inline-flex;gap:6px;align-items:center}
+  .fs-perc input[type=range]{width:110px;accent-color:var(--gold)}
+  .fey-dia .fey-aresta.pt-futura,.fey-dia .fey-resp.pt-futura,.fey-dia .fey-menos.pt-futura{opacity:.16}
+  .fey-dia .fey-aresta.pt-curso .tr{stroke-dasharray:6 5;animation:feyFluir .8s linear infinite}
+  @media (prefers-reduced-motion:reduce){.fey-dia .fey-aresta.pt-curso .tr{animation:none}}
+  #feyToken{filter:drop-shadow(0 0 4px var(--gold))}
+  .notas-chip{color:#E08A3C;border-color:#E08A3C}
+  /* Chips de filtro (Tarefas) e chip de ramo (Unidades) */
+  .filtro-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px;align-items:center}
+  .chip{font:inherit;font-size:.68rem;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--hairline);border-radius:999px;padding:3px 10px;cursor:pointer}
+  .chip.on{color:var(--gold);border-color:var(--gold);font-weight:600}
+  .chip.acao{color:var(--steel);border-color:var(--steel)}
+  .chip-select{font:inherit;font-size:.68rem;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--hairline);border-radius:999px;padding:3px 8px}
+  .ramo-chip{margin:0 0 8px}
+  /* Azulejos de qualidade (Dados) */
+  #qualidadeRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:8px;margin:4px 0 12px}
+  .q-tile{font:inherit;display:flex;flex-direction:column;gap:2px;align-items:flex-start;
+    padding:10px 12px;border:1px solid var(--hairline);border-radius:10px;
+    background:transparent;color:var(--ink);cursor:pointer;text-align:left}
+  .q-tile:hover{border-color:var(--gold)}
+  .q-val{font-size:1.15rem;font-weight:700;color:var(--gold)}
+  .q-rot{font-size:.66rem;color:var(--ink-dim)}
+  /* Perfil de pessoa no sítio */
+  .ag-perfil{border:1px solid var(--hairline);border-left:3px solid var(--gold);
+    border-radius:0 8px 8px 0;padding:8px 10px;margin:2px 0 6px 14px}
+  .agp-topo{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .agp-nome{font-size:.78rem;font-weight:600;color:var(--ink)}
+  .agp-linha{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;
+    font-size:.7rem;color:var(--ink-dim)}
+  .agp-linha select{font:inherit;font-size:.7rem;color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);border-radius:6px;padding:2px 6px;max-width:170px}
+  .agp-tarefas .row{width:100%}
+  /* Mapa da hierarquia (página Unidades) */
+  #mapaUnidades{display:none}
+  #pageBody #mapaUnidades{display:block;margin:2px 0 10px;border:1px solid var(--hairline);
+    border-radius:10px;padding:6px;overflow-x:auto}
+  #mapaUnidades svg{display:block;min-width:300px;width:100%;height:auto;max-height:180px}
+  .mapa-cx{cursor:pointer}
+  .mapa-cx:hover rect{stroke-width:2}
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -133,6 +243,7 @@
   .fey-mais:hover .rotulo,.fey-mais:focus-visible .rotulo{opacity:1}
   /* Botões HTML com o quadricolor dentro: ícone e texto na mesma linha */
   .com-gplus{display:inline-flex;align-items:center;gap:6px}
+  .icon-round svg{display:block}
   .com-gplus .gplus{display:inline-flex;flex:none}
   .fey-menos{cursor:pointer}
   .fey-menos circle{fill:var(--panel);stroke:#E0554F;stroke-width:1.2}
@@ -314,6 +425,60 @@
   .te-grid input,.te-grid textarea{font:inherit;font-size:.82rem;color:var(--ink);
     background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:6px 8px;min-width:0}
   .te-grid textarea{resize:vertical}
+  .te-linkrow{display:flex;gap:6px;min-width:0;align-items:center}
+  .te-linkrow input{flex:1;min-width:0}
+  .te-linkrow a.btn[aria-disabled="true"]{opacity:.35;pointer-events:none}
+  /* Estado do levantamento: um ponto discreto — cinza (por confirmar),
+     aço (validado pelo serviço), dourado (aprovado). */
+  .estado-ponto{display:inline-block;width:8px;height:8px;border-radius:50%;
+    flex:none;border:1px solid var(--hairline);background:transparent}
+  .estado-ponto.e-validado{background:var(--steel);border-color:var(--steel)}
+  .estado-ponto.e-aprovado{background:var(--gold);border-color:var(--gold)}
+  /* Carga por agente: um número pequeno com a cor a subir com o peso. */
+  .carga{flex:none;min-width:17px;text-align:center;font-size:.62rem;font-weight:700;
+    border-radius:999px;padding:1px 4px;border:1px solid var(--hairline);color:var(--ink-dim)}
+  .carga.c-normal{color:var(--steel);border-color:var(--steel)}
+  .carga.c-media{color:#E08A3C;border-color:#E08A3C}
+  .carga.c-alta{color:#E0554F;border-color:#E0554F}
+  /* Simulação de ausências */
+  .sim-aus{margin-top:10px;border:1px solid var(--hairline);border-radius:10px;padding:8px 10px}
+  .sim-aus>summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--gold)}
+  .sim-escolha{display:flex;flex-wrap:wrap;gap:4px 10px;margin:8px 0}
+  .sim-ag{display:inline-flex;gap:5px;align-items:center;font-size:.72rem;color:var(--ink-dim);
+    border:1px solid var(--hairline);border-radius:999px;padding:2px 9px;cursor:pointer}
+  .sim-ag.on{color:var(--ink);border-color:var(--gold)}
+  .sim-res .row{width:100%}
+  /* Miniatura do fluxo no cartão de procedimento */
+  .pp-mini{width:92px;height:30px;flex:none;color:var(--ink-dim);opacity:.9}
+  /* Renomear no sítio */
+  .ren-inline{font:inherit;color:var(--ink);background:transparent;
+    border:1px solid var(--gold);border-radius:6px;padding:1px 6px;
+    width:min(220px,60vw);min-width:90px}
+  .ren-inline:focus{outline:none}
+  /* Seleção múltipla: linha marcada e barra de lote */
+  .row.sel,.task-row.sel{outline:1.6px solid var(--gold);outline-offset:-1.6px;border-radius:8px}
+  #loteBar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:60;
+    display:flex;gap:8px;align-items:center;padding:8px 14px;border-radius:999px;
+    border:1px solid var(--hairline)}
+  #loteBar[hidden]{display:none}
+  #loteBar .lote-n{font-size:.74rem;font-weight:600;color:var(--gold)}
+  /* Versões com nome */
+  .ver-nova{display:flex;gap:6px;margin-bottom:8px}
+  .ver-nova input{flex:1;min-width:0;font:inherit;font-size:.8rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:6px 8px}
+  .ver-nova input:focus{outline:none;border-color:var(--gold)}
+  .ver-row{display:flex;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--hairline)}
+  .ver-row .nm{flex:1;min-width:0;font-size:.78rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ver-row .dt{font-size:.64rem;color:var(--ink-dim);flex:none}
+  /* Relatório de comparação */
+  #verDiffDlg{position:fixed;inset:0;z-index:54;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #verDiffDlg.open{display:grid;place-items:center}
+  #vdCard{width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px}
+  #vdCard h3{font-size:.95rem;margin:0 0 10px;font-weight:600}
+  #vdLinhas{font-size:.78rem;line-height:1.7;color:var(--ink)}
+  #vdLinhas div{padding:2px 0;border-bottom:1px dashed var(--hairline)}
   .te-grid input:focus,.te-grid textarea:focus{outline:none;border-color:var(--gold)}
   .te-grid .btn{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .danger-btn{border-color:#E0554F;color:#E0554F}
@@ -1996,9 +2161,9 @@
       <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de um nódulo para outro para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
       <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detetados">Estado</button>
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
-      <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo">👁</button>
-      <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação">⛶</button>
-      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem">📷</button>
+      <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/></svg></button>
+      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.2L9 5.4h6L16.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
     </div>
   </div>
@@ -2057,9 +2222,9 @@
       <button id="addLayerBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo procedimento
@@ -2070,9 +2235,9 @@
       <button id="addGroupBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo grupo
@@ -2088,9 +2253,9 @@
       <button id="addNodeBtn" class="add-btn">
         <span class="gplus" aria-hidden="true">
           <svg width="14" height="14" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo nódulo
@@ -2106,9 +2271,9 @@
       <button id="addAgentBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo agente
@@ -2137,6 +2302,8 @@
         <button class="theme-btn" data-theme="verde" title="Verde institucional"><span class="tdot" style="background:linear-gradient(135deg,#0B241A,#2E8B62 60%,#D9C36A)"></span>Verde Institucional</button>
         <button class="theme-btn" data-theme="contraste" title="Alto contraste — cores seguras para daltonismo (Okabe–Ito)"><span class="tdot" style="background:linear-gradient(135deg,#000000,#0072B2 45%,#F0E442)"></span>Alto Contraste</button>
       </div>
+      <div class="mini-title">Diagrama de interações</div>
+      <div id="feyPrefsRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -2159,6 +2326,8 @@
   <details id="secDados">
     <summary>Dados</summary>
     <div class="sec-body">
+      <div class="mini-title">Qualidade do levantamento</div>
+      <div id="qualidadeRow"></div>
       <div class="setup-btns">
         <button class="btn" id="pasteImportBtn" title="Criar nódulos em massa a partir de colunas coladas do Excel">Colar do Excel</button>
         <button class="btn" id="newDatasetBtn">Nova rede</button>
@@ -2169,6 +2338,20 @@
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
       <div id="setupMsg" role="status"></div>
+      <div class="mini-title" style="margin-top:12px">Versões com nome</div>
+      <div class="ver-nova">
+        <input id="verNome" type="text" maxlength="48" placeholder="ex.: antes da reorganização de setembro">
+        <button class="btn" id="verGuardar">Guardar versão</button>
+      </div>
+      <div id="verLista"></div>
+      <div class="foot-note">As versões ficam neste aparelho (no máximo 8 — a mais antiga sai). "Comparar" mostra o que mudou entre a versão e o estado atual; "Repor" volta lá, com direito a Anular.</div>
+      <div class="mini-title" style="margin-top:12px">Procedimentos avulsos e modelos</div>
+      <div class="setup-btns">
+        <button class="btn" id="procExpBtn" title="Guardar UM procedimento num ficheiro, com os nódulos identificados por nome — para partilhar entre câmaras">Exportar um procedimento</button>
+        <button class="btn" id="procImpBtn" title="Trazer um procedimento de um ficheiro — os nódulos em falta são criados">Importar procedimento</button>
+        <button class="btn" id="modelosBtn" title="Começar a partir de um procedimento-tipo: licenciamento, atendimento, contratação">Modelos de procedimentos-tipo</button>
+        <input type="file" id="procImpFile" accept=".json,application/json" hidden>
+      </div>
       <div class="foot-note">"Nova rede" começa do zero, só com o Executivo — apaga tudo o resto, por isso guarde antes se precisar. "Guardar dataset" e "Abrir dataset" levam e trazem tudo num ficheiro JSON. "Exportar PDF" gera um documento com o organograma e todos os fluxogramas; "Exportar apresentação" gera um .pptx 16:9 pronto a mostrar. Estes dois precisam de internet na primeira utilização.</div>
     </div>
   </details>
@@ -2339,6 +2522,12 @@
       <button class="btn tiny" id="teResp" title="Alterar ou anular o responsável"></button>
       <label>Destino</label>
       <button class="btn tiny" id="teDest" title="Mudar o nódulo de chegada desta tarefa"></button>
+      <label>Estado</label>
+      <button class="btn tiny" id="teEstado" title="Estado do levantamento — clique para avançar: por confirmar, validado pelo serviço, aprovado"></button>
+      <label for="teLink">Referência</label>
+      <span class="te-linkrow"><input id="teLink" type="url" maxlength="300" placeholder="https:// — minuta, legislação, plataforma"><a id="teLinkGo" class="btn tiny icon-round" target="_blank" rel="noopener" title="Abrir a referência noutro separador" aria-label="Abrir a referência">↗</a></span>
+      <label for="teNota">Nota</label>
+      <textarea id="teNota" maxlength="500" rows="2" placeholder="nota de levantamento — ex.: confirmar com a chefe de divisão"></textarea>
     </div>
     <div class="card-btns">
       <button class="btn danger-btn" id="teDel" title="Apagar esta tarefa">− Apagar tarefa</button>
@@ -2694,6 +2883,9 @@ function makeTaskData(p,a,b,desc,agentId,duration){
   const t={id:"t"+(++taskCounter), a, b,
     desc:desc||"Descrever a tarefa — entregável, âmbito e cadência.",
     nome:"",                      // rótulo curto para o diagrama; vazio usa a descrição
+    estado:"",                    // levantamento: ""=por confirmar, "validado", "aprovado"
+    link:"",                      // referência: minuta, legislação, plataforma
+    nota:"",                      // nota de levantamento: o que não cabe na descrição
     agent:agentId||null, duration:duration||"1 dia",
     proc:processes.indexOf(p), custom:false};
   p.tasks.push(t);
@@ -4773,6 +4965,7 @@ function setTab(id){
   }else{
     document.body.dataset.tab=id;
     if(id==="tarefas")renderTaskListAll();
+    if(id==="dados")renderQualidade();
     showPage(id);
   }
   /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
@@ -4833,6 +5026,63 @@ function closePage(){
 /* Explorador de procedimentos: cada procedimento com as suas tarefas à vista,
    para editar e ARRASTAR — uma tarefa larga-se no organograma simplificado
    para lhe mudar o destino. */
+/* Renomear no sítio: troca o texto por um campo, Enter (ou sair) grava,
+   Esc desiste. O clique dentro do campo não sobe à linha. */
+function renomearNoSitio(alvo,valor,aplicar){
+  if(alvo.querySelector("input.ren-inline"))return;
+  const antigo=alvo.textContent;
+  const inp=document.createElement("input");
+  inp.className="ren-inline";inp.type="text";inp.maxLength=40;inp.value=valor;
+  inp.setAttribute("aria-label","Novo nome");
+  alvo.textContent="";alvo.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,40);
+    inp.remove();
+    if(gravar&&v&&v!==valor)aplicar(v);
+    else alvo.textContent=antigo;
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* Miniatura do fluxo: três traços que distinguem, à vista, um procedimento
+   linear de um com bifurcações — antes de o abrir. */
+function miniFluxo(p){
+  if(!p.tasks.length)return null;
+  const L=feyLayout(p);
+  let st2=null;try{st2=procStats(p);}catch(e){}
+  const s=svgEl("svg",{class:"pp-mini",viewBox:"0 0 "+L.W+" "+L.H,
+    preserveAspectRatio:"xMidYMid meet","aria-hidden":"true"});
+  /* A miniatura conta a verdade: os mesmos arcos do diagrama, e o caminho
+     crítico por baixo, a dourado. */
+  const vistos={};
+  p.tasks.forEach(t2=>{
+    const a=L.pos[t2.a],b=L.pos[t2.b];
+    if(!a||!b)return;
+    const kpar=t2.a+"→"+t2.b, par=(vistos[kpar]=(vistos[kpar]||0)); vistos[kpar]++;
+    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+    let nx=-dy/len,ny=dx/len; if(ny>0){nx=-nx;ny=-ny;}
+    const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+    const lado=(par%2===0)?1:-1;
+    const cxq=(a.x+b.x)/2+nx*amp*lado, cyq=(a.y+b.y)/2+ny*amp*lado;
+    const d="M"+a.x+" "+a.y+" Q "+cxq+" "+cyq+" "+b.x+" "+b.y;
+    if(st2&&st2.critical.has(t2.id))
+      svgEl("path",{d:d,fill:"none",stroke:"var(--gold)","stroke-width":26,opacity:0.55},s);
+    svgEl("path",{d:d,fill:"none",stroke:"currentColor","stroke-width":10,opacity:0.5},s);
+  });
+  L.g.ids.forEach(id=>{
+    const q=L.pos[id],n=byId(id);
+    if(q&&n)svgEl("circle",{cx:q.x,cy:q.y,r:24,fill:hex(n.color)},s);
+  });
+  return s;
+}
 function renderPageProcs(){
   const host=el("div");
   host.id="procExplore";
@@ -4842,11 +5092,24 @@ function renderPageProcs(){
     card.style.borderLeft="3px solid "+hex(p.color);
     const head=el("div","pp-head");
     const nm=el("button","nm",p.name);
-    nm.title="Abrir o diagrama de interações";
-    nm.onclick=()=>showFeynman(p);
+    nm.title="Abrir o diagrama de interações · duplo clique renomeia";
+    nm.onclick=()=>{if(!nm.querySelector(".ren-inline"))showFeynman(p);};
+    nm.addEventListener("dblclick",e=>{
+      e.stopPropagation();
+      renomearNoSitio(nm,p.name,v=>{
+        anotaHistorico("renomear “"+p.name+"” para “"+v+"”");
+        p.name=v;
+        if(p._nameEl)p._nameEl.textContent=v;
+        markDirty();
+        if(document.body.dataset.page==="procedimentos"){devolveSeccoes();showPage("procedimentos");}
+      });
+    });
     const wr=el("span","warn-slot");wr.style.position="static";
     wr.innerHTML=avisoHTML(procAvisos(p));
     const cnt=el("span","count",p.tasks.length+" tarefa(s)");
+    const nNotas=p.tasks.filter(t=>t.nota).length;
+    const chipNotas=nNotas?el("span","count notas-chip",nNotas+" nota(s)"):null;
+    if(chipNotas)chipNotas.title="Tarefas com nota de levantamento por resolver";
     const bMais=el("button","btn tiny com-gplus");
     bMais.innerHTML=gplusHTML(12)+"Nova tarefa";
     bMais.title="Nova tarefa neste procedimento";
@@ -4854,8 +5117,25 @@ function renderPageProcs(){
     const bFey=el("button","btn tiny","Ver em diagrama de Feynman");
     bFey.title="Abrir “"+p.name+"” na vista de interações — bifurcações e convergências, com zoom";
     bFey.onclick=()=>showFeynman(p);
-    head.append(nm,wr,cnt,bFey,bMais);
+    armaReceita(wr,()=>abrirReceita(p));
+    const mf=miniFluxo(p);
+    if(mf)head.append(nm,wr,mf,cnt,bFey,bMais);
+    else head.append(nm,wr,cnt,bFey,bMais);
+    if(chipNotas)cnt.after(chipNotas);
     card.append(head);
+    /* Progresso do levantamento: aprovado (dourado), validado (aço), e o
+       que falta fica no fundo da barra. */
+    if(p.tasks.length){
+      const na=p.tasks.filter(t=>t.estado==="aprovado").length;
+      const nv=p.tasks.filter(t=>t.estado==="validado").length;
+      const prog=el("div","pp-prog");
+      prog.title="Levantamento: "+na+" aprovada(s) · "+nv+" validada(s) · "+
+        (p.tasks.length-na-nv)+" por confirmar";
+      const sA=el("span","pa");sA.style.width=(na/p.tasks.length*100)+"%";
+      const sV=el("span","pv");sV.style.width=(nv/p.tasks.length*100)+"%";
+      prog.append(sA,sV);
+      card.append(prog);
+    }
     if(p.tasks.length){
       const lista=el("div","pp-tarefas");
       p.tasks.forEach(tk=>{
@@ -4901,7 +5181,8 @@ function comecarArrasto(){
   if(svg){svg.removeAttribute("width");svg.removeAttribute("height");
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");}
   const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
-  if(dragAtivo.tipo==="agente"){T.textContent="Largar “"+dragAtivo.rotulo+"” em…";S.textContent="Solte sobre o nódulo onde a pessoa passa a trabalhar.";}
+  if(dragAtivo.tipo==="agenteLote"){T.textContent="Largar "+dragAtivo.rotulo+" em…";S.textContent="Solte sobre o nódulo onde as pessoas selecionadas passam a trabalhar.";}
+  else if(dragAtivo.tipo==="agente"){T.textContent="Largar “"+dragAtivo.rotulo+"” em…";S.textContent="Solte sobre o nódulo onde a pessoa passa a trabalhar.";}
   else if(dragAtivo.tipo==="tarefa"){T.textContent="Novo destino de “"+dragAtivo.rotulo+"”";S.textContent="Solte sobre o nódulo de chegada da tarefa.";}
   else{T.textContent="Mudar “"+dragAtivo.rotulo+"” de lugar";S.textContent="Solte sobre o novo superior hierárquico.";}
   nodePickEl.classList.add("open");
@@ -4925,12 +5206,25 @@ addEventListener("pointerup",e=>{
   if(!caixa)return;                     // largou fora: cancela sem drama
   const alvo=byId(caixa.getAttribute("data-id"));
   if(!alvo)return;
-  if(st.tipo==="agente"){
+  if(st.tipo==="agenteLote"){
+    let movidos=0;
+    loteHistorico(()=>{
+      st.dados.ids.forEach(id=>{
+        const a=agentById(id);
+        if(a&&a.nodeId!==alvo.id){moveAgentToNode(a,alvo.id);movidos++;}
+      });
+      anotaHistorico("mover "+movidos+" pessoas para “"+alvo.name+"”");
+    });
+    selAgentes.clear();syncSelAgentes();
+    flash(movidos?(movidos+" pessoa(s) passaram para “"+alvo.name+"”."):"Já estavam todas nessa equipa.",
+      movidos?{actions:[{label:"Anular",fn:undoAction}]}:undefined);
+  }else if(st.tipo==="agente"){
     const a=agentById(st.dados.id);
     if(!a)return;
     if(a.nodeId===alvo.id){flash("Já está nessa equipa.");return;}
     moveAgentToNode(a,alvo.id);
-    flash("“"+a.name+"” passou para “"+alvo.name+"”.");
+    flash("“"+a.name+"” passou para “"+alvo.name+"”.",
+      {actions:[{label:"Anular",fn:undoAction}]});
   }else if(st.tipo==="tarefa"){
     const pr=layerById(st.dados.pid);
     const tk=pr&&pr.tasks.find(x=>x.id===st.dados.tid);
@@ -4947,7 +5241,8 @@ addEventListener("pointerup",e=>{
     if(n.parent===alvo.id){flash("Já responde a “"+alvo.name+"”.");return;}
     if(!canReparent(n,alvo)){flash("Não pode: ou é descendente, ou o único Executivo, ou não há níveis que cheguem.",{type:"err"});return;}
     reparentNode(n,alvo);
-    flash("“"+n.name+"” passou a responder a “"+alvo.name+"”.");
+    flash("“"+n.name+"” passou a responder a “"+alvo.name+"”.",
+      {actions:[{label:"Anular",fn:undoAction}]});
   }
 });
 addEventListener("pointercancel",()=>{
@@ -4975,7 +5270,12 @@ addEventListener("click",e=>{
     const r=e.target.closest(".row[data-aid]");
     if(!r)return;
     const a=agentById(r.dataset.aid);
-    if(a)armarArrasto("agente",{id:a.id,ancora:a.nodeId},a.name,e);
+    if(!a)return;
+    /* Se a linha pertence a uma seleção múltipla, o arrasto leva o grupo. */
+    if(selAgentes.has(a.id)&&selAgentes.size>1){
+      armarArrasto("agenteLote",{ids:[...selAgentes],ancora:a.nodeId},
+        selAgentes.size+" pessoas",e);
+    }else armarArrasto("agente",{id:a.id,ancora:a.nodeId},a.name,e);
   });
   const tl=document.getElementById("taskListAll");
   if(tl)tl.addEventListener("pointerdown",e=>{
@@ -5322,12 +5622,65 @@ function triSVG(cor,s){
 /* O "+" da casa: o quadricolor que os botões "Novo …" do painel sempre
    usaram. Uma só definição para HTML e para dentro dos SVG, para que
    adicionar — seja o quê — tenha a mesma cara em todo o lado. */
-const GPLUS_RECTS=[["6","0","2","6","#EA4335"],["8","6","6","2","#4285F4"],
-  ["6","8","2","6","#34A853"],["0","6","6","2","#FBBC05"],["6","6","2","2","#4285F4"]];
+const GPLUS_RECTS=[["6","0","2","6","var(--gp-a)"],["8","6","6","2","var(--gp-b)"],
+  ["6","8","2","6","var(--gp-c)"],["0","6","6","2","var(--gp-d)"],["6","6","2","2","var(--gp-b)"]];
 function gplusHTML(s){
   return '<span class="gplus small" aria-hidden="true"><svg width="'+s+'" height="'+s+
     '" viewBox="0 0 14 14">'+GPLUS_RECTS.map(r=>'<rect x="'+r[0]+'" y="'+r[1]+
     '" width="'+r[2]+'" height="'+r[3]+'" fill="'+r[4]+'"/>').join("")+'</svg></span>';
+}
+/* O selo deixa de ser só sinal: clicar nele lista o que falta, e cada item
+   leva ao sítio onde se resolve — atribuir o responsável em falta, ou abrir
+   o diagrama para rematar a cadeia. */
+async function abrirReceita(p){
+  const av=procAvisos(p);
+  const ops=[];
+  p.tasks.filter(t=>!t.agent).slice(0,8).forEach(t=>{
+    const A=byId(t.a),B=byId(t.b);
+    ops.push({k:"t:"+t.id,label:"Sem responsável: “"+(t.nome||String(t.desc||"tarefa").slice(0,26))+
+      "” ("+(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")+") — atribuir"});
+  });
+  if(av.vermelho)ops.push({k:"fim",
+    label:p.tasks.length?"Cadeia por finalizar — abrir o diagrama e rematar":"Sem tarefas — criar a primeira",
+    primary:true});
+  if(!ops.length)return;
+  const r=await askOpcoes("O que falta em “"+p.name+"”",
+    "Cada item leva ao sítio onde se resolve.",ops);
+  /* Enquanto o diálogo esteve aberto o mundo pode ter mudado (um Anular, um
+     repor de versão): se o procedimento já não for o do modelo, não há sítio
+     para onde saltar. */
+  if(!r||!processes.includes(p))return;
+  if(r==="fim"){showFeynman(p);return;}
+  if(r.indexOf("t:")===0){
+    const tk=p.tasks.find(x=>x.id===r.slice(2));
+    showFeynman(p);
+    if(tk)openAgentPickFor(p,tk);
+  }
+}
+async function abrirReceitaGrupo(g){
+  const membros=g.layers.map(layerById).filter(Boolean);
+  const maus=membros.filter(p2=>{const a=procAvisos(p2);return a.amarelo||a.vermelho;});
+  if(!maus.length)return;
+  const ops=maus.map(p2=>{
+    const a=procAvisos(p2);
+    const partes=[];
+    if(a.vermelho)partes.push("por finalizar");
+    if(a.amarelo)partes.push(p2.tasks.filter(x=>!x.agent).length+" sem responsável");
+    return {k:p2.id,label:p2.name+" — "+partes.join(", ")};
+  });
+  const r=await askOpcoes("O que falta no grupo “"+g.name+"”",
+    "Escolha um procedimento para ver a lista.",ops);
+  const alvo=r&&layerById(r);
+  if(alvo)abrirReceita(alvo);
+}
+/* Liga um selo (warn-slot) à sua receita, sem deixar o clique subir à linha. */
+function armaReceita(elm,fn){
+  if(!elm)return elm;
+  elm.style.cursor="pointer";
+  elm.title="Ver o que falta — clique para a lista";
+  elm.addEventListener("click",e=>{e.stopPropagation();fn();});
+  elm.addEventListener("pointerdown",e=>e.stopPropagation());
+  return elm;
 }
 function avisoHTML(av){
   let h="";
@@ -5422,6 +5775,7 @@ function addLayerRow(p){
   row.append(swatch,name,openFc,count,del,sw,warn);
   procList.appendChild(row);
   p._row=row;p._nameEl=name;p._countEl=count;p._delBtn=del;p._warnEl=warn;
+  armaReceita(warn,()=>abrirReceita(p));
   applyProcSearch();
 }
 processes.forEach(addLayerRow);
@@ -5539,6 +5893,7 @@ function renderGroups(){
 
     const gw=el("span","warn-slot");
     g._warnEl=gw;
+    armaReceita(gw,()=>abrirReceitaGrupo(g));
     const sw=switchGrupo(g,members,"Alternar grupo "+g.name,
       ()=>{if(selected&&selected.type==="group")renderDetail();});
 
@@ -5656,7 +6011,87 @@ function renderNodeList(){
   nodes.filter(n=>!n.parent||!byId(n.parent))
     .sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name))
     .forEach(root=>addRow(root,0));
+  aplicaFiltroUnidades();
 }
+/* Mapa da hierarquia na página Unidades: clicar numa caixa filtra a lista
+   ao ramo dela; o chip diz onde se está e devolve tudo. Só existe na página
+   — no painel estreito a lista chega. */
+let unidadeRamo=null;
+function subArvore(id){
+  const s=new Set([id]);
+  let mudou=true;
+  while(mudou){
+    mudou=false;
+    nodes.forEach(n=>{if(n.parent&&s.has(n.parent)&&!s.has(n.id)){s.add(n.id);mudou=true;}});
+  }
+  return s;
+}
+function aplicaFiltroUnidades(){
+  const host=document.getElementById("mapaUnidades");
+  if(host)desenhaMapaUnidades(host);
+  const lista=document.getElementById("nodeList");
+  if(!lista)return;
+  const chipVelho=lista.parentNode.querySelector(".ramo-chip");
+  if(chipVelho)chipVelho.remove();
+  if(!unidadeRamo||!byId(unidadeRamo)){
+    unidadeRamo=null;
+    lista.querySelectorAll(".row[data-nid]").forEach(r=>{r.style.display="";});
+    return;
+  }
+  const s=subArvore(unidadeRamo);
+  lista.querySelectorAll(".row[data-nid]").forEach(r=>{
+    r.style.display=s.has(r.dataset.nid)?"":"none";
+  });
+  const chip=el("button","chip on ramo-chip","A mostrar: "+byId(unidadeRamo).name+" ×");
+  chip.type="button";
+  chip.title="Voltar a mostrar todas as unidades";
+  chip.onclick=()=>{unidadeRamo=null;renderNodeList();};
+  lista.parentNode.insertBefore(chip,lista);
+}
+function desenhaMapaUnidades(host){
+  host.innerHTML="";
+  const porTier={};
+  nodes.forEach(n=>{(porTier[n.tier]=porTier[n.tier]||[]).push(n);});
+  const tiers=Object.keys(porTier).map(Number).sort((a,b)=>a-b);
+  const CW=92,CH=20,GX=8,GY=12;
+  const maxN=Math.max(...tiers.map(t2=>porTier[t2].length));
+  const W=Math.max(300,maxN*(CW+GX)+20);
+  const H=tiers.length*(CH+GY)+8;
+  const svg=svgEl("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
+    "aria-label":"Mapa da hierarquia — clique para filtrar a lista"},host);
+  const posM={};
+  tiers.forEach((t2,r)=>{
+    const linha=porTier[t2].slice().sort((a,b)=>a.name.localeCompare(b.name));
+    const larg=linha.length*(CW+GX)-GX;
+    linha.forEach((n,i)=>{
+      const x=(W-larg)/2+i*(CW+GX), y=6+r*(CH+GY);
+      posM[n.id]={x:x+CW/2,y:y+CH};
+      const g2=svgEl("g",{class:"mapa-cx"+(unidadeRamo===n.id?" on":""),tabindex:0,role:"button"},svg);
+      svgEl("title",{},g2).textContent=n.name+" — clique para ver só este ramo";
+      svgEl("rect",{x:x,y:y,width:CW,height:CH,rx:5,fill:"var(--panel)",
+        stroke:unidadeRamo===n.id?"var(--gold)":hex(n.color),
+        "stroke-width":unidadeRamo===n.id?2:1.2},g2);
+      const nome=n.name.length>13?n.name.slice(0,12)+"…":n.name;
+      svgEl("text",{x:x+CW/2,y:y+CH/2+3.4,"text-anchor":"middle","font-size":8.6,
+        fill:"var(--ink)"},g2).textContent=nome;
+      const vai=()=>{unidadeRamo=(unidadeRamo===n.id)?null:n.id;renderNodeList();};
+      g2.addEventListener("click",vai);
+      g2.addEventListener("keydown",e2=>{if(e2.key==="Enter"||e2.key===" "){e2.preventDefault();vai();}});
+    });
+  });
+  nodes.forEach(n=>{
+    if(!n.parent||!posM[n.id]||!posM[n.parent])return;
+    svgEl("line",{x1:posM[n.parent].x,y1:posM[n.parent].y,
+      x2:posM[n.id].x,y2:posM[n.id].y-CH,stroke:"var(--hairline)","stroke-width":1},svg);
+  });
+}
+(function(){
+  const lista=document.getElementById("nodeList");
+  if(!lista)return;
+  const host=el("div");
+  host.id="mapaUnidades";
+  lista.parentNode.insertBefore(host,lista);
+})();
 document.getElementById("addNodeBtn").onclick=()=>{
   const n=createNode();
   selectNode(n);
@@ -5672,6 +6107,215 @@ agentList.parentNode.insertBefore(
   makeTabSearch("Pesquisar agentes…",v=>{agentSearch=v;renderAgentsTab();}),
   agentList
 );
+/* Duplo clique numa linha de unidade ou de pessoa renomeia no sítio. */
+document.getElementById("nodeList").addEventListener("dblclick",e=>{
+  const r=e.target.closest(".row[data-nid]");
+  if(!r)return;
+  const n=byId(r.dataset.nid);
+  const span=r.querySelector(".row-name")||r;
+  if(!n)return;
+  e.preventDefault();e.stopPropagation();
+  renomearNoSitio(span,n.name,v=>{
+    anotaHistorico("renomear “"+n.name+"” para “"+v+"”");
+    n.name=v;
+    refreshNodeVisual(n);renderNodeList();renderDetail();markDirty();
+  });
+});
+agentList.addEventListener("dblclick",e=>{
+  const r=e.target.closest(".row[data-aid]");
+  if(!r)return;
+  const a=agentById(r.dataset.aid);
+  const span=r.querySelector(".row-name")||r;
+  if(!a)return;
+  e.preventDefault();e.stopPropagation();
+  renomearNoSitio(span,a.name,v=>{
+    anotaHistorico("renomear “"+a.name+"” para “"+v+"”");
+    a.name=v;
+    const n=byId(a.nodeId);
+    if(n)refreshNodeVisual(n);
+    renderAgentsTab();renderDetail();markDirty();
+  });
+});
+/* ---- Seleção múltipla de pessoas ----
+   Ctrl+clique seleciona; arrastar uma linha selecionada leva o grupo todo
+   para o nódulo onde se largar. */
+const selAgentes=new Set();
+function syncSelAgentes(){
+  document.querySelectorAll("#agentList .row[data-aid]").forEach(r=>{
+    r.classList.toggle("sel",selAgentes.has(r.dataset.aid));
+  });
+}
+agentList.addEventListener("click",e=>{
+  if(!(e.ctrlKey||e.metaKey))return;
+  const r=e.target.closest(".row[data-aid]");
+  if(!r)return;
+  e.preventDefault();e.stopPropagation();
+  if(selAgentes.has(r.dataset.aid))selAgentes.delete(r.dataset.aid);
+  else selAgentes.add(r.dataset.aid);
+  syncSelAgentes();
+},true);
+/* ---- Simulação de ausências ----
+   Marcar quem falta (férias, licença, saída) e ver de imediato as tarefas
+   que ficam sem ninguém — contando com os substitutos — mais o ranking de
+   pontos únicos de falha. Só lê: nada aqui mexe nos dados. */
+(function(){
+  const det=document.createElement("details");
+  det.id="simAus";det.className="sim-aus";
+  const sum=document.createElement("summary");
+  sum.textContent="Simulação de ausências — e se faltarem…?";
+  det.append(sum);
+  const escolha=el("div","sim-escolha");
+  const res=el("div","sim-res");
+  det.append(escolha,res);
+  agentList.parentNode.insertBefore(det,agentList.nextSibling);
+  const marcados=new Set();
+  /* Devolve o responsável "descoberto", ou null se a tarefa está coberta:
+     o titular presente, ou o substituto dele presente, cobrem-na. */
+  function descoberta(t,S){
+    const a=t.agent?agentById(t.agent):null;
+    if(!a)return null;                    // sem responsável: é o selo amarelo, não isto
+    const fora=id=>{const x=id?agentById(id):null;return !x||x.absent||S.has(x.id);};
+    if(!fora(a.id))return null;
+    if(a.subst&&!fora(a.subst))return null;
+    return a;
+  }
+  function calc(){
+    [...marcados].forEach(id=>{if(!agentById(id))marcados.delete(id);});
+    escolha.innerHTML="";res.innerHTML="";
+    agents.slice().sort((x,y)=>x.name.localeCompare(y.name)).forEach(a=>{
+      const n=byId(a.nodeId);
+      const lb=el("label","sim-ag"+(marcados.has(a.id)?" on":""));
+      const cb=document.createElement("input");
+      cb.type="checkbox";cb.checked=marcados.has(a.id);
+      cb.onchange=()=>{if(cb.checked)marcados.add(a.id);else marcados.delete(a.id);calc();};
+      lb.append(cb,document.createTextNode(a.name+(n?" · "+abbrev(n.name):"")));
+      escolha.append(lb);
+    });
+    if(marcados.size){
+      const orfas=[];
+      processes.forEach(p2=>p2.tasks.forEach(t2=>{
+        const a=descoberta(t2,marcados);
+        if(a)orfas.push({p:p2,t:t2,a});
+      }));
+      res.append(el("div","mini-title",
+        "Com "+marcados.size+" ausência(s): "+
+        (orfas.length?orfas.length+" tarefa(s) ficam sem ninguém":"tudo coberto ✓")));
+      orfas.slice(0,30).forEach(o=>{
+        const b=el("button","row");
+        b.type="button";
+        b.append(el("span","t-desc",o.t.nome||String(o.t.desc||"tarefa").slice(0,34)));
+        b.append(el("span","t-route",o.p.name+" · resp.: "+o.a.name+
+          (o.a.subst?" (o substituto também está fora)":" (sem substituto)")));
+        b.title="Abrir o diagrama de “"+o.p.name+"”";
+        b.onclick=()=>showFeynman(o.p);
+        res.append(b);
+      });
+      if(orfas.length>30)res.append(el("div","foot-note","… e mais "+(orfas.length-30)+"."));
+    }
+    /* Pontos únicos de falha: para cada pessoa, quantas tarefas ficariam sem
+       ninguém se SÓ ela faltasse. É o argumento da continuidade em números. */
+    const spof=agents.map(a=>{
+      const S=new Set([a.id]);
+      let n2=0;
+      processes.forEach(p2=>p2.tasks.forEach(t2=>{if(descoberta(t2,S))n2++;}));
+      return {a,n:n2};
+    }).filter(x=>x.n>0).sort((x,y)=>y.n-x.n).slice(0,5);
+    if(spof.length){
+      res.append(el("div","mini-title","Pontos únicos de falha — a única cobertura de…"));
+      spof.forEach(x=>{
+        const b=el("button","row");
+        b.type="button";
+        b.append(el("span","t-desc",x.a.name));
+        b.append(el("span","count",x.n+" tarefa(s)"));
+        b.title="Se "+x.a.name+" faltar sozinho(a), "+x.n+" tarefa(s) ficam sem ninguém — abrir o painel";
+        b.onclick=()=>selectAgent(x.a);
+        res.append(b);
+      });
+    }
+  }
+  det.addEventListener("toggle",()=>{if(det.open)calc();});
+  window.recalcSimAus=()=>{if(det.open)calc();};
+  window.abrirSimulacao=()=>{det.open=true;calc();try{det.scrollIntoView({block:"nearest"});}catch(e){}};
+  window.simMarcarAusencia=id=>{marcados.add(id);window.abrirSimulacao();};
+})();
+/* Quantas tarefas esta pessoa tem a cargo, em todos os procedimentos. */
+function cargaDe(agentId){
+  let n=0;
+  processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===agentId)n++;}));
+  return n;
+}
+/* Perfil de pessoa no sítio (página Pessoas): carga, tarefas com salto,
+   substituto editável, ausência, e o atalho para simular a falta. */
+function togglePerfilAgente(a,row){
+  const aberto=row.nextElementSibling&&row.nextElementSibling.classList&&
+    row.nextElementSibling.classList.contains("ag-perfil");
+  document.querySelectorAll(".ag-perfil").forEach(e2=>e2.remove());
+  if(aberto)return;
+  const card=el("div","ag-perfil");
+  const minhas=[];
+  processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===a.id)minhas.push({p,t});}));
+  const topo=el("div","agp-topo");
+  topo.append(el("span","agp-nome",a.name+" — "+a.category));
+  const cg=el("span","carga "+(minhas.length>=5?"c-alta":minhas.length>=3?"c-media":minhas.length?"c-normal":"c-zero"),String(minhas.length));
+  cg.title=minhas.length+" tarefa(s) a cargo";
+  topo.append(cg);
+  card.append(topo);
+  if(minhas.length){
+    const lst=el("div","agp-tarefas");
+    minhas.slice(0,8).forEach(x=>{
+      const b=el("button","row");
+      b.type="button";
+      b.append(el("span","t-desc",x.t.nome||String(x.t.desc||"tarefa").slice(0,32)));
+      b.append(el("span","t-route",x.p.name));
+      b.title="Abrir o diagrama de “"+x.p.name+"”";
+      b.onclick=()=>showFeynman(x.p);
+      lst.append(b);
+    });
+    if(minhas.length>8)lst.append(el("div","foot-note","… e mais "+(minhas.length-8)+"."));
+    card.append(lst);
+  }
+  const linha=el("div","agp-linha");
+  const lb=el("label",null,"Substituto ");
+  const sel=document.createElement("select");
+  const op0=document.createElement("option");
+  op0.value="";op0.textContent="— nenhum —";
+  sel.append(op0);
+  agents.filter(x=>x.id!==a.id).sort((x,y)=>x.name.localeCompare(y.name)).forEach(x=>{
+    const op=document.createElement("option");
+    op.value=x.id;op.textContent=x.name;
+    sel.append(op);
+  });
+  sel.value=a.subst||"";
+  sel.onchange=()=>{
+    anotaHistorico("definir o substituto de “"+a.name+"”");
+    a.subst=sel.value||null;
+    markDirty();
+    flash(sel.value?("Substituto de "+a.name+": "+agentById(sel.value).name+"."):"Substituto retirado.",
+      {actions:[{label:"Anular",fn:undoAction}]});
+  };
+  lb.append(sel);
+  linha.append(lb);
+  const swA=el("button","switch"+(a.absent?" on":""));
+  swA.setAttribute("role","switch");
+  swA.setAttribute("aria-checked",String(!!a.absent));
+  swA.setAttribute("aria-label","Marcar "+a.name+" como ausente");
+  const lbA=el("label",null,"Ausente ");
+  lbA.append(swA);
+  swA.onclick=()=>{
+    anotaHistorico((a.absent?"repor":"marcar a ausência de")+" “"+a.name+"”");
+    a.absent=!a.absent;
+    swA.classList.toggle("on",a.absent);
+    swA.setAttribute("aria-checked",String(a.absent));
+    markDirty();
+  };
+  linha.append(lbA);
+  const bSim=el("button","btn tiny","Simular a ausência");
+  bSim.title="Abrir a simulação com "+a.name+" marcado(a)";
+  bSim.onclick=()=>{if(typeof window.simMarcarAusencia==="function")window.simMarcarAusencia(a.id);};
+  linha.append(bSim);
+  card.append(linha);
+  row.after(card);
+}
 function agentRowBtn(a,tagText){
   const row=el("button","row");
   row.dataset.aid=a.id;
@@ -5681,9 +6325,22 @@ function agentRowBtn(a,tagText){
   star.style.flex="none";
   const name=el("span","row-name",a.name);
   const tag=el("span","count",tagText);
-  row.append(star,iniChip(a,"sm"),name,tag);
+  /* A carga vê-se na linha: aço até 2 tarefas, quente a 3–4, vermelho a 5+.
+     É aqui que o funcionário-ilha aparece antes de ser problema. */
+  const nCarga=cargaDe(a.id);
+  const carga=el("span","carga "+(nCarga>=5?"c-alta":nCarga>=3?"c-media":nCarga>=1?"c-normal":"c-zero"),
+    String(nCarga));
+  carga.title=nCarga===1?"1 tarefa a cargo":nCarga+" tarefas a cargo";
+  row.append(star,iniChip(a,"sm"),name,carga,tag);
   row.title=a.name+" — "+a.category;
-  row.onclick=()=>selectAgent(a);
+  /* Na PÁGINA, o clique abre um perfil no sítio; na Home continua a abrir o
+     painel 3D — cada contexto com o gesto que lhe serve. */
+  row.onclick=()=>{
+    if(document.body.dataset.tab==="agentes"&&document.body.classList.contains("page-open")){
+      togglePerfilAgente(a,row);return;
+    }
+    selectAgent(a);
+  };
 
   row.draggable=true;
   row.addEventListener("dragstart",e=>{
@@ -5746,6 +6403,7 @@ function nodeDropHeader(n,expanded,count){
 }
 const catExpanded={};
 function renderAgentsTab(){
+  if(typeof window.recalcSimAus==="function")window.recalcSimAus();
   agentList.innerHTML="";
   const tog=el("div","layer-pick");
   [["node","Por nódulo"],["category","Por categoria"]].forEach(([m,lbl])=>{
@@ -5858,6 +6516,10 @@ function viewValid(v){
   return false;
 }
 function closeModalSilent(){
+  /* Sair do diagrama com um rascunho pendente APLICA-O (um passo de Anular,
+     com toast) — o rascunho é provisório mas não se perde por acidente.
+     Descartar é sempre um gesto explícito. */
+  if(rascunho&&!rascunhoAplicando&&modalView&&modalView.type==="feynman")aplicarRascunho(false);
   modal.classList.remove("open");
   modal.classList.remove("from-3d");
   modalView=null;
@@ -5978,6 +6640,7 @@ function canReparent(n,target){
   return target.tier+1+subtreeDepth(n)<=TIER.length-1;
 }
 function reparentNode(n,target){
+  if(n&&target)anotaHistorico("pôr “"+n.name+"” a responder a “"+target.name+"”");
   if(!canReparent(n,target))return false;
   n.parent=target.id;
   setTierDeep(n,target.tier+1);
@@ -6017,6 +6680,7 @@ function deleteNode(n){
 }
 function moveAgentToNode(a,nodeId){
   if(!a||a.nodeId===nodeId||!byId(nodeId))return;
+  anotaHistorico("mover “"+a.name+"” para “"+(byId(nodeId)||{}).name+"”");
   const oldNode=byId(a.nodeId),newNode=byId(nodeId);
   const wasPrimary=a.primary;
   a.primary=false;
@@ -6594,7 +7258,7 @@ function renderNodeDetail(head,closeBtn){
     detail.append(row);
   });
   const addA=el("button","add-btn compact");
-  addA.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/><rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/><rect x="6" y="6" width="2" height="2" fill="#4285F4"/></svg></span>Adicionar agente`;
+  addA.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/><rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/><rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/></svg></span>Adicionar agente`;
   addA.onclick=()=>{
     const isFirst=agentsOf(n.id).length===0;
     addAgent(n.id,isFirst,isFirst?PRIMARY_CAT_BY_TIER[Math.min(n.tier,PRIMARY_CAT_BY_TIER.length-1)]:"Técnico Superior");
@@ -6980,7 +7644,7 @@ function renderGroupDetail(head,closeBtn){
   }
   // Quick-create straight into the group
   const nb=el("button","add-btn compact");
-  nb.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/><rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/><rect x="6" y="6" width="2" height="2" fill="#4285F4"/></svg></span>Novo procedimento neste grupo`;
+  nb.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/><rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/><rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/></svg></span>Novo procedimento neste grupo`;
   nb.title="Cria um procedimento novo e adiciona-o já a este grupo";
   nb.onclick=()=>{
     const p=createLayer();
@@ -7382,7 +8046,7 @@ function procStats(p){
   const critical=new Set();
   let cur=endId,guard=0;
   while(cur&&via[cur]&&guard++<400){critical.add(via[cur].id);cur=via[cur].a;}
-  return {graph:g,total,critical,
+  return {graph:g,total,critical,best,
     unknown:g.tasks.some(t=>parseDuration(t.duration)===null),
     forks:g.ids.filter(id=>g.outOf[id].length>1).length,
     joins:g.ids.filter(id=>g.inOf[id].length>1).length};
@@ -7562,6 +8226,7 @@ function renderFlowchart(p){
   if(fcSel&&!p.tasks.includes(fcSel))fcSel=null;
   if(fcInsertOn&&!p.tasks.includes(fcInsertOn))fcInsertOn=null;
   modalTitle.textContent=p.name;
+  poeTrilho(modalTitle);
   modalBody.innerHTML="";
   const col=hex(p.color);
   const idx=processes.indexOf(p);
@@ -7691,7 +8356,7 @@ function renderFlowchart(p){
             corpo.append(ln);
           });
           const ir=el("button","btn tiny","Abrir “"+r.proc.name+"”");
-          ir.onclick=()=>showFlowchart(r.proc);
+          ir.onclick=()=>{feyTrilho.push(p.id);trilhoManter=true;showFlowchart(r.proc);};
           corpo.append(ir);
           cai.append(corpo);
         }
@@ -8098,7 +8763,258 @@ function svgEl(tag,attrs,parent){
   return e;
 }
 let feyProcId=null,feyVB=null,feyReabrir=null;
+/* Preferências do diagrama, persistidas: quem apresenta quer menos camadas,
+   quem levanta quer tudo. A interface vive nas Definições. */
+const FEY_PREFS=(function(){
+  const d={resp:true,dur:true,anim:true,denso:false,gargalos:false,gente:false,pistas:false};
+  try{
+    const s=JSON.parse(storageGet("of.feyprefs.v1")||"{}");
+    Object.keys(d).forEach(k=>{if(typeof s[k]==="boolean")d[k]=s[k];});
+  }catch(e){}
+  return d;
+})();
+function guardaFeyPrefs(){storageSet("of.feyprefs.v1",JSON.stringify(FEY_PREFS));}
+/* Cada procedimento lembra o seu enquadramento (zoom/pan) — na sessão e
+   entre sessões. */
+const feyVBs=(function(){
+  try{const s=JSON.parse(storageGet("of.feyvb.v1")||"{}");
+    return (s&&typeof s==="object"&&!Array.isArray(s))?s:{};}catch(e){return {};}
+})();
+let feyVBsTimer=0;
+function guardaFeyVBs(){
+  clearTimeout(feyVBsTimer);
+  feyVBsTimer=setTimeout(()=>{try{storageSet("of.feyvb.v1",JSON.stringify(feyVBs));}catch(e){}},800);
+}
+function vbValido(v,L){
+  return v&&[v.x,v.y,v.w,v.h].every(Number.isFinite)&&v.w>L.W/10&&v.w<L.W*5;
+}
+/* A interface das preferências vive nas Definições: comutadores simples,
+   aplicados na hora se o diagrama estiver aberto. */
+(function(){
+  const host=document.getElementById("feyPrefsRow");
+  if(!host)return;
+  [["resp","Responsáveis nas tarefas"],["dur","Durações junto ao responsável"],
+   ["anim","Fluxo animado ao pairar"],["denso","Espaçamento compacto"],
+   ["gargalos","Modo gargalos — espessura pela duração"],["gente","Equipas nos nódulos"]]
+  .forEach(([k,rot])=>{
+    const row=el("div","row");
+    row.append(el("span","row-name",rot));
+    const sw=el("button","switch"+(FEY_PREFS[k]?" on":""));
+    sw.setAttribute("role","switch");
+    sw.setAttribute("aria-checked",String(FEY_PREFS[k]));
+    sw.setAttribute("aria-label",rot);
+    sw.onclick=()=>{
+      FEY_PREFS[k]=!FEY_PREFS[k];
+      guardaFeyPrefs();
+      sw.classList.toggle("on",FEY_PREFS[k]);
+      sw.setAttribute("aria-checked",String(FEY_PREFS[k]));
+      document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+      if(modalView&&modalView.type==="feynman")renderFeynman(modalView.layer);
+    };
+    row.append(sw);
+    host.append(row);
+  });
+  document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+})();
+/* ---- Rascunho: o modo-padrão de alterar um procedimento ----
+   Com o diagrama aberto, as mudanças não entram no histórico: acumulam num
+   rascunho com comparação de durações à vista. Aplicar (ou simplesmente sair
+   do diagrama) grava tudo como UM passo de Anular; Descartar repõe o estado
+   de entrada. Anular/Refazer ficam suspensos enquanto o rascunho durar. */
+let rascunho=null;              // {pid,base,ultimo,alteracoes,totalBase}
+let rascunhoAplicando=false;    // o markDirty do próprio Aplicar não reabre rascunho
+let feyTotalAoAbrir=0;          // duração de entrada, para a comparação
+let feyCarimbar=null;           // procedimento a "carimbar" no próximo render (Fim)
+function aplicarRascunho(silencioso){
+  if(!rascunho)return;
+  const r=rascunho;rascunho=null;
+  rascunhoAplicando=true;
+  try{
+    anotaHistorico(r.alteracoes+" alteração(ões) a “"+((layerById(r.pid)||{}).name||"?")+"”");
+    markDirty();
+  }finally{rascunhoAplicando=false;}
+  updateHistoryUI();
+  if(!silencioso)flash("Alterações aplicadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
+function descartarRascunho(){
+  if(!rascunho)return;
+  const b=rascunho.base;rascunho=null;
+  if(!b||!restoreState(b)){
+    /* Sem estado de entrada legível não há a que voltar — antes assumir as
+       alterações do que fingir que se descartou. */
+    updateHistoryUI();
+    flash("Não foi possível repor o estado de entrada — as alterações mantêm-se.",{type:"err"});
+    return;
+  }
+  updateHistoryUI();
+  flash("Rascunho descartado — o procedimento voltou ao que era.");
+}
+/* Trilho de regresso: quando se salta para um ramo convergente, guarda-se o
+   procedimento de onde se veio, e o título ganha um "‹ voltar". Abrir um
+   procedimento por qualquer OUTRO caminho limpa o trilho. */
+let feyTrilho=[],trilhoManter=false;
+function poeTrilho(titulo){
+  if(!trilhoManter)feyTrilho.length=0;
+  trilhoManter=false;
+  if(!feyTrilho.length)return;
+  const de=layerById(feyTrilho[feyTrilho.length-1]);
+  if(!de){feyTrilho.length=0;return;}
+  const volta=el("button","btn tiny fey-volta","‹ "+de.name);
+  volta.title="Voltar a “"+de.name+"”";
+  volta.onclick=()=>{feyTrilho.pop();trilhoManter=true;showFlowchart(de);};
+  titulo.prepend(volta);
+}
 function showFeynman(p){navigateTo({type:"feynman",layer:p});}
+/* Campo de renomear pousado sobre a pastilha da aresta: converte o ponto do
+   SVG em coordenadas do ecrã e deixa o renomear acontecer onde o olho está. */
+function renomearAresta(p,t,sx,sy,svg,wrap){
+  if(wrap.querySelector(".ren-aresta"))return;
+  const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
+  const m=svg.getScreenCTM();
+  if(!m)return;
+  const sp=pt.matrixTransform(m);
+  const wr=wrap.getBoundingClientRect();
+  const inp=document.createElement("input");
+  inp.className="ren-inline ren-aresta";
+  inp.type="text";inp.maxLength=40;
+  inp.value=t.nome||"";
+  inp.placeholder=String(t.desc||"").slice(0,30);
+  inp.setAttribute("aria-label","Novo nome da tarefa");
+  inp.style.left=(sp.x-wr.left-90)+"px";
+  inp.style.top=(sp.y-wr.top-14)+"px";
+  wrap.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,40);
+    inp.remove();
+    if(gravar&&v!==(t.nome||"")){
+      t.nome=v;
+      anotaHistorico("renomear a tarefa");
+      markDirty();renderFeynman(p);
+    }
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* Pastilha opaca atrás de um rótulo — partilhada pelos dois modos. */
+function pastilhaSVG(parent,cx,cy,txt,fs,cor,peso){
+  const w=Math.max(26,txt.length*fs*0.60+14);
+  svgEl("rect",{x:cx-w/2,y:cy-fs*0.80,width:w,height:fs*1.55,rx:fs*0.75,
+    fill:"var(--panel)",stroke:"var(--hairline)","stroke-width":0.6,opacity:0.96},parent);
+  const tx2=svgEl("text",{x:cx,y:cy+fs*0.34,"text-anchor":"middle","font-size":fs,fill:cor},parent);
+  if(peso)tx2.setAttribute("font-weight",peso);
+  tx2.textContent=txt;
+  return tx2;
+}
+/* ---- MODO PISTAS ----
+   Linhas = unidades; as tarefas correm da esquerda para a direita e cada
+   mudança de pista é uma transferência de responsabilidade — que é onde os
+   processos morrem. Leitura BPMN para quem decide; edição intacta (clique
+   edita, duplo clique renomeia, um "+" por pista continua a cadeia). */
+function feyPistas(p,st,wrap){
+  const cs=getComputedStyle(document.documentElement);
+  const ink=(cs.getPropertyValue("--ink")||"#eee").trim();
+  const dim=(cs.getPropertyValue("--ink-dim")||"#999").trim();
+  const gold=(cs.getPropertyValue("--gold")||"#d9c36a").trim();
+  const g=procGraph(p);
+  const lanes=g.ids.map(byId).filter(Boolean)
+    .sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name));
+  const laneY={};
+  const LX0=210,DXT=190,DYL=74,LY0=56;
+  lanes.forEach((n,i)=>{laneY[n.id]=LY0+i*DYL;});
+  const ordem=p.tasks.slice().sort((a,b)=>(g.layer[a.a]||0)-(g.layer[b.a]||0));
+  const W=LX0+Math.max(1,ordem.length)*DXT+80;
+  const H=LY0+lanes.length*DYL+20;
+  const svg=svgEl("svg",{id:"feySvg",role:"img",viewBox:"0 0 "+W+" "+H,
+    "aria-label":"Pistas de "+p.name},wrap);
+  const defs=svgEl("defs",{},svg);
+  const setas={};
+  const seta=cor=>{
+    if(setas[cor])return setas[cor];
+    const idm="pistaSeta"+Object.keys(setas).length;
+    const mk=svgEl("marker",{id:idm,viewBox:"0 0 10 10",refX:"9",refY:"5",
+      markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs);
+    svgEl("path",{d:"M0 0 L10 5 L0 10 Z",fill:cor},mk);
+    setas[cor]=idm;return idm;
+  };
+  // pistas: banda alternada + rótulo + "+" de continuar
+  lanes.forEach((n,i)=>{
+    const y=laneY[n.id];
+    if(i%2)svgEl("rect",{x:0,y:y-DYL/2,width:W,height:DYL,fill:"currentColor",
+      opacity:0.04,"pointer-events":"none"},svg);
+    svgEl("line",{x1:0,y1:y+DYL/2,x2:W,y2:y+DYL/2,stroke:"var(--hairline)",
+      "stroke-width":0.6,opacity:0.6},svg);
+    svgEl("circle",{cx:16,cy:y,r:6,fill:hex(n.color)},svg);
+    const nome=n.name.length>24?n.name.slice(0,23)+"…":n.name;
+    svgEl("text",{x:28,y:y+3.5,"font-size":10.5,fill:ink,"font-weight":600},svg).textContent=nome;
+    const mais=svgEl("g",{class:"fey-mais continua",transform:"translate("+(W-26)+","+y+")",
+      tabindex:0,role:"button"},svg);
+    svgEl("title",{},mais).textContent="Continuar a cadeia a partir de "+n.name;
+    svgEl("circle",{class:"halo",cx:0,cy:0,r:12},mais);
+    svgEl("circle",{class:"disco",cx:0,cy:0,r:8},mais);
+    const gp=svgEl("g",{class:"sinal",transform:"translate(-4.9,-4.9) scale(0.7)"},mais);
+    GPLUS_RECTS.forEach(r=>svgEl("rect",{x:r[0],y:r[1],width:r[2],height:r[3],fill:r[4]},gp));
+    const go=()=>startAddTask(p,n);
+    mais.addEventListener("pointerdown",e=>e.stopPropagation());
+    mais.addEventListener("click",e=>{e.stopPropagation();go();});
+    mais.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+  });
+  // tarefas: setas entre pistas, por ordem topológica
+  ordem.forEach((t,k)=>{
+    const yA=laneY[t.a],yB=laneY[t.b];
+    if(yA===undefined||yB===undefined)return;
+    const x1=LX0+k*DXT, x2=x1+DXT*0.74;
+    const corA=hex((byId(t.a)||{color:p.color}).color);
+    const corB=hex((byId(t.b)||{color:p.color}).color);
+    const ga=svgEl("g",{class:"fey-aresta"+(st.critical.has(t.id)?" critica":""),
+      tabindex:0,role:"button"},svg);
+    svgEl("title",{},ga).textContent=(t.nome||t.desc||"Tarefa")+" — clique edita · duplo clique renomeia";
+    const meioX=(x1+x2)/2, meioY=(yA+yB)/2;
+    const d=(yA===yB)
+      ?("M"+x1+" "+yA+" L"+x2+" "+yB)
+      :("M"+x1+" "+yA+" C "+meioX+" "+yA+", "+meioX+" "+yB+", "+x2+" "+yB);
+    if(st.critical.has(t.id))svgEl("path",{class:"cr-halo",d:d,fill:"none",
+      stroke:gold,"stroke-width":6,opacity:0.3,"pointer-events":"none"},ga);
+    let tinta=corA;
+    if(corA!==corB){
+      const gid="pistaGrad"+k;
+      const lg=svgEl("linearGradient",{id:gid,gradientUnits:"userSpaceOnUse",
+        x1:x1,y1:yA,x2:x2,y2:yB},defs);
+      svgEl("stop",{offset:"0%","stop-color":corA},lg);
+      svgEl("stop",{offset:"100%","stop-color":corB},lg);
+      tinta="url(#"+gid+")";
+    }
+    svgEl("path",{class:"tr",d:d,fill:"none",stroke:tinta,"stroke-width":2.2,
+      "marker-end":"url(#"+seta(corB)+")"},ga);
+    svgEl("path",{class:"hit",d:d},ga);
+    const base=String(t.nome||t.desc||"");
+    const rot=base.slice(0,20)+(base.length>20?"…":"");
+    pastilhaSVG(ga,meioX,meioY-10,rot,10,ink,600);
+    if(t.estado)svgEl("circle",{cx:meioX-(Math.max(26,rot.length*10*0.6+14))/2-6,cy:meioY-10,r:3,
+      fill:t.estado==="aprovado"?gold:"var(--steel)"},ga);
+    if(!t.agent){
+      const wg=svgEl("g",{transform:"translate("+(meioX+34)+","+(meioY-26)+")"},ga);
+      wg.innerHTML=triSVG("yellow",12);
+    }
+    const abrir=()=>openTaskEdit(p,t);
+    ga.addEventListener("pointerdown",e=>e.stopPropagation());
+    ga.addEventListener("click",abrir);
+    ga.addEventListener("dblclick",e=>{e.stopPropagation();e.preventDefault();
+      renomearAresta(p,t,meioX,meioY-10,svg,wrap);});
+    ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
+  });
+  if(!ordem.length){
+    svgEl("text",{x:W/2,y:H/2,"text-anchor":"middle","font-size":12,fill:dim},svg)
+      .textContent="Cadeia vazia — comece com “+ Nova tarefa”.";
+  }
+}
 function feyLayout(p){
   const g=procGraph(p);
   // coluna por camada topológica; num ciclo (importado) cai-se na ordem de chegada
@@ -8108,7 +9024,8 @@ function feyLayout(p){
   g.ids.forEach(id=>{(porCol[col[id]]=porCol[col[id]]||[]).push(id);});
   const cols=Object.keys(porCol).map(Number).sort((a,b)=>a-b);
   const pos={};
-  const X0=170,DX=236,DY=128,Y0=104;
+  const den=FEY_PREFS.denso;
+  const X0=170,DX=den?184:236,DY=den?98:128,Y0=104;
   let maxLinhas=1;
   cols.forEach(c=>{
     const linhas=porCol[c];
@@ -8116,7 +9033,7 @@ function feyLayout(p){
     linhas.forEach((id,r)=>{pos[id]={x:X0+c*DX,y:Y0+r*DY};});
   });
   const maxCol=cols.length?cols[cols.length-1]:0;
-  const H=Y0+Math.max(1,maxLinhas)*DY+30;
+  const H=Y0+Math.max(1,maxLinhas)*DY+64;   // +34 para a régua de dias ao fundo
   const meioY=Y0+((maxLinhas-1)*DY)/2;
   const inicio={x:44,y:meioY};
   const fim={x:X0+maxCol*DX+DX,y:meioY};
@@ -8125,8 +9042,10 @@ function feyLayout(p){
 function renderFeynman(p){
   modalTitle.innerHTML="";
   modalTitle.append(document.createTextNode("Diagrama · "+p.name+" "));
+  poeTrilho(modalTitle);
   const tw=el("span","warn-slot");tw.style.position="static";
   tw.innerHTML=avisoHTML(procAvisos(p));
+  armaReceita(tw,()=>abrirReceita(p));
   modalTitle.append(tw);
   modalBody.innerHTML="";
 
@@ -8152,25 +9071,136 @@ function renderFeynman(p){
   bDone.title=p.done
     ?"A cadeia está dada como completa — clique para reabrir"
     :"Declarar que a cadeia de tarefas está completa, do Início ao Fim";
-  bDone.onclick=()=>{p.done=!p.done;markDirty();renderFeynman(p);};
+  bDone.onclick=()=>{p.done=!p.done;
+    anotaHistorico((p.done?"finalizar":"reabrir")+" a cadeia de “"+p.name+"”");
+    if(p.done)feyCarimbar=p.id;      // o Fim carimba no próximo desenho
+    markDirty();renderFeynman(p);};
   const bFluxo=el("button","btn tiny","Fluxograma");
   bFluxo.title="Voltar à vista de fluxograma";
   bFluxo.onclick=()=>showFlowchart(p);
   const sep=el("span","sep");
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo);
+  /* Duração total pelo caminho mais longo (o caminho crítico, realçado a
+     dourado no diagrama) e o prazo legal ao lado, editável no sítio onde a
+     comparação se faz. */
+  const st=procStats(p);
+  const stats=el("span","fey-stats");
+  const stTot=el("span","fs-tot","≈ "+fmtDays(st.total)+(st.unknown?" (+?)":""));
+  stTot.title="Duração estimada pelo caminho mais longo — o caminho crítico, realçado a dourado"+
+    (st.unknown?". Há durações ilegíveis que contam como zero.":"");
+  stats.append(stTot);
+  const przLab=el("label","fs-prazo");
+  przLab.append(document.createTextNode("Prazo"));
+  const przIn=el("input");przIn.type="number";przIn.min="0";przIn.max="9999";
+  przIn.value=Number.isFinite(p.prazo)?p.prazo:"";przIn.placeholder="—";
+  przIn.title="Prazo legal do procedimento, em dias úteis — deixe vazio se não houver";
+  przIn.setAttribute("aria-label","Prazo legal em dias úteis");
+  przIn.onchange=()=>{
+    anotaHistorico("definir o prazo de “"+p.name+"”");
+    p.prazo=przIn.value===""?null:Math.max(0,Math.min(9999,+przIn.value||0));
+    markDirty();renderFeynman(p);
+  };
+  przLab.append(przIn,document.createTextNode("dias"));
+  stats.append(przLab);
+  if(Number.isFinite(p.prazo)&&st.total>p.prazo){
+    const ex=el("span","fs-excede","excede o prazo");
+    ex.title="O caminho crítico ("+fmtDays(st.total)+") ultrapassa o prazo legal de "+p.prazo+" dias";
+    stats.append(ex);
+  }
+  const bGarg=el("button","btn tiny","Gargalos");
+  bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
+  bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
+  bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  const bPista=el("button","btn tiny","Pistas");
+  bPista.title="Linhas = unidades; cada mudança de pista é uma transferência de responsabilidade";
+  bPista.setAttribute("aria-pressed",String(!!FEY_PREFS.pistas));
+  bPista.onclick=()=>{FEY_PREFS.pistas=!FEY_PREFS.pistas;guardaFeyPrefs();renderFeynman(p);};
+  /* Percurso: o cursor de dias arrasta a fronteira do "já devia estar feito";
+     o ▶ anima do dia 0 ao fim. Só faz sentido nas colunas e com durações. */
+  let percIn=null,percBtn=null,percTimer=0;
+  if(!FEY_PREFS.pistas&&st.total>0&&!procGraph(p).cyclic){
+    const percWrap=el("span","fs-perc");
+    percWrap.title="Percurso: onde está o processo ao dia N";
+    if(!reduceMotion){
+      percBtn=el("button","btn tiny icon-round","▶");
+      percBtn.title="Percorrer o procedimento do dia 0 ao fim";
+      percBtn.setAttribute("aria-label","Reproduzir o percurso");
+      percWrap.append(percBtn);
+    }
+    percIn=document.createElement("input");
+    percIn.type="range";percIn.min="0";percIn.max=String(Math.ceil(st.total*10)/10);
+    percIn.step="0.1";percIn.value=percIn.max;
+    percIn.setAttribute("aria-label","Dia do percurso");
+    percWrap.append(percIn);
+    stats.append(percWrap);
+  }
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bGarg,bPista,stats);
   modalBody.append(acts);
+  document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+  /* A duração de entrada é a referência da comparação do rascunho. */
+  if(!rascunho||rascunho.pid!==p.id)feyTotalAoAbrir=st.total;
+  /* ---- barra de rascunho: o modo-padrão de alterar ----
+     A primeira mudança abre o rascunho; aqui vive a contagem, a comparação
+     de durações e os dois gestos. Fechar o diagrama também aplica. */
+  if(rascunho&&rascunho.pid===p.id){
+    const bar=el("div","fey-rascunho");
+    bar.append(el("span","fr-tit","Rascunho — "+rascunho.alteracoes+" alteração(ões)"));
+    const cmp=el("span","fr-cmp",fmtDays(rascunho.totalBase)+" → "+fmtDays(st.total));
+    cmp.title="Duração à entrada → duração com o rascunho";
+    if(st.total>rascunho.totalBase)cmp.classList.add("pior");
+    else if(st.total<rascunho.totalBase)cmp.classList.add("melhor");
+    bar.append(cmp);
+    const bAp=el("button","btn tiny primary","Aplicar");
+    bAp.title="Gravar as alterações — ficam num só passo de Anular";
+    bAp.onclick=()=>{aplicarRascunho(false);renderFeynman(p);};
+    const bDesc=el("button","btn tiny danger-btn","Descartar");
+    bDesc.title="Esquecer todas as alterações deste rascunho";
+    bDesc.onclick=async()=>{
+      const n2=rascunho?rascunho.alteracoes:0;
+      if(!(await askConfirm("Descartar "+n2+" alteração(ões) do rascunho?",{yes:"Descartar",danger:true})))return;
+      descartarRascunho();
+    };
+    bar.append(bAp,bDesc);
+    bar.append(el("span","fr-nota","Fechar o diagrama também aplica."));
+    modalBody.append(bar);
+  }
 
   const wrap=el("div");wrap.id="feyWrap";
   modalBody.append(wrap);
+  /* Modo pistas: outra leitura do mesmo procedimento; num ciclo (importado)
+     cai-se sempre nas colunas, que o toleram. */
+  if(FEY_PREFS.pistas&&!procGraph(p).cyclic){
+    feyPistas(p,st,wrap);
+    return;
+  }
   const L=feyLayout(p);
   if(feyProcId!==p.id){feyVB=null;feyProcId=p.id;}
   const svg=svgEl("svg",{id:"feySvg",role:"img","aria-label":"Diagrama de interações de "+p.name},wrap);
 
-  // seta das tarefas
+  /* Setas das tarefas: uma por COR — as arestas herdam a cor do nódulo de
+     origem, para se ver de que serviço parte cada passo sem ler um rótulo. */
   const defs=svgEl("defs",{},svg);
-  const mk=svgEl("marker",{id:"feySeta",viewBox:"0 0 10 10",refX:"9",refY:"5",
-    markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs);
-  svgEl("path",{d:"M0 0 L10 5 L0 10 Z",fill:hex(p.color)},mk);
+  const setasPorCor={};
+  function seta(cor){
+    if(setasPorCor[cor])return setasPorCor[cor];
+    const idm="feySeta"+Object.keys(setasPorCor).length;
+    const mk=svgEl("marker",{id:idm,viewBox:"0 0 10 10",refX:"9",refY:"5",
+      markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},defs);
+    svgEl("path",{d:"M0 0 L10 5 L0 10 Z",fill:cor},mk);
+    setasPorCor[cor]=idm;
+    return idm;
+  }
+  /* Registos por tarefa e por nódulo, para o realce de cadeia ao pairar. */
+  const grpPorTarefa={},gvPorNo={};
+  const trPorTarefa={};
+  let gradN=0;
+  const maxDur=Math.max(1,...p.tasks.map(t=>parseDuration(t.duration)||0));
+  /* Chegadas de OUTROS procedimentos a cada nódulo (ramos convergentes) —
+     alimenta o distintivo ⇉ dos vértices. */
+  const rrP=ramosDe(p);
+  const chegadasNo={};
+  rrP.convergentes.forEach(r2=>r2.tasks.forEach(tt=>{
+    (chegadasNo[tt.b]=chegadasNo[tt.b]||[]).push({proc:r2.proc,t:tt});
+  }));
 
   const cs=getComputedStyle(document.documentElement);
   const ink=(cs.getPropertyValue("--ink")||"#eee").trim();
@@ -8185,29 +9215,24 @@ function renderFeynman(p){
     svgEl("rect",{x:L.X0+c*L.DX-L.DX*0.36,y:8,width:L.DX*0.72,height:L.H-16,
       rx:10,fill:"currentColor",opacity:0.045,"pointer-events":"none"},svg);
   }
-  /* Pastilha opaca atrás de um rótulo: o texto lê-se por cima do que for. */
-  function pastilha(parent,cx,cy,txt,fs,cor,peso){
-    const w=Math.max(26,txt.length*fs*0.60+14);
-    svgEl("rect",{x:cx-w/2,y:cy-fs*0.80,width:w,height:fs*1.55,rx:fs*0.75,
-      fill:"var(--panel)",stroke:"var(--hairline)","stroke-width":0.6,opacity:0.96},parent);
-    const tx2=svgEl("text",{x:cx,y:cy+fs*0.34,"text-anchor":"middle","font-size":fs,fill:cor},parent);
-    if(peso)tx2.setAttribute("font-weight",peso);
-    tx2.textContent=txt;
-    return tx2;
-  }
+  const pastilha=pastilhaSVG;
 
-  // ---- terminais Início / Fim ----
-  const gIni=svgEl("g",{class:"fey-vert"},svg);
-  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:10,fill:"none",stroke:dim,"stroke-width":1.4},gIni);
+  // ---- terminais Início / Fim — medalhões; o Fim carimba ao finalizar ----
+  const gIni=svgEl("g",{class:"fey-vert fey-terminal"},svg);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:14,fill:"none",stroke:dim,"stroke-width":1,opacity:0.55},gIni);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:10,fill:"none",stroke:dim,"stroke-width":1.6},gIni);
   svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:4.5,fill:dim},gIni);
-  svgEl("text",{x:L.inicio.x,y:L.inicio.y+26,"text-anchor":"middle","font-size":11,fill:dim},gIni)
+  svgEl("text",{x:L.inicio.x,y:L.inicio.y+30,"text-anchor":"middle","font-size":11,fill:dim},gIni)
     .textContent="Início";
-  const gFim=svgEl("g",{class:"fey-vert"},svg);
+  const gFim=svgEl("g",{class:"fey-vert fey-terminal"+((feyCarimbar===p.id)?" carimba":"")},svg);
+  if(feyCarimbar===p.id)feyCarimbar=null;
   const fimCor=p.done?gold:"#E0554F";
+  svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:14,fill:"none",stroke:fimCor,"stroke-width":1,
+    opacity:0.55,"stroke-dasharray":p.done?"none":"2 3"},gFim);
   svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:10,fill:"none",stroke:fimCor,
-    "stroke-width":p.done?2:1.4,"stroke-dasharray":p.done?"none":"3 3"},gFim);
+    "stroke-width":p.done?2.2:1.4,"stroke-dasharray":p.done?"none":"3 3"},gFim);
   if(p.done)svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:4.5,fill:gold},gFim);
-  svgEl("text",{x:L.fim.x,y:L.fim.y+26,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
+  svgEl("text",{x:L.fim.x,y:L.fim.y+30,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
     .textContent="Fim";
   if(!p.done){
     const fw=svgEl("g",{transform:"translate("+(L.fim.x+8)+","+(L.fim.y-24)+")"},gFim);
@@ -8247,34 +9272,97 @@ function renderFeynman(p){
     // ponto médio REAL da curva (t=0.5 da quadrática) — é onde vive o rótulo
     const lx=0.25*a.x+0.5*cxq+0.25*b.x, ly=0.25*a.y+0.5*cyq+0.25*b.y;
 
-    const ga=svgEl("g",{class:"fey-aresta",tabindex:0,role:"button"},svg);
+    const corA=hex((byId(t.a)||{color:p.color}).color);
+    const corB=hex((byId(t.b)||{color:p.color}).color);
+    /* O arco conta a transferência: gradiente da cor de origem para a de
+       destino — o sentido lê-se mesmo sem a seta (que fica na cor de chegada). */
+    let tinta=corA;
+    if(corA!==corB){
+      const gid="feyGrad"+(gradN++);
+      const lg=svgEl("linearGradient",{id:gid,gradientUnits:"userSpaceOnUse",
+        x1:a.x,y1:a.y,x2:b.x,y2:b.y},defs);
+      svgEl("stop",{offset:"0%","stop-color":corA},lg);
+      svgEl("stop",{offset:"100%","stop-color":corB},lg);
+      tinta="url(#"+gid+")";
+    }
+    /* Modo gargalos: a espessura carrega a duração — os arcos gordos são
+       onde o tempo se perde. */
+    const larg=FEY_PREFS.gargalos?(1.5+((parseDuration(t.duration)||0)/maxDur)*4.6):2.2;
+    const ga=svgEl("g",{class:"fey-aresta"+(st.critical.has(t.id)?" critica":""),tabindex:0,role:"button"},svg);
     svgEl("title",{},ga).textContent=(t.nome||t.desc||"Tarefa")+" — editar nome, descrição e responsável";
-    svgEl("path",{class:"tr",d:d,fill:"none",stroke:corProc,
-      "stroke-width":2.2,"marker-end":"url(#feySeta)"},ga);
+    if(st.critical.has(t.id))svgEl("path",{class:"cr-halo",d:d,fill:"none",stroke:gold,
+      "stroke-width":larg+3.8,opacity:0.30,"pointer-events":"none"},ga);
+    const trEl=svgEl("path",{class:"tr",d:d,fill:"none",stroke:tinta,
+      "stroke-width":larg,"marker-end":"url(#"+seta(corB)+")"},ga);
+    trPorTarefa[t.id]={tr:trEl,ini:st.best[t.a]||0,dur:parseDuration(t.duration)||0};
     svgEl("path",{class:"hit",d:d},ga);
     const ag=t.agent?agentById(t.agent):null;
     const base=String(t.nome||t.desc||"");
     const rot=base.slice(0,24)+(base.length>24?"…":"");
     // pastilhas: nome por cima, responsável por baixo — legíveis sobre tudo
     pastilha(ga,lx,ly-11,rot,11,ink,600);
+    /* Ponto de estado do levantamento, encostado à esquerda da pastilha. */
+    const wNome=Math.max(26,rot.length*11*0.60+14);
+    if(t.estado)svgEl("circle",{cx:lx-wNome/2-7,cy:ly-11,r:3.4,
+      fill:t.estado==="aprovado"?gold:"var(--steel)",stroke:"rgba(0,0,0,0.3)","stroke-width":0.6},ga)
+      .append(Object.assign(svgEl("title",{}),{textContent:rotuloEstado(t.estado)}));
+    /* Referência: um alvo próprio que abre a ligação noutro separador. */
+    if(urlSegura(t.link)){
+      const la=svgEl("a",{class:"fey-link",href:t.link,target:"_blank",rel:"noopener"},ga);
+      svgEl("title",{},la).textContent="Abrir a referência: "+t.link;
+      svgEl("circle",{cx:lx+wNome/2+11,cy:ly-11,r:7,fill:"var(--panel)",
+        stroke:"var(--hairline)","stroke-width":0.8},la);
+      const lt=svgEl("text",{x:lx+wNome/2+11,y:ly-7.6,"text-anchor":"middle","font-size":8,fill:ink},la);
+      lt.textContent="↗";
+      la.addEventListener("pointerdown",e=>e.stopPropagation());
+      la.addEventListener("click",e=>e.stopPropagation());
+    }
     if(!t.agent){
       const wg=svgEl("g",{transform:"translate("+(lx+38)+","+(ly-32)+")"},ga);
       wg.innerHTML=triSVG("yellow",13);
       svgEl("title",{},wg).textContent="Tarefa sem responsável";
     }
+    /* Nota de levantamento: um ponto âmbar — pairar mostra o texto. */
+    if(t.nota){
+      const ng=svgEl("circle",{class:"fey-nota",cx:lx-wNome/2-16,cy:ly-11,r:3.4,
+        fill:"#E08A3C",stroke:"rgba(0,0,0,0.3)","stroke-width":0.6},ga);
+      svgEl("title",{},ng).textContent="Nota: "+t.nota;
+    }
     const abrir=()=>openTaskEdit(p,t);
     ga.addEventListener("pointerdown",e=>e.stopPropagation());
     ga.addEventListener("click",abrir);
+    /* Duplo clique renomeia no sítio: um campo pousa sobre a pastilha do
+       nome — Enter grava (no rascunho, como tudo), Esc desiste. */
+    ga.addEventListener("dblclick",e=>{
+      e.stopPropagation();e.preventDefault();
+      renomearAresta(p,t,lx,ly-11,svg,wrap);
+    });
     ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
-    /* O responsável é um alvo próprio: clicar nele vai direto à troca. */
-    const gAg=svgEl("g",{class:"fey-resp",tabindex:0,role:"button"},svg);
-    svgEl("title",{},gAg).textContent="Alterar ou anular o responsável";
-    const respTx=pastilha(gAg,lx,ly+13,(ag?ag.name:"— sem responsável —")+" · "+t.duration,9.5,dim);
-    respTx.setAttribute("text-decoration","underline");
-    const trocaResp=()=>openAgentPickFor(p,t);
-    gAg.addEventListener("pointerdown",e=>e.stopPropagation());
-    gAg.addEventListener("click",e=>{e.stopPropagation();trocaResp();});
-    gAg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trocaResp();}});
+    /* O responsável é um alvo próprio: clicar troca; pairar ilumina TODAS as
+       tarefas da mesma pessoa neste procedimento. Ocultável nas Definições. */
+    let gAg=null;
+    if(FEY_PREFS.resp){
+      gAg=svgEl("g",{class:"fey-resp",tabindex:0,role:"button"},svg);
+      svgEl("title",{},gAg).textContent="Alterar ou anular o responsável";
+      const respTx=pastilha(gAg,lx,ly+13,
+        (ag?ag.name:"— sem responsável —")+(FEY_PREFS.dur?(" · "+t.duration):""),9.5,dim);
+      respTx.setAttribute("text-decoration","underline");
+      const trocaResp=()=>openAgentPickFor(p,t);
+      gAg.addEventListener("pointerdown",e=>e.stopPropagation());
+      gAg.addEventListener("click",e=>{e.stopPropagation();trocaResp();});
+      gAg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trocaResp();}});
+      if(t.agent){
+        gAg.addEventListener("pointerenter",()=>{
+          svg.classList.add("fey-mesmo");
+          p.tasks.forEach(tt=>{if(tt.agent===t.agent)
+            (grpPorTarefa[tt.id]||[]).forEach(g2=>g2.classList.add("mesmo-resp"));});
+        });
+        gAg.addEventListener("pointerleave",()=>{
+          svg.classList.remove("fey-mesmo");
+          svg.querySelectorAll(".mesmo-resp").forEach(e2=>e2.classList.remove("mesmo-resp"));
+        });
+      }
+    }
     /* E o "−": apagar esta tarefa, com a pergunta sobre as encadeadas. */
     const menos=svgEl("g",{class:"fey-menos",transform:"translate("+(lx-38)+","+(ly-32)+")",
       tabindex:0,role:"button"},svg);
@@ -8285,6 +9373,7 @@ function renderFeynman(p){
     menos.addEventListener("pointerdown",e=>e.stopPropagation());
     menos.addEventListener("click",e=>{e.stopPropagation();apaga();});
     menos.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();apaga();}});
+    grpPorTarefa[t.id]=gAg?[ga,gAg,menos]:[ga,menos];
   });
 
   // ---- vértices (nódulos) ----
@@ -8314,18 +9403,230 @@ function renderFeynman(p){
     mais.addEventListener("pointerdown",e=>e.stopPropagation());
     mais.addEventListener("click",e=>{e.stopPropagation();go();});
     mais.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+    gvPorNo[id]=gv;
+    /* Junções em modo gargalos: onde vários ramos têm de convergir há
+       espera — assinala-se. */
+    if(FEY_PREFS.gargalos&&(L.g.inOf[id]||[]).length>1){
+      const jh=svgEl("circle",{cx:q.x,cy:q.y,r:15,fill:"none",stroke:"#E08A3C",
+        "stroke-width":1.6,"stroke-dasharray":"3 3"},gv);
+      svgEl("title",{},gv).textContent=n.name+" — junção: espera que "+
+        (L.g.inOf[id]||[]).length+" ramos cheguem";
+    }
+    /* Distintivo ⇉: aqui desaguam tarefas de OUTROS procedimentos — clicar
+       salta para lá, com trilho de regresso. */
+    if(chegadasNo[id]&&chegadasNo[id].length){
+      const cheg=chegadasNo[id];
+      const bg=svgEl("g",{class:"fey-cheg",transform:"translate("+(q.x-16)+","+(q.y-14)+")",
+        tabindex:0,role:"button"},svg);
+      svgEl("title",{},bg).textContent="Aqui chegam "+cheg.length+" tarefa(s) de: "+
+        [...new Set(cheg.map(x=>x.proc.name))].join(", ")+" — clique para ver";
+      svgEl("circle",{cx:0,cy:0,r:8.5,fill:"var(--panel)",stroke:gold,"stroke-width":1.1},bg);
+      svgEl("text",{x:0,y:3,"text-anchor":"middle","font-size":8,fill:gold},bg)
+        .textContent="⇉"+(cheg.length>1?cheg.length:"");
+      const saltar=async()=>{
+        const fontes=[...new Map(cheg.map(x=>[x.proc.id,x.proc])).values()];
+        let alvo2=fontes[0];
+        if(fontes.length>1){
+          const r2=await askOpcoes("Ver o procedimento que converge aqui","",
+            fontes.map(pp=>({k:pp.id,label:pp.name})));
+          alvo2=r2?layerById(r2):null;
+        }
+        if(alvo2){feyTrilho.push(p.id);trilhoManter=true;showFeynman(alvo2);}
+      };
+      bg.addEventListener("pointerdown",e=>e.stopPropagation());
+      bg.addEventListener("click",e=>{e.stopPropagation();saltar();});
+      bg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();saltar();}});
+    }
+    /* Equipas nos nódulos (preferência): as iniciais de quem lá trabalha. */
+    if(FEY_PREFS.gente){
+      const eq=agentsOf(id).slice(0,3);
+      eq.forEach((a2,k)=>{
+        const cxg=q.x-((eq.length-1)*9)+k*18, cyg=q.y+58;
+        const gg=svgEl("g",{class:"fey-gente"},gv);
+        svgEl("title",{},gg).textContent=a2.name+(a2.primary?" ★":"");
+        svgEl("circle",{cx:cxg,cy:cyg,r:7.5,fill:hex(n.color),opacity:0.85,
+          stroke:a2.primary?gold:"rgba(0,0,0,0.3)","stroke-width":a2.primary?1.4:0.8},gg);
+        svgEl("text",{x:cxg,y:cyg+2.6,"text-anchor":"middle","font-size":6.5,fill:"#FFFFFF"},gg)
+          .textContent=(a2.name.match(/\b\p{L}/gu)||["?"]).slice(0,2).join("").toUpperCase();
+      });
+    }
+    /* Pairar num nódulo ilumina tudo o que está a montante e a jusante e
+       esbate o resto — "o que depende disto?" sem um clique. */
+    gv.addEventListener("pointerenter",()=>{
+      const ns=new Set([id]),ts=new Set();
+      let fila=[id];
+      while(fila.length){const c=fila.pop();(L.g.outOf[c]||[]).forEach(tt=>{
+        ts.add(tt.id);if(!ns.has(tt.b)){ns.add(tt.b);fila.push(tt.b);}});}
+      fila=[id];
+      while(fila.length){const c=fila.pop();(L.g.inOf[c]||[]).forEach(tt=>{
+        ts.add(tt.id);if(!ns.has(tt.a)){ns.add(tt.a);fila.push(tt.a);}});}
+      svg.classList.add("fey-cadeia");
+      ns.forEach(nid=>{if(gvPorNo[nid])gvPorNo[nid].classList.add("na-cadeia");});
+      ts.forEach(tid=>{(grpPorTarefa[tid]||[]).forEach(g2=>g2.classList.add("na-cadeia"));});
+    });
+    gv.addEventListener("pointerleave",()=>{
+      svg.classList.remove("fey-cadeia");
+      svg.querySelectorAll(".na-cadeia").forEach(e2=>e2.classList.remove("na-cadeia"));
+    });
   });
 
+  /* ---- régua de dias + linha do prazo ----
+     As colunas topológicas viram quase-cronograma: por baixo, os dias
+     acumulados pelo caminho mais longo até cada coluna; havendo prazo, uma
+     linha vertical vermelha diz EM QUE ETAPA se rebenta. */
+  if(!L.g.cyclic&&st.total>0){
+    const RY=L.H-22;
+    svgEl("line",{x1:L.inicio.x-6,y1:RY,x2:L.fim.x+12,y2:RY,
+      stroke:dim,"stroke-width":1,opacity:0.55,"pointer-events":"none"},svg);
+    svgEl("text",{x:L.inicio.x,y:RY+15,"text-anchor":"middle","font-size":8.5,fill:dim},svg)
+      .textContent="dia 0";
+    const colDias=[];
+    for(let c=0;c<=L.maxCol;c++){
+      let d2=0;
+      L.g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,st.best[id]||0);});
+      colDias[c]=d2;
+      const x2=L.X0+c*L.DX;
+      svgEl("line",{x1:x2,y1:RY-4,x2:x2,y2:RY+4,stroke:dim,"stroke-width":1,opacity:0.7},svg);
+      svgEl("text",{x:x2,y:RY+15,"text-anchor":"middle","font-size":8.5,fill:dim},svg)
+        .textContent="dia "+(Math.round(d2*10)/10);
+    }
+    if(Number.isFinite(p.prazo)&&p.prazo>0&&p.prazo<st.total){
+      let c=0;while(c<=L.maxCol&&colDias[c]<p.prazo)c++;
+      const d0=c>0?colDias[c-1]:0, x0p=c>0?L.X0+(c-1)*L.DX:L.inicio.x;
+      const d1=colDias[Math.min(c,L.maxCol)]||d0, x1p=L.X0+Math.min(c,L.maxCol)*L.DX;
+      const f=(d1>d0)?(p.prazo-d0)/(d1-d0):1;
+      const px2=x0p+(x1p-x0p)*f;
+      svgEl("line",{x1:px2,y1:10,x2:px2,y2:RY+6,stroke:"#E0554F","stroke-width":1.4,
+        "stroke-dasharray":"5 4",opacity:0.85,"pointer-events":"none"},svg);
+      pastilha(svg,px2,18,"prazo · "+p.prazo+" dias",9,"#E0554F",600);
+    }
+  }
   if(!p.tasks.length){
     svgEl("text",{x:(L.inicio.x+L.fim.x)/2,y:L.inicio.y-34,"text-anchor":"middle",
       "font-size":12,fill:dim},svg).textContent="Cadeia vazia — comece com “+ Nova tarefa”.";
   }
 
+  /* ---- teclado ----
+     Setas saltam entre vértices (anel dourado no focado), N cria uma tarefa
+     a partir dele, Enter edita a primeira saída, F volta a enquadrar. */
+  svg.setAttribute("tabindex","0");
+  let feyFoco=null;
+  const focaVert=id=>{
+    svg.querySelectorAll(".fey-vert.focado").forEach(e2=>e2.classList.remove("focado"));
+    feyFoco=id;
+    if(id&&gvPorNo[id])gvPorNo[id].classList.add("focado");
+  };
+  svg.addEventListener("keydown",e=>{
+    const setas={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]};
+    if(setas[e.key]){
+      e.preventDefault();
+      const [dx2,dy2]=setas[e.key];
+      const ids=L.g.ids.filter(id=>L.pos[id]);
+      if(!ids.length)return;
+      if(!feyFoco||!L.pos[feyFoco]){
+        focaVert(ids.slice().sort((a2,b2)=>L.pos[a2].x-L.pos[b2].x||L.pos[a2].y-L.pos[b2].y)[0]);
+        return;
+      }
+      const o=L.pos[feyFoco];
+      let melhor=null,melhorPeso=Infinity;
+      ids.forEach(id=>{
+        if(id===feyFoco)return;
+        const q2=L.pos[id];
+        const ax=q2.x-o.x,ay=q2.y-o.y;
+        const frente=ax*dx2+ay*dy2;           // componente na direção pedida
+        if(frente<=4)return;
+        const lado=Math.abs(ax*dy2)+Math.abs(ay*dx2);
+        const peso=frente+lado*2.2;
+        if(peso<melhorPeso){melhorPeso=peso;melhor=id;}
+      });
+      if(melhor)focaVert(melhor);
+    }else if((e.key==="n"||e.key==="N")&&feyFoco){
+      e.preventDefault();
+      const n2=byId(feyFoco);
+      if(n2)startAddTask(p,n2);
+    }else if(e.key==="Enter"&&feyFoco){
+      e.preventDefault();
+      const saida=(L.g.outOf[feyFoco]||[])[0];
+      if(saida)openTaskEdit(p,saida);
+    }else if(e.key==="f"||e.key==="F"){
+      e.preventDefault();
+      bFit.onclick();
+    }
+  });
   // ---- zoom e deslocação ----
   const fit=()=>({x:0,y:0,w:L.W,h:L.H});
-  let vb=feyVB&&feyProcId===p.id?feyVB:fit();
-  const aplicaVB=()=>{svg.setAttribute("viewBox",vb.x+" "+vb.y+" "+vb.w+" "+vb.h);feyVB=vb;};
+  let vb=(feyVB&&feyProcId===p.id)?feyVB:
+    (vbValido(feyVBs[p.id],L)?{...feyVBs[p.id]}:fit());
+  /* Minimapa: o "onde estou" quando o diagrama está ampliado. Pontos nas
+     cores dos nódulos, retângulo dourado a marcar a janela, clique salta. */
+  const mini=el("div");mini.id="feyMini";mini.hidden=true;
+  const miniSvg=svgEl("svg",{viewBox:"0 0 "+L.W+" "+L.H,"aria-hidden":"true"},mini);
+  L.g.ids.forEach(id2=>{const q2=L.pos[id2],n2=byId(id2);
+    if(q2&&n2)svgEl("circle",{cx:q2.x,cy:q2.y,r:11,fill:hex(n2.color)},miniSvg);});
+  const miniVis=svgEl("rect",{fill:"none",stroke:"var(--gold)","stroke-width":8,rx:10},miniSvg);
+  wrap.append(mini);
+  mini.addEventListener("pointerdown",e=>{
+    e.stopPropagation();
+    const r2=miniSvg.getBoundingClientRect();
+    const mx=(e.clientX-r2.left)/r2.width*L.W, my=(e.clientY-r2.top)/r2.height*L.H;
+    vb={x:mx-vb.w/2,y:my-vb.h/2,w:vb.w,h:vb.h};
+    aplicaVB();
+  });
+  const aplicaVB=()=>{
+    svg.setAttribute("viewBox",vb.x+" "+vb.y+" "+vb.w+" "+vb.h);feyVB=vb;
+    feyVBs[p.id]=vb;guardaFeyVBs();
+    mini.hidden=vb.w>=L.W*0.96;
+    if(!mini.hidden){miniVis.setAttribute("x",vb.x);miniVis.setAttribute("y",vb.y);
+      miniVis.setAttribute("width",vb.w);miniVis.setAttribute("height",vb.h);}
+  };
   aplicaVB();
+  /* ---- percurso: fronteira do dia N ---- */
+  const tok=svgEl("circle",{id:"feyToken",r:6,fill:gold,stroke:"rgba(0,0,0,0.4)",
+    "stroke-width":1,"pointer-events":"none"},svg);
+  tok.style.display="none";
+  const aplicaDia=d=>{
+    const noFim=d>=st.total-1e-6;
+    svg.classList.toggle("fey-dia",!noFim);
+    let alvoTok=null,fracTok=0;
+    p.tasks.forEach(t=>{
+      const reg=trPorTarefa[t.id];
+      const gEls=grpPorTarefa[t.id]||[];
+      gEls.forEach(g2=>g2.classList.remove("pt-futura","pt-curso"));
+      if(!reg||noFim)return;
+      if(d<=reg.ini+1e-9)gEls.forEach(g2=>g2.classList.add("pt-futura"));
+      else if(d<reg.ini+reg.dur-1e-9){
+        gEls.forEach(g2=>g2.classList.add("pt-curso"));
+        if(st.critical.has(t.id)){alvoTok=reg.tr;fracTok=reg.dur>0?(d-reg.ini)/reg.dur:1;}
+      }
+    });
+    if(alvoTok&&!noFim){
+      try{
+        const len=alvoTok.getTotalLength();
+        const pt2=alvoTok.getPointAtLength(len*Math.max(0,Math.min(1,fracTok)));
+        tok.setAttribute("cx",pt2.x);tok.setAttribute("cy",pt2.y);
+        tok.style.display="";
+      }catch(e){tok.style.display="none";}
+    }else tok.style.display="none";
+  };
+  if(percIn){
+    percIn.addEventListener("input",()=>{clearInterval(percTimer);
+      if(percBtn)percBtn.textContent="▶";
+      aplicaDia(+percIn.value);});
+    if(percBtn)percBtn.onclick=()=>{
+      if(percBtn.textContent==="⏸"){clearInterval(percTimer);percBtn.textContent="▶";return;}
+      percBtn.textContent="⏸";
+      let d=0;
+      const passo=Math.max(0.05,st.total/70);
+      aplicaDia(0);percIn.value="0";
+      clearInterval(percTimer);
+      percTimer=setInterval(()=>{
+        d+=passo;
+        if(d>=st.total){d=st.total;clearInterval(percTimer);percBtn.textContent="▶";}
+        percIn.value=String(Math.round(d*10)/10);
+        aplicaDia(d);
+      },80);
+    };
+  }
   const zoomEm=(fx,fy,fator)=>{
     const nw=Math.max(L.W/8,Math.min(L.W*4,vb.w*fator));
     const k=nw/vb.w;
@@ -8335,7 +9636,7 @@ function renderFeynman(p){
   const centro=()=>({x:vb.x+vb.w/2,y:vb.y+vb.h/2});
   bMais.onclick=()=>{const c=centro();zoomEm(c.x,c.y,0.8);};
   bMenos.onclick=()=>{const c=centro();zoomEm(c.x,c.y,1.25);};
-  bFit.onclick=()=>{vb=fit();aplicaVB();};
+  bFit.onclick=()=>{vb=fit();aplicaVB();delete feyVBs[p.id];guardaFeyVBs();};
   const paraSvg=(ev)=>{
     const r=svg.getBoundingClientRect();
     return {x:vb.x+(ev.clientX-r.left)/r.width*vb.w,
@@ -8923,6 +10224,23 @@ function refreshTaskEditRows(){
   document.getElementById("teResp").textContent=ag?ag.name:"— sem responsável —";
   const nd=byId(t.b);
   document.getElementById("teDest").textContent=nd?nd.name:"?";
+  const be=document.getElementById("teEstado");
+  be.innerHTML='<span class="estado-ponto '+(t.estado?("e-"+t.estado):"")+'"></span> '+esc(rotuloEstado(t.estado));
+  const li=document.getElementById("teLink"),go=document.getElementById("teLinkGo");
+  li.value=t.link||"";
+  document.getElementById("teNota").value=t.nota||"";
+  go.href=urlSegura(t.link)||"#";
+  go.setAttribute("aria-disabled",urlSegura(t.link)?"false":"true");
+}
+/* O levantamento é iterativo: cada tarefa carrega o estado em que a informação
+   está — por confirmar com o serviço, validada por ele, ou aprovada. */
+function rotuloEstado(e){
+  return e==="aprovado"?"Aprovado":(e==="validado"?"Validado pelo serviço":"Por confirmar");
+}
+/* Só se abre o que for mesmo um endereço web — um "javascript:" colado por
+   engano (ou por maldade num ficheiro importado) não vira link clicável. */
+function urlSegura(u){
+  return /^https?:\/\//i.test(String(u||""))?u:null;
 }
 function openTaskEdit(p,t){
   teState={p,t};
@@ -8935,7 +10253,8 @@ function openTaskEdit(p,t){
 document.getElementById("teOk").onclick=()=>closeTaskEdit();
 taskEditEl.addEventListener("pointerdown",e=>{if(e.target===taskEditEl)closeTaskEdit();});
 document.getElementById("teNome").addEventListener("change",function(){
-  if(!teState)return;teState.t.nome=this.value.trim().slice(0,40);markDirty();
+  if(!teState)return;teState.t.nome=this.value.trim().slice(0,40);
+  anotaHistorico("renomear a tarefa");markDirty();
   if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
 });
 document.getElementById("teDur").addEventListener("change",function(){
@@ -8943,7 +10262,27 @@ document.getElementById("teDur").addEventListener("change",function(){
   if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
 });
 document.getElementById("teDesc").addEventListener("change",function(){
-  if(!teState)return;teState.t.desc=this.value.slice(0,400);markDirty();
+  if(!teState)return;teState.t.desc=this.value.slice(0,400);
+  anotaHistorico("editar a tarefa");markDirty();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+});
+document.getElementById("teEstado").onclick=()=>{
+  if(!teState)return;
+  const ordem=["","validado","aprovado"];
+  const t2=teState.t;
+  t2.estado=ordem[(ordem.indexOf(t2.estado||"")+1)%ordem.length];
+  anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(t2.estado)+"”");
+  markDirty();refreshTaskEditRows();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+};
+document.getElementById("teNota").addEventListener("change",function(){
+  if(!teState)return;teState.t.nota=this.value.slice(0,500);
+  anotaHistorico("anotar a tarefa");markDirty();
+  if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
+});
+document.getElementById("teLink").addEventListener("change",function(){
+  if(!teState)return;teState.t.link=this.value.trim().slice(0,300);
+  anotaHistorico("editar a referência da tarefa");markDirty();refreshTaskEditRows();
   if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
 });
 document.getElementById("teResp").onclick=()=>{if(teState)openAgentPickFor(teState.p,teState.t);};
@@ -9001,6 +10340,7 @@ function tarefasAJusante(p,t){
 async function apagarTarefaFey(p,t){
   if(p.tasks.indexOf(t)<0)return;
   const rot=t.nome||String(t.desc||"tarefa").slice(0,30);
+  anotaHistorico("apagar a tarefa “"+rot+"”");
   const seg=tarefasAJusante(p,t);
   if(!seg.length){
     if(!(await askConfirm("Apagar a tarefa “"+rot+"”?",{yes:"Apagar",danger:true})))return;
@@ -9038,6 +10378,7 @@ function startRetarget(p,t){
 }
 async function retargetAplica(p,t,n){
   closeNodePick();
+  anotaHistorico("mudar o destino de uma tarefa para “"+n.name+"”");
   const diretas=p.tasks.filter(x=>x!==t&&x.a===t.b);
   const jusante=tarefasAJusante(p,t);
   let modo="seguir";
@@ -9065,7 +10406,7 @@ async function retargetAplica(p,t,n){
   updateLayerCounts();
   refreshTaskEditRows();
   if(modalView&&modalView.type==="feynman")renderFeynman(p);
-  flash("Destino atualizado.");
+  flash("Destino atualizado.",{actions:[{label:"Anular",fn:undoAction}]});
 }
 
 /* ---- Per-procedure export. One layout feeds the screen, the SVG and the PDF. ---- */
@@ -9182,13 +10523,153 @@ async function __exportProcPDF(p){
 
 let orgOrient="v";
 /* ---- Separador Tarefas: todas as tarefas, agrupadas por procedimento ---- */
+/* ---- Seleção múltipla de tarefas ----
+   Ctrl+clique junta tarefas de qualquer procedimento; uma barra ao fundo
+   oferece as operações em lote. A atribuição respeita a regra da casa: só
+   quem pertence à equipa de ORIGEM da tarefa pode ficar responsável. */
+const selTarefas=new Map();
+function limparSelTarefas(){
+  selTarefas.clear();
+  document.querySelectorAll("#taskListAll .task-row.sel").forEach(r=>r.classList.remove("sel"));
+  syncLoteBar();
+}
+function syncLoteBar(){
+  let bar=document.getElementById("loteBar");
+  [...selTarefas.entries()].forEach(([k,x])=>{
+    if(!processes.includes(x.p)||!x.p.tasks.includes(x.t))selTarefas.delete(k);
+  });
+  if(!selTarefas.size){if(bar)bar.hidden=true;return;}
+  if(!bar){
+    bar=el("div","glass");bar.id="loteBar";
+    const n=el("span","lote-n");
+    const bResp=el("button","btn tiny","Responsável…");
+    bResp.onclick=loteAtribuir;
+    const bDel=el("button","btn tiny danger-btn","Apagar");
+    bDel.onclick=loteApagar;
+    const bX=el("button","btn tiny","Limpar");
+    bX.onclick=limparSelTarefas;
+    bar.append(n,bResp,bDel,bX);
+    document.body.append(bar);
+  }
+  bar.hidden=false;
+  bar.querySelector(".lote-n").textContent=selTarefas.size+" selecionada(s)";
+}
+async function loteAtribuir(){
+  const items=[...selTarefas.values()];
+  if(!items.length)return;
+  const equipa=new Map();
+  items.forEach(x=>agentsOf(x.t.a).forEach(a=>equipa.set(a.id,a)));
+  const ops=[...equipa.values()].slice(0,24).map(a=>({k:a.id,label:a.name}));
+  ops.push({k:"limpar",label:"— sem responsável —",danger:true});
+  const r=await askOpcoes("Responsável para "+items.length+" tarefa(s)",
+    "Só quem pertence à equipa de origem pode ficar responsável — nas tarefas de outra origem a escolha fica sem efeito.",ops);
+  if(!r)return;
+  let aplicadas=0;
+  loteHistorico(()=>{
+    items.forEach(x=>{
+      if(r==="limpar"){x.t.agent=null;aplicadas++;return;}
+      const a=agentById(r);
+      if(a&&a.nodeId===x.t.a){x.t.agent=r;aplicadas++;}
+    });
+    anotaHistorico("atribuir responsável a "+aplicadas+" tarefa(s)");
+  });
+  limparSelTarefas();renderTaskListAll();
+  flash(aplicadas+" tarefa(s) atualizadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
+async function loteApagar(){
+  const items=[...selTarefas.values()];
+  if(!items.length)return;
+  if(!(await askConfirm("Apagar "+items.length+" tarefa(s) selecionada(s)?",{yes:"Apagar",danger:true})))return;
+  loteHistorico(()=>{
+    items.forEach(x=>deleteTask(x.t));
+    anotaHistorico("apagar "+items.length+" tarefa(s)");
+  });
+  limparSelTarefas();renderTaskListAll();
+  flash(items.length+" tarefa(s) apagadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
+/* Filtro por fatia do separador Tarefas. A fatia "excedido" apanha as
+   tarefas dos procedimentos cujo caminho crítico ultrapassa o prazo. */
+let filtroTarefas={k:"tudo",pessoa:null};
+function tarefaPassaFiltro(t,p,excedidos){
+  switch(filtroTarefas.k){
+    case "semresp":return !t.agent;
+    case "porconfirmar":return !(t.estado==="validado"||t.estado==="aprovado");
+    case "validado":return t.estado==="validado";
+    case "aprovado":return t.estado==="aprovado";
+    case "excedido":return excedidos.has(p.id);
+    case "pessoa":return t.agent===filtroTarefas.pessoa;
+    default:return true;
+  }
+}
 function renderTaskListAll(){
   const host=document.getElementById("taskListAll");
   if(!host)return;
   host.innerHTML="";
+  const excedidos=new Set();
+  processes.forEach(p=>{
+    if(Number.isFinite(p.prazo)){
+      try{if(procStats(p).total>p.prazo)excedidos.add(p.id);}catch(e){}
+    }
+  });
+  /* barra de chips com contagens */
+  const chips=el("div","filtro-chips");
+  const conta=k=>{
+    const guarda=filtroTarefas;filtroTarefas={k:k,pessoa:guarda.pessoa};
+    let n=0;
+    processes.forEach(p=>p.tasks.forEach(t=>{if(tarefaPassaFiltro(t,p,excedidos))n++;}));
+    filtroTarefas=guarda;return n;
+  };
+  [["tudo","Tudo"],["semresp","Sem responsável"],["porconfirmar","Por confirmar"],
+   ["validado","Validado"],["aprovado","Aprovado"],["excedido","Prazo excedido"]]
+  .forEach(([k,rot])=>{
+    const n=conta(k);
+    const b=el("button","chip"+(filtroTarefas.k===k?" on":""),rot+" · "+n);
+    b.type="button";
+    b.onclick=()=>{filtroTarefas={k:k,pessoa:null};renderTaskListAll();};
+    chips.append(b);
+  });
+  /* filtro por pessoa: só quem tem tarefas */
+  const comTarefas=new Map();
+  processes.forEach(p=>p.tasks.forEach(t=>{
+    if(t.agent){const a=agentById(t.agent);if(a)comTarefas.set(a.id,a);}
+  }));
+  if(comTarefas.size){
+    const sel=document.createElement("select");
+    sel.className="chip-select";
+    sel.setAttribute("aria-label","Filtrar por pessoa");
+    const op0=document.createElement("option");
+    op0.value="";op0.textContent="Por pessoa…";
+    sel.append(op0);
+    [...comTarefas.values()].sort((a,b)=>a.name.localeCompare(b.name)).forEach(a=>{
+      const op=document.createElement("option");
+      op.value=a.id;op.textContent=a.name;
+      sel.append(op);
+    });
+    if(filtroTarefas.k==="pessoa")sel.value=filtroTarefas.pessoa||"";
+    sel.onchange=()=>{
+      filtroTarefas=sel.value?{k:"pessoa",pessoa:sel.value}:{k:"tudo",pessoa:null};
+      renderTaskListAll();
+    };
+    chips.append(sel);
+  }
+  /* a fatia alimenta a barra de lote que já existe */
+  if(filtroTarefas.k!=="tudo"){
+    const bSel=el("button","chip acao","Selecionar estas");
+    bSel.type="button";
+    bSel.title="Junta a fatia inteira à seleção múltipla — a barra de lote aparece ao fundo";
+    bSel.onclick=()=>{
+      processes.forEach(p=>p.tasks.forEach(t=>{
+        if(tarefaPassaFiltro(t,p,excedidos))selTarefas.set(p.id+"|"+t.id,{p,t});
+      }));
+      renderTaskListAll();syncLoteBar();
+    };
+    chips.append(bSel);
+  }
+  host.append(chips);
   let total=0;
   processes.forEach(p=>{
     if(!p.tasks.length)return;
+    if(!p.tasks.some(t=>tarefaPassaFiltro(t,p,excedidos)))return;
     const head=el("div","mini-title");
     const dot=el("span","swatch");
     dot.style.background=hex(p.color);
@@ -9197,6 +10678,7 @@ function renderTaskListAll(){
     head.append(dot,document.createTextNode(p.name+" · "+p.tasks.length));
     host.append(head);
     p.tasks.forEach(t=>{
+      if(!tarefaPassaFiltro(t,p,excedidos))return;
       total++;
       const A=byId(t.a),B=byId(t.b);
       const ag=t.agent?agentById(t.agent):null;
@@ -9204,18 +10686,32 @@ function renderTaskListAll(){
       row.dataset.tid=t.id;row.dataset.pid=p.id;
       row.type="button";
       row.title="Abrir o painel desta tarefa";
-      row.append(el("span","t-desc",t.nome||t.desc||"(sem descrição)"));
+      const pontoE=el("span","estado-ponto"+(t.estado?" e-"+t.estado:""));
+      pontoE.title=rotuloEstado(t.estado);
+      row.append(pontoE,el("span","t-desc",t.nome||t.desc||"(sem descrição)"));
       row.append(el("span","t-route",
         (A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")
         +(ag?(" · "+ag.name):"")
         +(t.duration?(" · "+t.duration+" dia"+(t.duration===1?"":"s")):"")));
-      row.onclick=()=>selectTask(t);
+      if(selTarefas.has(p.id+"|"+t.id))row.classList.add("sel");
+      row.onclick=e=>{
+        if(e.ctrlKey||e.metaKey||e.shiftKey){
+          e.preventDefault();
+          const k=p.id+"|"+t.id;
+          if(selTarefas.has(k))selTarefas.delete(k);
+          else selTarefas.set(k,{p,t});
+          row.classList.toggle("sel",selTarefas.has(k));
+          syncLoteBar();
+        }else selectTask(t);
+      };
       host.append(row);
     });
   });
   if(!total){
     host.append(el("div","foot-note",
-      "Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma."));
+      filtroTarefas.k==="tudo"
+        ?"Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma."
+        :"Nada nesta fatia. Escolha outro filtro, ou “Tudo”."));
   }
 }
 /* O separador só se redesenha quando está à vista, e no máximo uma vez por
@@ -9504,6 +11000,271 @@ function flash(msg,opts){
   msgTimer=setTimeout(()=>setupMsg.textContent="",4000);
   return toast(msg,opts);
 }
+/* ============================================================
+   VERSÕES COM NOME + PROCEDIMENTOS AVULSOS E MODELOS
+============================================================ */
+/* Painel de qualidade: quatro azulejos que dizem quanto falta para acabar o
+   levantamento — e cada um salta para o sítio onde se resolve. */
+function renderQualidade(){
+  const host=document.getElementById("qualidadeRow");
+  if(!host)return;
+  host.innerHTML="";
+  let nT=0,nApr=0,nSem=0;
+  processes.forEach(p=>p.tasks.forEach(t=>{
+    nT++;
+    if(t.estado==="aprovado")nApr++;
+    if(!t.agent)nSem++;
+  }));
+  const semPrazo=processes.filter(p=>p.tasks.length&&!Number.isFinite(p.prazo));
+  const fora=id=>{const x=id?agentById(id):null;return !x||x.absent;};
+  const spof=agents.filter(a=>{
+    let n=0;
+    processes.forEach(p=>p.tasks.forEach(t=>{
+      if(t.agent===a.id&&(!a.subst||fora(a.subst)))n++;
+    }));
+    return n>0;
+  }).length;
+  const tile=(rot,valor,tit,fn)=>{
+    const b=el("button","q-tile");
+    b.type="button";b.title=tit;
+    b.append(el("span","q-val",valor));
+    b.append(el("span","q-rot",rot));
+    b.onclick=fn;
+    host.append(b);
+  };
+  tile("aprovadas",nT?Math.round(nApr/nT*100)+"%":"—",
+    nApr+" de "+nT+" tarefas aprovadas — clique para ver as que faltam",
+    ()=>{filtroTarefas={k:"porconfirmar",pessoa:null};setTab("tarefas");});
+  tile("sem responsável",String(nSem),
+    "Tarefas sem responsável — clique para as listar",
+    ()=>{filtroTarefas={k:"semresp",pessoa:null};setTab("tarefas");});
+  tile("sem prazo",String(semPrazo.length),
+    "Procedimentos sem prazo legal definido — clique para escolher um e defini-lo",
+    async()=>{
+      if(!semPrazo.length){flash("Todos os procedimentos têm prazo. ✓");return;}
+      const r=await askOpcoes("Definir prazo — qual procedimento?","O prazo edita-se na barra do diagrama.",
+        semPrazo.slice(0,12).map(p=>({k:p.id,label:p.name})));
+      const alvo=r&&layerById(r);
+      if(alvo)showFeynman(alvo);
+    });
+  tile("pontos únicos",String(spof),
+    "Pessoas que são a única cobertura de alguma tarefa — clique para abrir a simulação de ausências",
+    ()=>{setTab("agentes");if(typeof window.abrirSimulacao==="function")window.abrirSimulacao();});
+}
+const VER_KEY="of.versions.v1";
+function loadVersoes(){
+  try{const l=JSON.parse(storageGet(VER_KEY)||"[]");return Array.isArray(l)?l:[];}catch(e){return [];}
+}
+function saveVersoes(l){return storageSet(VER_KEY,JSON.stringify(l));}
+function renderVersoes(){
+  const host=document.getElementById("verLista");
+  if(!host)return;
+  host.innerHTML="";
+  const l=loadVersoes();
+  if(!l.length){host.append(el("div","foot-note","Ainda não guardou nenhuma versão."));return;}
+  l.slice().reverse().forEach(v=>{
+    const row=el("div","ver-row");
+    row.append(el("span","nm",v.nome));
+    row.append(el("span","dt",new Date(v.at).toLocaleDateString("pt-PT",
+      {day:"numeric",month:"short",year:"numeric"})));
+    const bCmp=el("button","btn tiny","Comparar");
+    bCmp.title="O que mudou entre esta versão e o estado atual";
+    bCmp.onclick=()=>{
+      let va=null;try{va=JSON.parse(v.state);}catch(e){}
+      if(!va){flash("A versão está ilegível.",{type:"err"});return;}
+      mostraDiff("“"+v.nome+"” → agora",diffStates(va,JSON.parse(snapshotState())));
+    };
+    const bRep=el("button","btn tiny","Repor");
+    bRep.title="Voltar a este estado — com direito a Anular";
+    bRep.onclick=async()=>{
+      if(!(await askConfirm("Repor a versão “"+v.nome+"”? O estado atual fica no Anular.",{yes:"Repor"})))return;
+      if(!restoreState(v.state)){flash("Não foi possível repor esta versão.",{type:"err"});return;}
+      anotaHistorico("repor a versão “"+v.nome+"”");
+      markDirty();
+      flash("Versão “"+v.nome+"” reposta.",{actions:[{label:"Anular",fn:undoAction}]});
+    };
+    const bDel=el("button","btn tiny danger-btn","×");
+    bDel.title="Apagar esta versão (não mexe nos dados atuais)";
+    bDel.setAttribute("aria-label","Apagar a versão "+v.nome);
+    bDel.onclick=async()=>{
+      if(!(await askConfirm("Apagar a versão “"+v.nome+"”?",{yes:"Apagar",danger:true})))return;
+      saveVersoes(loadVersoes().filter(x=>x.at!==v.at));
+      renderVersoes();
+    };
+    row.append(bCmp,bRep,bDel);
+    host.append(row);
+  });
+}
+document.getElementById("verGuardar").onclick=()=>{
+  const inp=document.getElementById("verNome");
+  const nome=inp.value.trim().slice(0,48)||("Versão de "+new Date().toLocaleDateString("pt-PT"));
+  const l=loadVersoes();
+  l.push({nome,at:new Date().toISOString(),state:snapshotState()});
+  while(l.length>8)l.shift();
+  if(!saveVersoes(l)){flash("Sem espaço no browser para guardar a versão — exporte o dataset.",{type:"err"});return;}
+  inp.value="";
+  renderVersoes();
+  flash("Versão “"+nome+"” guardada.");
+};
+renderVersoes();
+/* Diff legível entre dois estados: mais, menos, renomeados, e contagens de
+   tarefas por procedimento. */
+function diffStates(va,vb){
+  const linhas=[];
+  const porId=l=>{const m={};(l||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});return m;};
+  const seccao=(nome,la,lb)=>{
+    const A=porId(la),B=porId(lb);
+    const mais=Object.keys(B).filter(id=>!A[id]);
+    const menos=Object.keys(A).filter(id=>!B[id]);
+    if(mais.length)linhas.push("+ "+nome+": "+mais.map(id=>B[id].name).join(", "));
+    if(menos.length)linhas.push("− "+nome+": "+menos.map(id=>A[id].name).join(", "));
+    Object.keys(B).forEach(id=>{
+      if(A[id]&&A[id].name!==B[id].name)
+        linhas.push("≈ "+nome+": “"+A[id].name+"” → “"+B[id].name+"”");
+    });
+  };
+  seccao("Unidades",va.nodes,vb.nodes);
+  seccao("Pessoas",va.agents,vb.agents);
+  seccao("Procedimentos",va.layers,vb.layers);
+  seccao("Grupos",va.groups,vb.groups);
+  const A=porId(va.layers),B=porId(vb.layers);
+  Object.keys(B).forEach(id=>{
+    if(A[id]&&(A[id].tasks||[]).length!==(B[id].tasks||[]).length)
+      linhas.push("≈ “"+B[id].name+"”: "+(A[id].tasks||[]).length+" → "+(B[id].tasks||[]).length+" tarefa(s)");
+  });
+  return linhas.length?linhas:["Sem diferenças de estrutura — nomes, membros e contagens iguais."];
+}
+function mostraDiff(titulo,linhas){
+  let dlg=document.getElementById("verDiffDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="verDiffDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    const card=el("div","glass");card.id="vdCard";
+    card.append(el("h3",null,""));
+    card.append(el("div",null,""));card.lastChild.id="vdLinhas";
+    const btns=el("div","card-btns");
+    const bF=el("button","btn primary","Fechar");
+    bF.onclick=()=>dlg.classList.remove("open");
+    btns.append(bF);
+    card.append(btns);
+    dlg.append(card);
+    dlg.addEventListener("pointerdown",e=>{if(e.target===dlg)dlg.classList.remove("open");});
+    document.body.append(dlg);
+  }
+  dlg.querySelector("h3").textContent="Comparação — "+titulo;
+  const host=document.getElementById("vdLinhas");
+  host.innerHTML="";
+  linhas.forEach(l=>host.append(el("div",null,l)));
+  dlg.classList.add("open");
+}
+/* ---- procedimentos avulsos: um procedimento num ficheiro, nódulos por NOME ---- */
+function chaveNome(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+}
+document.getElementById("procExpBtn").onclick=async()=>{
+  const ops=processes.slice(0,24).map(p2=>({k:p2.id,label:p2.name+" — "+p2.tasks.length+" tarefa(s)"}));
+  if(!ops.length){flash("Não há procedimentos para exportar.");return;}
+  const r=await askOpcoes("Exportar qual procedimento?",
+    "O ficheiro identifica os nódulos por nome, para viajar entre organizações.",ops);
+  const p2=r&&layerById(r);
+  if(!p2)return;
+  const cfg={format:"procedimento-autarquias",version:1,exported:new Date().toISOString(),
+    name:p2.name,prazo:Number.isFinite(p2.prazo)?p2.prazo:null,
+    tasks:p2.tasks.map(t2=>({nome:t2.nome||"",desc:t2.desc,duration:t2.duration,
+      estado:t2.estado||"",link:t2.link||"",
+      aNome:(byId(t2.a)||{}).name||"?",bNome:(byId(t2.b)||{}).name||"?"}))};
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="procedimento-"+chaveNome(p2.name).replace(/\s+/g,"-").slice(0,40)+".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  flash("Procedimento “"+p2.name+"” exportado.");
+};
+function importarProcedimento(cfg,origem){
+  if(!cfg||cfg.format!=="procedimento-autarquias"||!Array.isArray(cfg.tasks)||!cfg.tasks.length){
+    flash("O ficheiro não é um procedimento válido.",{type:"err"});return;
+  }
+  const criados=[];
+  const resolve=nome=>{
+    const alvo=chaveNome(nome);
+    let n=nodes.find(x=>chaveNome(x.name)===alvo);
+    if(!n){
+      n=createNode({name:String(nome).slice(0,40),tier:Math.min(2,TIER.length-1)});
+      criados.push(n.name);
+    }
+    return n;
+  };
+  let p2=null;
+  loteHistorico(()=>{
+    p2=makeLayerData(String(cfg.name||"Procedimento importado").slice(0,28),
+      LAYER_COLORS[processes.length%LAYER_COLORS.length]);
+    p2._visible=true;
+    p2.done=false;
+    p2.prazo=Number.isFinite(cfg.prazo)?Math.max(0,cfg.prazo):null;
+    addLayerRow(p2);
+    /* O visual da camada tem de existir ANTES das tarefas: buildTaskVisual
+       pendura cada arco no grupo 3D do procedimento (a ordem do restore). */
+    buildLayerVisual(p2);
+    cfg.tasks.slice(0,60).forEach(ct=>{
+      if(!ct||!ct.aNome||!ct.bNome||chaveNome(ct.aNome)===chaveNome(ct.bNome))return;
+      const A=resolve(ct.aNome),B=resolve(ct.bNome);
+      const t2=makeTaskData(p2,A.id,B.id,
+        typeof ct.desc==="string"?ct.desc.slice(0,400):undefined,null,
+        typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
+      t2.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
+      t2.estado=(ct.estado==="validado"||ct.estado==="aprovado")?ct.estado:"";
+      t2.link=typeof ct.link==="string"&&/^https?:\/\//i.test(ct.link)?ct.link.slice(0,300):"";
+      t2.custom=true;
+      buildTaskVisual(t2);
+    });
+    relayoutLayers();
+    updateLayerCounts();
+    renderGroups();
+    anotaHistorico("importar o procedimento “"+p2.name+"”"+(origem?(" ("+origem+")"):""));
+  });
+  flash("“"+p2.name+"” importado — "+p2.tasks.length+" tarefa(s)"+
+    (criados.length?("; unidades criadas: "+criados.join(", ")):"")+".",
+    {actions:[{label:"Anular",fn:undoAction},{label:"Abrir",fn:()=>showFeynman(p2)}]});
+}
+document.getElementById("procImpBtn").onclick=()=>document.getElementById("procImpFile").click();
+document.getElementById("procImpFile").addEventListener("change",function(){
+  const f=this.files&&this.files[0];
+  this.value="";
+  if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let cfg=null;
+    try{cfg=JSON.parse(rd.result);}catch(e){}
+    importarProcedimento(cfg,f.name);
+  };
+  rd.readAsText(f);
+});
+/* ---- modelos-tipo: meia dúzia de cadeias reais para arrancar depressa ---- */
+const MODELOS_PROC=[
+  {format:"procedimento-autarquias",version:1,name:"Licenciamento urbanístico",prazo:60,tasks:[
+    {nome:"Receção",desc:"Receção e triagem do pedido de licenciamento; verificação dos elementos instrutórios.",duration:"2 dias",aNome:"Atendimento",bNome:"Divisão de Urbanismo"},
+    {nome:"Saneamento",desc:"Saneamento e apreciação liminar; pedido de consultas obrigatórias.",duration:"8 dias",aNome:"Divisão de Urbanismo",bNome:"Consultas Externas"},
+    {nome:"Pareceres",desc:"Emissão de pareceres pelas entidades externas consultadas.",duration:"20 dias",aNome:"Consultas Externas",bNome:"Divisão de Urbanismo"},
+    {nome:"Proposta",desc:"Apreciação técnica final e proposta de decisão.",duration:"5 dias",aNome:"Divisão de Urbanismo",bNome:"Executivo"},
+    {nome:"Decisão",desc:"Deferimento e liquidação de taxas devidas.",duration:"3 dias",aNome:"Executivo",bNome:"Tesouraria"}]},
+  {format:"procedimento-autarquias",version:1,name:"Atendimento e reclamações",prazo:15,tasks:[
+    {nome:"Registo",desc:"Registo da reclamação e encaminhamento para o serviço competente.",duration:"1 dia",aNome:"Atendimento",bNome:"Serviço Competente"},
+    {nome:"Instrução",desc:"Análise, instrução e proposta de resposta.",duration:"8 dias",aNome:"Serviço Competente",bNome:"Atendimento"},
+    {nome:"Resposta",desc:"Resposta ao munícipe e arquivamento do processo.",duration:"2 dias",aNome:"Atendimento",bNome:"Expediente"}]},
+  {format:"procedimento-autarquias",version:1,name:"Contratação (consulta prévia)",prazo:30,tasks:[
+    {nome:"Requisição",desc:"Requisição interna e cabimento orçamental.",duration:"3 dias",aNome:"Serviço Requisitante",bNome:"Contratação Pública"},
+    {nome:"Peças",desc:"Elaboração das peças do procedimento e envio de convites.",duration:"5 dias",aNome:"Contratação Pública",bNome:"Executivo"},
+    {nome:"Adjudicação",desc:"Análise de propostas e adjudicação.",duration:"5 dias",aNome:"Executivo",bNome:"Contratação Pública"},
+    {nome:"Compromisso",desc:"Registo do compromisso e emissão da nota de encomenda.",duration:"2 dias",aNome:"Contratação Pública",bNome:"Tesouraria"}]}
+];
+document.getElementById("modelosBtn").onclick=async()=>{
+  const r=await askOpcoes("Modelos de procedimentos-tipo",
+    "Importa uma cadeia pronta a adaptar — os nódulos em falta são criados por nome.",
+    MODELOS_PROC.map((m,i)=>({k:String(i),label:m.name+" — "+m.tasks.length+" passos, prazo "+m.prazo+" dias"})));
+  if(r===null||r===undefined)return;
+  importarProcedimento(MODELOS_PROC[+r],"modelo");
+};
 document.getElementById("exportBtn").onclick=()=>{
   const cfg={
     format:"mapeamento-autarquias-setup",
@@ -9515,7 +11276,8 @@ document.getElementById("exportBtn").onclick=()=>{
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
   };
@@ -9650,7 +11412,8 @@ importFile.onchange=()=>{
         }
         if(cl.name){p.name=String(cl.name).slice(0,28);if(p._nameEl)p._nameEl.textContent=p.name;p.refreshLabel();}
         if(typeof cl.visible==="boolean")p._visible=cl.visible;
-        p.done=cl.done===undefined?true:!!cl.done;   // mesma regra do restauro
+        p.done=cl.done===undefined?true:!!cl.done;
+      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;   // mesma regra do restauro
         // Validar ANTES de destruir: com `tasks` a vir noutro formato, o
         // procedimento ficaria vazio em vez de intacto.
         const impTasks=Array.isArray(cl.tasks)?cl.tasks:[];
@@ -9663,6 +11426,9 @@ importFile.onchange=()=>{
             ct.agent&&agentById(ct.agent)?ct.agent:null,
             typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
           t.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
+          t.estado=(ct.estado==="validado"||ct.estado==="aprovado")?ct.estado:"";
+          t.link=typeof ct.link==="string"?ct.link.slice(0,300):"";
+          t.nota=typeof ct.nota==="string"?ct.nota.slice(0,500):"";
           t.custom=!!ct.custom;
           buildTaskVisual(t);
         });
@@ -10022,7 +11788,8 @@ const THEMES={
     tessera:"201,214,232",tesseraGold:"232,180,76",tessAlpha:1,
     stars:[0x8FA2BC,0xC9D6E8],pill:"rgba(8,15,28,0.72)",
     primaries:[[0x4A90E2,0x8FD0FF],[0xE0554F,0xFF9A6B],[0xE8C445,0xFFF0A0],
-      [0x5CC46A,0xA8F0B8],[0xB06AE0,0xE8A8FF],[0xE08A3C,0xFFC98A]]},
+      [0x5CC46A,0xA8F0B8],[0xB06AE0,0xE8A8FF],[0xE08A3C,0xFFC98A]],
+    gp:["#E0554F","#4A90E2","#5CC46A","#E8C445"]},
   lisboa:{label:"Meia-noite em Lisboa",light:false,
     css:{"--bg-deep":"#070A1C","--bg-mid":"#10163A","--ink":"#EAF0FA","--ink-dim":"#8FA0C8",
       "--gold":"#F4C542","--steel":"#7FB3E0","--panel":"rgba(13,19,52,0.86)",
@@ -10034,7 +11801,8 @@ const THEMES={
     tessera:"127,179,224",tesseraGold:"244,197,66",tessAlpha:1,
     stars:[0x8FA0C8,0xBBD4F0],pill:"rgba(8,12,34,0.74)",
     primaries:[[0x3E7CB1,0x9AD1F5],[0xE06A8A,0xFFB3C0],[0xF4C542,0xFFEFAF],
-      [0x46B8A0,0xA8F0DC],[0x8A7FE8,0xC9C0FF],[0xE08A3C,0xFFCF9A]]},
+      [0x46B8A0,0xA8F0DC],[0x8A7FE8,0xC9C0FF],[0xE08A3C,0xFFCF9A]],
+    gp:["#E06A8A","#3E7CB1","#46B8A0","#F4C542"]},
   calcada:{label:"Calçada",light:true,
     css:{"--bg-deep":"#A89A78","--bg-mid":"#B8AB88","--ink":"#211A10","--ink-dim":"#5C5138",
       "--gold":"#775212","--steel":"#3A3122","--panel":"rgba(216,206,182,0.9)",
@@ -10047,7 +11815,8 @@ const THEMES={
     stars:[0x6E6248,0x554B36],pill:"rgba(33,27,17,0.82)",
     pillInk:"#F2E9D4",pillSub:"rgba(210,199,174,0.95)",
     primaries:[[0x2B5FA8,0x6C9BD6],[0xB0402F,0xD87A5C],[0x9C7A16,0xC9A83E],
-      [0x4F7A2F,0x86AC60],[0x7A3E9C,0xA878C8],[0xA85A1F,0xD08A50]]},
+      [0x4F7A2F,0x86AC60],[0x7A3E9C,0xA878C8],[0xA85A1F,0xD08A50]],
+    gp:["#B0402F","#2B5FA8","#4F7A2F","#9C7A16"]},
   verde:{label:"Verde Institucional",light:false,
     css:{"--bg-deep":"#04100A","--bg-mid":"#0B241A","--ink":"#EAF5EE","--ink-dim":"#8FB8A4",
       "--gold":"#D9C36A","--steel":"#A8D8C0","--panel":"rgba(9,29,20,0.87)",
@@ -10059,7 +11828,8 @@ const THEMES={
     tessera:"168,216,192",tesseraGold:"217,195,106",tessAlpha:1,
     stars:[0x8FB8A4,0xC8E8D4],pill:"rgba(6,20,13,0.74)",
     primaries:[[0x2E8B62,0x7FD8AC],[0xC2603A,0xE89A6B],[0xC9B03C,0xF0DC8A],
-      [0x3E86B1,0x8FC8E8],[0x8A62C2,0xC0A0E8],[0x62A83A,0xA8D875]]},
+      [0x3E86B1,0x8FC8E8],[0x8A62C2,0xC0A0E8],[0x62A83A,0xA8D875]],
+    gp:["#C2603A","#3E86B1","#2E8B62","#C9B03C"]},
   // Branch colours use the Okabe–Ito palette, which stays distinguishable under
   // deuteranopia, protanopia and tritanopia; backgrounds go pure black for contrast.
   contraste:{label:"Alto Contraste",light:false,
@@ -10073,7 +11843,8 @@ const THEMES={
     tessera:"255,255,255",tesseraGold:"240,228,66",tessAlpha:1.7,
     stars:[0xCFCFCF,0xFFFFFF],pill:"rgba(0,0,0,0.9)",
     primaries:[[0x0072B2,0x56B4E9],[0xD55E00,0xFF9E5C],[0xF0E442,0xFFF6A8],
-      [0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]]}
+      [0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]],
+    gp:["#D55E00","#0072B2","#009E73","#F0E442"]}   // Okabe–Ito: distinguível em daltonismo
 };
 let themeId="nocturno";
 /* Mesma cor, outro alfa. Os tons do tema vêm como "rgba(r,g,b,a)"; a curva de
@@ -10127,6 +11898,8 @@ function applyTheme(id,opts){
   const T0=THEMES[id]||THEMES.nocturno;
   themeId=THEMES[id]?id:"nocturno";
   Object.entries(T0.css).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+  (T0.gp||["#E0554F","#4A90E2","#5CC46A","#E8C445"]).forEach((v,i)=>
+    document.documentElement.style.setProperty(["--gp-a","--gp-b","--gp-c","--gp-d"][i],v));
   document.body.classList.toggle("theme-light",!!T0.light);
   GOLD=T0.gold;GOLD3D=T0.gold;
   THEME_LIGHT=!!T0.light;
@@ -12782,18 +14555,29 @@ function paletteActions(){
     {kind:"Ação",label:"Ajuda e atalhos",run:openHelp}
   ];
 }
+/* Saltar da paleta para uma seleção no 3D com uma página aberta deixava a
+   seleção a acontecer ATRÁS da página opaca. Antes do salto, volta-se a casa. */
+function irDaPaleta(fn){
+  if(document.body.classList.contains("page-open"))setTab("home");
+  fn();
+}
 function buildPaletteItems(){
   const out=paletteActions();
-  nodes.forEach(n=>out.push({kind:"Nódulo",label:n.name,sub:"N"+n.tier,run:()=>selectNode(n)}));
+  /* Os tipos falam a língua da interface — Unidade e Pessoa — ainda que o
+     código continue a dizer nódulo e agente. */
+  nodes.forEach(n=>out.push({kind:"Unidade",label:n.name,sub:"N"+n.tier,run:()=>irDaPaleta(()=>selectNode(n))}));
   agents.forEach(a=>{
     const n=byId(a.nodeId);
-    out.push({kind:"Agente",label:a.name,sub:(n?abbrev(n.name):"")+" · "+a.category,run:()=>selectAgent(a)});
+    out.push({kind:"Pessoa",label:a.name,sub:(n?abbrev(n.name):"")+" · "+a.category,run:()=>irDaPaleta(()=>selectAgent(a))});
   });
   processes.forEach(p=>out.push({kind:"Procedimento",label:p.name,
     sub:p.tasks.length+" tarefa(s)",run:()=>showFlowchart(p)}));
   groups.forEach(g=>out.push({kind:"Grupo",label:g.name,
-    sub:g.layers.length+" proc.",run:()=>selectGroup(g)}));
-  processes.forEach(p=>p.tasks.forEach(t=>out.push({kind:"Tarefa",label:t.desc,
+    sub:g.layers.length+" proc.",run:()=>irDaPaleta(()=>selectGroup(g))}));
+  /* O nome curto do diagrama e a descrição entram AMBOS no rótulo: qualquer
+     um deles encontra a tarefa. */
+  processes.forEach(p=>p.tasks.forEach(t=>out.push({kind:"Tarefa",
+    label:t.nome?(t.nome+" — "+String(t.desc||"").slice(0,60)):t.desc,
     sub:p.name,run:()=>showFlowchart(p,t)})));
   return out;
 }
@@ -12976,6 +14760,12 @@ function inlineRename(host,getVal,setVal,maxLen){
 const HISTORY_MAX=40;
 const AUTOSAVE_KEY="of.autosave.v1";
 const undoStack=[],redoStack=[];
+/* Legendas do histórico: pilhas paralelas às de estado. Quem muda alguma
+   coisa anota o quê (anotaHistorico) ANTES do markDirty; o recordHistory
+   consome a nota. O botão Anular diz no title o que vai desfazer. */
+const undoRotulos=[],redoRotulos=[];
+let rotuloPendente=null;
+function anotaHistorico(s){rotuloPendente=s;}
 let lastSnap=null,historyBusy=false,autosaveTimer=null;
 
 function snapshotState(){
@@ -12986,7 +14776,8 @@ function snapshotState(){
     agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
     theme:themeId
   });
@@ -13073,6 +14864,7 @@ function restoreState(json){
       // Ausente = ficheiro de antes de existir o estado: dá-se por finalizado,
       // senão um dataset antigo acordava todo a vermelho sem ninguém lhe tocar.
       p.done=cl.done===undefined?true:!!cl.done;
+      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;
       addLayerRow(p);
       (cl.tasks||[]).forEach(ct=>{
         if(!ct||!byId(ct.a)||!byId(ct.b)||ct.a===ct.b)return;   // a===b seria um auto-laço
@@ -13082,6 +14874,9 @@ function restoreState(json){
           typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
         if(ct.id)t.id=ct.id;
         t.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
+        t.estado=(ct.estado==="validado"||ct.estado==="aprovado")?ct.estado:"";
+        t.link=typeof ct.link==="string"?ct.link.slice(0,300):"";
+        t.nota=typeof ct.nota==="string"?ct.nota.slice(0,500):"";
         t.custom=!!ct.custom;
       });
     });
@@ -13122,8 +14917,15 @@ function restoreState(json){
 }
 function updateHistoryUI(){
   const u=document.getElementById("undoBtn"),r=document.getElementById("redoBtn");
-  if(u)u.disabled=!undoStack.length;
-  if(r)r.disabled=!redoStack.length;
+  const ur=undoRotulos.length?undoRotulos[undoRotulos.length-1]:null;
+  const rr=redoRotulos.length?redoRotulos[redoRotulos.length-1]:null;
+  const emRasc=!!rascunho;
+  if(u){u.disabled=!undoStack.length||emRasc;
+    u.title=emRasc?"Indisponível durante o rascunho — Aplicar ou Descartar primeiro"
+      :"Anular (Ctrl+Z)"+(ur?" — "+ur:"");}
+  if(r){r.disabled=!redoStack.length||emRasc;
+    r.title=emRasc?"Indisponível durante o rascunho — Aplicar ou Descartar primeiro"
+      :"Refazer (Ctrl+Shift+Z)"+(rr?" — "+rr:"");}
 }
 let autosaveWarned=false;
 function scheduleAutosave(){
@@ -13152,40 +14954,91 @@ function recordHistory(){
   if(historyBusy)return;
   const cur=snapshotState();
   if(cur===lastSnap)return;
+  /* Com o diagrama aberto, a mudança vai para o rascunho e não para as
+     pilhas: o lastSnap fica no estado de entrada, e é ele que o Aplicar
+     empurra para o histórico como um único passo. */
+  if(!rascunhoAplicando&&modalView&&modalView.type==="feynman"&&modalView.layer){
+    if(rascunho&&rascunho.pid===modalView.layer.id){
+      if(cur!==rascunho.ultimo){rascunho.alteracoes++;rascunho.ultimo=cur;}
+      scheduleAutosave();updateHistoryUI();
+      return;
+    }
+    if(!rascunho){
+      rascunho={pid:modalView.layer.id,base:lastSnap,ultimo:cur,
+        alteracoes:1,totalBase:feyTotalAoAbrir};
+      scheduleAutosave();updateHistoryUI();
+      return;
+    }
+  }
   if(lastSnap!==null){
     undoStack.push(lastSnap);
-    if(undoStack.length>HISTORY_MAX)undoStack.shift();
-    redoStack.length=0;
+    undoRotulos.push(rotuloPendente);
+    if(undoStack.length>HISTORY_MAX){undoStack.shift();undoRotulos.shift();}
+    redoStack.length=0;redoRotulos.length=0;
   }
+  rotuloPendente=null;
   lastSnap=cur;
   updateHistoryUI();
   scheduleAutosave();
 }
 function undoAction(){
+  if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
   if(exportBusy()){flash("Aguarde o fim da exportação para anular.",{type:"err"});return;}
   if(!undoStack.length){flash("Nada para anular.");return;}
   const cur=snapshotState();
   const prev=undoStack.pop();
+  const rot=undoRotulos.pop()||null;
   if(!restoreState(prev)){flash("Não foi possível anular.",{type:"err"});return;}
-  redoStack.push(cur);
-  if(redoStack.length>HISTORY_MAX)redoStack.shift();
+  redoStack.push(cur);redoRotulos.push(rot);
+  if(redoStack.length>HISTORY_MAX){redoStack.shift();redoRotulos.shift();}
   lastSnap=prev;
   updateHistoryUI();scheduleAutosave();
-  flash("Anulado.");
+  flash(rot?("Anulado: "+rot+"."):"Anulado.");
 }
 function redoAction(){
+  if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
   if(exportBusy()){flash("Aguarde o fim da exportação para refazer.",{type:"err"});return;}
   if(!redoStack.length){flash("Nada para refazer.");return;}
   const cur=snapshotState();
   const next=redoStack.pop();
+  const rot=redoRotulos.pop()||null;
   if(!restoreState(next)){flash("Não foi possível refazer.",{type:"err"});return;}
-  undoStack.push(cur);
-  if(undoStack.length>HISTORY_MAX)undoStack.shift();
+  undoStack.push(cur);undoRotulos.push(rot);
+  if(undoStack.length>HISTORY_MAX){undoStack.shift();undoRotulos.shift();}
   lastSnap=next;
   updateHistoryUI();scheduleAutosave();
-  flash("Refeito.");
+  flash(rot?("Refeito: "+rot+"."):"Refeito.");
 }
-document.getElementById("undoBtn").onclick=undoAction;
+/* Premir-e-segurar o Anular abre a lista das últimas ações com legenda —
+   escolher uma recua até lá de uma vez. O clique curto continua a anular um. */
+(function(){
+  const u=document.getElementById("undoBtn");
+  let timer=0,abriuLista=false;
+  async function abreLista(){
+    abriuLista=true;
+    if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
+    if(!undoStack.length){flash("Nada para anular.");return;}
+    const n=Math.min(8,undoStack.length);
+    const ops=[];
+    for(let i=0;i<n;i++){
+      const rot=undoRotulos[undoRotulos.length-1-i];
+      ops.push({k:String(i),label:(i+1)+(i?" passos":" passo")+" atrás"+(rot?(" — "+rot):"")});
+    }
+    const r=await askOpcoes("Recuar no histórico",
+      "Anula tudo até ao passo escolhido, inclusive.",ops);
+    if(r===null||r===undefined)return;
+    const vezes=+r+1;
+    for(let i=0;i<vezes;i++)undoAction();
+  }
+  u.addEventListener("pointerdown",()=>{
+    abriuLista=false;
+    clearTimeout(timer);
+    timer=setTimeout(abreLista,550);
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+    u.addEventListener(ev,()=>clearTimeout(timer)));
+  u.onclick=()=>{if(abriuLista){abriuLista=false;return;}undoAction();};
+})();
 document.getElementById("redoBtn").onclick=redoAction;
 
 /* ============================================================
@@ -13210,6 +15063,10 @@ syncThemeButtons();
 applyScene(0);
 syncPlay();
 booted=true;
+/* O histórico ancora aqui: com o lastSnap semeado no arranque, a PRIMEIRA
+   alteração já é anulável, e um rascunho aberto de imediato tem sempre um
+   estado de entrada a que o Descartar pode voltar. */
+lastSnap=snapshotState();
 updateDirtyUI();
 syncDensityRange();
 updateEmptyHint();
