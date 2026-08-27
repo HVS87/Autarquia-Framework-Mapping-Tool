@@ -350,6 +350,22 @@
     flex:none;border:1px solid var(--hairline);background:transparent}
   .estado-ponto.e-validado{background:var(--steel);border-color:var(--steel)}
   .estado-ponto.e-aprovado{background:var(--gold);border-color:var(--gold)}
+  /* Carga por agente: um número pequeno com a cor a subir com o peso. */
+  .carga{flex:none;min-width:17px;text-align:center;font-size:.62rem;font-weight:700;
+    border-radius:999px;padding:1px 4px;border:1px solid var(--hairline);color:var(--ink-dim)}
+  .carga.c-normal{color:var(--steel);border-color:var(--steel)}
+  .carga.c-media{color:#E08A3C;border-color:#E08A3C}
+  .carga.c-alta{color:#E0554F;border-color:#E0554F}
+  /* Simulação de ausências */
+  .sim-aus{margin-top:10px;border:1px solid var(--hairline);border-radius:10px;padding:8px 10px}
+  .sim-aus>summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--gold)}
+  .sim-escolha{display:flex;flex-wrap:wrap;gap:4px 10px;margin:8px 0}
+  .sim-ag{display:inline-flex;gap:5px;align-items:center;font-size:.72rem;color:var(--ink-dim);
+    border:1px solid var(--hairline);border-radius:999px;padding:2px 9px;cursor:pointer}
+  .sim-ag.on{color:var(--ink);border-color:var(--gold)}
+  .sim-res .row{width:100%}
+  /* Miniatura do fluxo no cartão de procedimento */
+  .pp-mini{width:92px;height:30px;flex:none;color:var(--ink-dim);opacity:.9}
   .te-grid input:focus,.te-grid textarea:focus{outline:none;border-color:var(--gold)}
   .te-grid .btn{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .danger-btn{border-color:#E0554F;color:#E0554F}
@@ -4875,6 +4891,24 @@ function closePage(){
 /* Explorador de procedimentos: cada procedimento com as suas tarefas à vista,
    para editar e ARRASTAR — uma tarefa larga-se no organograma simplificado
    para lhe mudar o destino. */
+/* Miniatura do fluxo: três traços que distinguem, à vista, um procedimento
+   linear de um com bifurcações — antes de o abrir. */
+function miniFluxo(p){
+  if(!p.tasks.length)return null;
+  const L=feyLayout(p);
+  const s=svgEl("svg",{class:"pp-mini",viewBox:"0 0 "+L.W+" "+L.H,
+    preserveAspectRatio:"xMidYMid meet","aria-hidden":"true"});
+  p.tasks.forEach(t2=>{
+    const a=L.pos[t2.a],b=L.pos[t2.b];
+    if(a&&b)svgEl("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
+      stroke:"currentColor","stroke-width":10,opacity:0.45},s);
+  });
+  L.g.ids.forEach(id=>{
+    const q=L.pos[id],n=byId(id);
+    if(q&&n)svgEl("circle",{cx:q.x,cy:q.y,r:24,fill:hex(n.color)},s);
+  });
+  return s;
+}
 function renderPageProcs(){
   const host=el("div");
   host.id="procExplore";
@@ -4896,7 +4930,10 @@ function renderPageProcs(){
     const bFey=el("button","btn tiny","Ver em diagrama de Feynman");
     bFey.title="Abrir “"+p.name+"” na vista de interações — bifurcações e convergências, com zoom";
     bFey.onclick=()=>showFeynman(p);
-    head.append(nm,wr,cnt,bFey,bMais);
+    armaReceita(wr,()=>abrirReceita(p));
+    const mf=miniFluxo(p);
+    if(mf)head.append(nm,wr,mf,cnt,bFey,bMais);
+    else head.append(nm,wr,cnt,bFey,bMais);
     card.append(head);
     if(p.tasks.length){
       const lista=el("div","pp-tarefas");
@@ -5371,6 +5408,56 @@ function gplusHTML(s){
     '" viewBox="0 0 14 14">'+GPLUS_RECTS.map(r=>'<rect x="'+r[0]+'" y="'+r[1]+
     '" width="'+r[2]+'" height="'+r[3]+'" fill="'+r[4]+'"/>').join("")+'</svg></span>';
 }
+/* O selo deixa de ser só sinal: clicar nele lista o que falta, e cada item
+   leva ao sítio onde se resolve — atribuir o responsável em falta, ou abrir
+   o diagrama para rematar a cadeia. */
+async function abrirReceita(p){
+  const av=procAvisos(p);
+  const ops=[];
+  p.tasks.filter(t=>!t.agent).slice(0,8).forEach(t=>{
+    const A=byId(t.a),B=byId(t.b);
+    ops.push({k:"t:"+t.id,label:"Sem responsável: “"+(t.nome||String(t.desc||"tarefa").slice(0,26))+
+      "” ("+(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")+") — atribuir"});
+  });
+  if(av.vermelho)ops.push({k:"fim",
+    label:p.tasks.length?"Cadeia por finalizar — abrir o diagrama e rematar":"Sem tarefas — criar a primeira",
+    primary:true});
+  if(!ops.length)return;
+  const r=await askOpcoes("O que falta em “"+p.name+"”",
+    "Cada item leva ao sítio onde se resolve.",ops);
+  if(!r)return;
+  if(r==="fim"){showFeynman(p);return;}
+  if(r.indexOf("t:")===0){
+    const tk=p.tasks.find(x=>x.id===r.slice(2));
+    showFeynman(p);
+    if(tk)openAgentPickFor(p,tk);
+  }
+}
+async function abrirReceitaGrupo(g){
+  const membros=g.layers.map(layerById).filter(Boolean);
+  const maus=membros.filter(p2=>{const a=procAvisos(p2);return a.amarelo||a.vermelho;});
+  if(!maus.length)return;
+  const ops=maus.map(p2=>{
+    const a=procAvisos(p2);
+    const partes=[];
+    if(a.vermelho)partes.push("por finalizar");
+    if(a.amarelo)partes.push(p2.tasks.filter(x=>!x.agent).length+" sem responsável");
+    return {k:p2.id,label:p2.name+" — "+partes.join(", ")};
+  });
+  const r=await askOpcoes("O que falta no grupo “"+g.name+"”",
+    "Escolha um procedimento para ver a lista.",ops);
+  const alvo=r&&layerById(r);
+  if(alvo)abrirReceita(alvo);
+}
+/* Liga um selo (warn-slot) à sua receita, sem deixar o clique subir à linha. */
+function armaReceita(elm,fn){
+  if(!elm)return elm;
+  elm.style.cursor="pointer";
+  elm.title="Ver o que falta — clique para a lista";
+  elm.addEventListener("click",e=>{e.stopPropagation();fn();});
+  elm.addEventListener("pointerdown",e=>e.stopPropagation());
+  return elm;
+}
 function avisoHTML(av){
   let h="";
   if(av.vermelho)h+='<span class="warn-badge" title="Procedimento por finalizar — a cadeia não está marcada como finalizada">'+triSVG("red")+'</span>';
@@ -5464,6 +5551,7 @@ function addLayerRow(p){
   row.append(swatch,name,openFc,count,del,sw,warn);
   procList.appendChild(row);
   p._row=row;p._nameEl=name;p._countEl=count;p._delBtn=del;p._warnEl=warn;
+  armaReceita(warn,()=>abrirReceita(p));
   applyProcSearch();
 }
 processes.forEach(addLayerRow);
@@ -5581,6 +5669,7 @@ function renderGroups(){
 
     const gw=el("span","warn-slot");
     g._warnEl=gw;
+    armaReceita(gw,()=>abrirReceitaGrupo(g));
     const sw=switchGrupo(g,members,"Alternar grupo "+g.name,
       ()=>{if(selected&&selected.type==="group")renderDetail();});
 
@@ -5714,6 +5803,94 @@ agentList.parentNode.insertBefore(
   makeTabSearch("Pesquisar agentes…",v=>{agentSearch=v;renderAgentsTab();}),
   agentList
 );
+/* ---- Simulação de ausências ----
+   Marcar quem falta (férias, licença, saída) e ver de imediato as tarefas
+   que ficam sem ninguém — contando com os substitutos — mais o ranking de
+   pontos únicos de falha. Só lê: nada aqui mexe nos dados. */
+(function(){
+  const det=document.createElement("details");
+  det.id="simAus";det.className="sim-aus";
+  const sum=document.createElement("summary");
+  sum.textContent="Simulação de ausências — e se faltarem…?";
+  det.append(sum);
+  const escolha=el("div","sim-escolha");
+  const res=el("div","sim-res");
+  det.append(escolha,res);
+  agentList.parentNode.insertBefore(det,agentList.nextSibling);
+  const marcados=new Set();
+  /* Devolve o responsável "descoberto", ou null se a tarefa está coberta:
+     o titular presente, ou o substituto dele presente, cobrem-na. */
+  function descoberta(t,S){
+    const a=t.agent?agentById(t.agent):null;
+    if(!a)return null;                    // sem responsável: é o selo amarelo, não isto
+    const fora=id=>{const x=id?agentById(id):null;return !x||x.absent||S.has(x.id);};
+    if(!fora(a.id))return null;
+    if(a.subst&&!fora(a.subst))return null;
+    return a;
+  }
+  function calc(){
+    [...marcados].forEach(id=>{if(!agentById(id))marcados.delete(id);});
+    escolha.innerHTML="";res.innerHTML="";
+    agents.slice().sort((x,y)=>x.name.localeCompare(y.name)).forEach(a=>{
+      const n=byId(a.nodeId);
+      const lb=el("label","sim-ag"+(marcados.has(a.id)?" on":""));
+      const cb=document.createElement("input");
+      cb.type="checkbox";cb.checked=marcados.has(a.id);
+      cb.onchange=()=>{if(cb.checked)marcados.add(a.id);else marcados.delete(a.id);calc();};
+      lb.append(cb,document.createTextNode(a.name+(n?" · "+abbrev(n.name):"")));
+      escolha.append(lb);
+    });
+    if(marcados.size){
+      const orfas=[];
+      processes.forEach(p2=>p2.tasks.forEach(t2=>{
+        const a=descoberta(t2,marcados);
+        if(a)orfas.push({p:p2,t:t2,a});
+      }));
+      res.append(el("div","mini-title",
+        "Com "+marcados.size+" ausência(s): "+
+        (orfas.length?orfas.length+" tarefa(s) ficam sem ninguém":"tudo coberto ✓")));
+      orfas.slice(0,30).forEach(o=>{
+        const b=el("button","row");
+        b.type="button";
+        b.append(el("span","t-desc",o.t.nome||String(o.t.desc||"tarefa").slice(0,34)));
+        b.append(el("span","t-route",o.p.name+" · resp.: "+o.a.name+
+          (o.a.subst?" (o substituto também está fora)":" (sem substituto)")));
+        b.title="Abrir o diagrama de “"+o.p.name+"”";
+        b.onclick=()=>showFeynman(o.p);
+        res.append(b);
+      });
+      if(orfas.length>30)res.append(el("div","foot-note","… e mais "+(orfas.length-30)+"."));
+    }
+    /* Pontos únicos de falha: para cada pessoa, quantas tarefas ficariam sem
+       ninguém se SÓ ela faltasse. É o argumento da continuidade em números. */
+    const spof=agents.map(a=>{
+      const S=new Set([a.id]);
+      let n2=0;
+      processes.forEach(p2=>p2.tasks.forEach(t2=>{if(descoberta(t2,S))n2++;}));
+      return {a,n:n2};
+    }).filter(x=>x.n>0).sort((x,y)=>y.n-x.n).slice(0,5);
+    if(spof.length){
+      res.append(el("div","mini-title","Pontos únicos de falha — a única cobertura de…"));
+      spof.forEach(x=>{
+        const b=el("button","row");
+        b.type="button";
+        b.append(el("span","t-desc",x.a.name));
+        b.append(el("span","count",x.n+" tarefa(s)"));
+        b.title="Se "+x.a.name+" faltar sozinho(a), "+x.n+" tarefa(s) ficam sem ninguém — abrir o painel";
+        b.onclick=()=>selectAgent(x.a);
+        res.append(b);
+      });
+    }
+  }
+  det.addEventListener("toggle",()=>{if(det.open)calc();});
+  window.recalcSimAus=()=>{if(det.open)calc();};
+})();
+/* Quantas tarefas esta pessoa tem a cargo, em todos os procedimentos. */
+function cargaDe(agentId){
+  let n=0;
+  processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===agentId)n++;}));
+  return n;
+}
 function agentRowBtn(a,tagText){
   const row=el("button","row");
   row.dataset.aid=a.id;
@@ -5723,7 +5900,13 @@ function agentRowBtn(a,tagText){
   star.style.flex="none";
   const name=el("span","row-name",a.name);
   const tag=el("span","count",tagText);
-  row.append(star,iniChip(a,"sm"),name,tag);
+  /* A carga vê-se na linha: aço até 2 tarefas, quente a 3–4, vermelho a 5+.
+     É aqui que o funcionário-ilha aparece antes de ser problema. */
+  const nCarga=cargaDe(a.id);
+  const carga=el("span","carga "+(nCarga>=5?"c-alta":nCarga>=3?"c-media":nCarga>=1?"c-normal":"c-zero"),
+    String(nCarga));
+  carga.title=nCarga===1?"1 tarefa a cargo":nCarga+" tarefas a cargo";
+  row.append(star,iniChip(a,"sm"),name,carga,tag);
   row.title=a.name+" — "+a.category;
   row.onclick=()=>selectAgent(a);
 
@@ -5788,6 +5971,7 @@ function nodeDropHeader(n,expanded,count){
 }
 const catExpanded={};
 function renderAgentsTab(){
+  if(typeof window.recalcSimAus==="function")window.recalcSimAus();
   agentList.innerHTML="";
   const tog=el("div","layer-pick");
   [["node","Por nódulo"],["category","Por categoria"]].forEach(([m,lbl])=>{
@@ -8188,6 +8372,7 @@ function renderFeynman(p){
   poeTrilho(modalTitle);
   const tw=el("span","warn-slot");tw.style.position="static";
   tw.innerHTML=avisoHTML(procAvisos(p));
+  armaReceita(tw,()=>abrirReceita(p));
   modalTitle.append(tw);
   modalBody.innerHTML="";
 
