@@ -240,6 +240,27 @@
     border:1px solid var(--hairline);border-radius:7px;padding:5px 6px}
   .fey-estado{cursor:pointer}
   .fey-estado:hover{stroke:var(--gold);stroke-width:1.6}
+  .fant-chip{color:var(--ink-dim);border-style:dashed}
+  /* ---- folha de impressão ----
+     Ctrl+P com o diagrama (ou o fluxograma) aberto imprime SÓ o conteúdo do
+     modal, em fundo branco com tintas escuras — os cromas do ecrã ficam no
+     ecrã. As variáveis são redefinidas dentro do print, por isso todas as
+     pastilhas e traços seguem sozinhos. */
+  @media print{
+    :root{--panel:#fff;--ink:#111;--ink-dim:#555;--hairline:#999;
+      --gold:#8a6a1c;--steel:#333;--bg-mid:#fff;--bg-deep:#fff;--scrim:#fff}
+    header,#tabbar,#panel,#page,#detail,#stage,#toastHost,#stepper,#quest,
+    #whereBar,#radarWrap,#trailMenu,#emptyHint,#loteBar,#modalClose,
+    .fey-acts,.fey-rascunho,#feyMini,.skip-link{display:none!important}
+    body{background:#fff!important}
+    #modal{position:static!important;display:block!important;padding:0!important;
+      background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+    #modalCard{position:static!important;width:100%!important;max-width:none!important;
+      height:auto!important;max-height:none!important;border:none!important;
+      box-shadow:none!important;background:#fff!important;overflow:visible!important}
+    #feyWrap{border:none!important;overflow:visible!important}
+    #feySvg{width:100%!important;height:auto!important}
+  }
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -8871,6 +8892,9 @@ function descartarRascunho(){
    procedimento de onde se veio, e o título ganha um "‹ voltar". Abrir um
    procedimento por qualquer OUTRO caminho limpa o trilho. */
 let feyTrilho=[],trilhoManter=false;
+/* Fantasma de versão: as arestas de uma versão guardada, a tracejado por
+   trás das atuais — "o que mudou desde setembro" sem ler relatório nenhum. */
+let feyFantasma=null;   // {pid,nome,tasks:[{a,b}]}
 function poeTrilho(titulo){
   if(!trilhoManter)feyTrilho.length=0;
   trilhoManter=false;
@@ -9024,6 +9048,149 @@ function renomearAresta(p,t,sx,sy,svg,wrap){
   });
   inp.addEventListener("blur",()=>fecha(true));
   ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* ---- feySVG: o diagrama num SVG autónomo ----
+   Cores do tema resolvidas em concreto (um ficheiro não tem as variáveis da
+   página), título com duração e data, régua, fases e legenda de unidades.
+   Serve o botão Exportar (PNG/SVG) e o PDF geral. */
+function feySVG(p,modo){
+  const cs=getComputedStyle(document.documentElement);
+  const cor=k=>(cs.getPropertyValue(k)||"").trim();
+  const INKc=cor("--ink")||"#222",DIMc=cor("--ink-dim")||"#777";
+  const GOLDc=cor("--gold")||"#8a6a1c",PANELc="#FFFFFF";
+  const HAIRc="#C9C2B4";
+  const st=procStats(p);
+  const g=st.graph;
+  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const out=[];
+  const defs=[];
+  let W,H;
+  const M=26,TOPO=54;
+  const nosUsados=[...new Set(g.ids)].map(byId).filter(Boolean);
+  const LEG=Math.ceil(nosUsados.length/3)*16+26;
+  function pill(cx,cy,txt,fs,c,peso){
+    const w=Math.max(26,txt.length*fs*0.60+14);
+    out.push('<rect x="'+(cx-w/2)+'" y="'+(cy-fs*0.80)+'" width="'+w+'" height="'+(fs*1.55)+
+      '" rx="'+(fs*0.75)+'" fill="'+PANELc+'" stroke="'+HAIRc+'" stroke-width="0.6"/>');
+    out.push('<text x="'+cx+'" y="'+(cy+fs*0.34)+'" text-anchor="middle" font-size="'+fs+
+      '" fill="'+c+'"'+(peso?' font-weight="'+peso+'"':'')+'>'+esc(txt)+'</text>');
+  }
+  if(modo==="pistas"&&!g.cyclic){
+    const lanes=nosUsados.slice().sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name));
+    const laneY={};
+    const LX0=210,DXT=190,DYL=64,LY0=TOPO+22;
+    lanes.forEach((n,i)=>{laneY[n.id]=LY0+i*DYL;});
+    const ordem=p.tasks.slice().sort((a,b)=>(g.layer[a.a]||0)-(g.layer[b.a]||0));
+    W=LX0+Math.max(1,ordem.length)*DXT+60;
+    H=LY0+lanes.length*DYL+LEG;
+    lanes.forEach((n,i)=>{
+      const y=laneY[n.id];
+      if(i%2)out.push('<rect x="0" y="'+(y-DYL/2)+'" width="'+W+'" height="'+DYL+'" fill="'+INKc+'" opacity="0.05"/>');
+      out.push('<circle cx="16" cy="'+y+'" r="6" fill="'+hex(n.color)+'"/>');
+      out.push('<text x="28" y="'+(y+3.5)+'" font-size="10.5" fill="'+INKc+'" font-weight="600">'+
+        esc(n.name.length>24?n.name.slice(0,23)+"…":n.name)+'</text>');
+    });
+    ordem.forEach((tk,k)=>{
+      const yA=laneY[tk.a],yB=laneY[tk.b];
+      if(yA===undefined||yB===undefined)return;
+      const x1=LX0+k*DXT,x2=x1+DXT*0.74,mX=(x1+x2)/2,mY=(yA+yB)/2;
+      const cA=hex((byId(tk.a)||{color:p.color}).color),cB=hex((byId(tk.b)||{color:p.color}).color);
+      const gid="xg"+k;
+      defs.push('<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+x1+'" y1="'+yA+
+        '" x2="'+x2+'" y2="'+yB+'"><stop offset="0%" stop-color="'+cA+'"/><stop offset="100%" stop-color="'+cB+'"/></linearGradient>');
+      const d=(yA===yB)?("M"+x1+" "+yA+" L"+x2+" "+yB)
+        :("M"+x1+" "+yA+" C "+mX+" "+yA+", "+mX+" "+yB+", "+x2+" "+yB);
+      if(st.critical.has(tk.id))out.push('<path d="'+d+'" fill="none" stroke="'+GOLDc+'" stroke-width="6" opacity="0.3"/>');
+      out.push('<path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="2.2"/>');
+      out.push('<circle cx="'+x2+'" cy="'+yB+'" r="3" fill="'+cB+'"/>');
+      pill(mX,mY-10,(tk.nome||tk.desc||"").slice(0,20),9.5,INKc,600);
+    });
+  }else{
+    const L=feyLayout(p);
+    W=L.W+M;H=L.H+TOPO+LEG;
+    const dy=TOPO;
+    for(let c=0;c<=L.maxCol;c++){
+      if(c%2)out.push('<rect x="'+(L.X0+c*L.DX-L.DX*0.36)+'" y="'+(8+dy)+'" width="'+(L.DX*0.72)+
+        '" height="'+(L.H-16)+'" rx="10" fill="'+INKc+'" opacity="0.05"/>');
+    }
+    /* fases */
+    (function(){
+      const fases=(p.fases||[]).filter(f=>f.ate<=L.maxCol).sort((a,b)=>a.ate-b.ate);
+      let ini=0;
+      fases.forEach(f=>{
+        const x1=L.X0+ini*L.DX-L.DX*0.42,x2=L.X0+f.ate*L.DX+L.DX*0.42;
+        out.push('<rect x="'+x1+'" y="'+(6+dy)+'" width="'+(x2-x1)+'" height="17" rx="8" fill="'+GOLDc+'" opacity="0.14"/>');
+        out.push('<text x="'+((x1+x2)/2)+'" y="'+(18+dy)+'" text-anchor="middle" font-size="9.5" fill="'+GOLDc+'" font-weight="600">'+esc(f.nome)+'</text>');
+        ini=f.ate+1;
+      });
+    })();
+    const vistos={};
+    p.tasks.forEach((tk,i)=>{
+      const a=L.pos[tk.a],b=L.pos[tk.b];
+      if(!a||!b)return;
+      const kpar=tk.a+"→"+tk.b,par=(vistos[kpar]=(vistos[kpar]||0));vistos[kpar]++;
+      const ddx=b.x-a.x,ddy=b.y-a.y,len=Math.hypot(ddx,ddy)||1;
+      let nx=-ddy/len,ny=ddx/len;if(ny>0){nx=-nx;ny=-ny;}
+      const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+      const lado=(par%2===0)?1:-1;
+      const cxq=(a.x+b.x)/2+nx*amp*lado,cyq=(a.y+b.y)/2+ny*amp*lado;
+      const d="M"+a.x+" "+(a.y+dy)+" Q "+cxq+" "+(cyq+dy)+" "+b.x+" "+(b.y+dy);
+      const lx=0.25*a.x+0.5*cxq+0.25*b.x,ly=0.25*a.y+0.5*cyq+0.25*b.y+dy;
+      const cA=hex((byId(tk.a)||{color:p.color}).color),cB=hex((byId(tk.b)||{color:p.color}).color);
+      const gid="xg"+i;
+      defs.push('<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+a.x+'" y1="'+(a.y+dy)+
+        '" x2="'+b.x+'" y2="'+(b.y+dy)+'"><stop offset="0%" stop-color="'+cA+'"/><stop offset="100%" stop-color="'+cB+'"/></linearGradient>');
+      if(st.critical.has(tk.id))out.push('<path d="'+d+'" fill="none" stroke="'+GOLDc+'" stroke-width="6" opacity="0.3"/>');
+      out.push('<path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="2.2"/>');
+      out.push('<circle cx="'+b.x+'" cy="'+(b.y+dy)+'" r="3" fill="'+cB+'"/>');
+      const base=String(tk.nome||tk.desc||"");
+      pill(lx,ly-11,base.slice(0,24)+(base.length>24?"…":""),11,INKc,600);
+      const ag=tk.agent?agentById(tk.agent):null;
+      pill(lx,ly+11,(ag?ag.name:"—")+" · "+tk.duration,8.5,DIMc);
+    });
+    g.ids.forEach(id=>{
+      const n=byId(id),q=L.pos[id];
+      if(!n||!q)return;
+      out.push('<circle cx="'+q.x+'" cy="'+(q.y+dy)+'" r="9" fill="'+hex(n.color)+'" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>');
+      pill(q.x,q.y+27+dy,n.name.length>20?n.name.slice(0,19)+"…":n.name,10.5,INKc,600);
+    });
+    /* terminais + gatilho/produto */
+    out.push('<circle cx="'+L.inicio.x+'" cy="'+(L.inicio.y+dy)+'" r="10" fill="none" stroke="'+DIMc+'" stroke-width="1.6"/>');
+    out.push('<text x="'+L.inicio.x+'" y="'+(L.inicio.y+28+dy)+'" text-anchor="middle" font-size="10" fill="'+DIMc+'">Início</text>');
+    if(p.gatilho)out.push('<text x="'+L.inicio.x+'" y="'+(L.inicio.y+42+dy)+'" text-anchor="middle" font-size="8" font-style="italic" fill="'+INKc+'">« '+esc(p.gatilho.slice(0,26))+' »</text>');
+    const fimC=p.done?GOLDc:"#B0402F";
+    out.push('<circle cx="'+L.fim.x+'" cy="'+(L.fim.y+dy)+'" r="10" fill="none" stroke="'+fimC+'" stroke-width="2"'+(p.done?'':' stroke-dasharray="3 3"')+'/>');
+    out.push('<text x="'+L.fim.x+'" y="'+(L.fim.y+28+dy)+'" text-anchor="middle" font-size="10" fill="'+fimC+'">Fim</text>');
+    if(p.produto)out.push('<text x="'+L.fim.x+'" y="'+(L.fim.y+42+dy)+'" text-anchor="middle" font-size="8" font-style="italic" fill="'+INKc+'">« '+esc(p.produto.slice(0,26))+' »</text>');
+    /* régua */
+    if(!g.cyclic&&st.total>0){
+      const RY=L.H-22+dy;
+      out.push('<line x1="'+(L.inicio.x-6)+'" y1="'+RY+'" x2="'+(L.fim.x+12)+'" y2="'+RY+'" stroke="'+DIMc+'" stroke-width="1" opacity="0.6"/>');
+      for(let c=0;c<=L.maxCol;c++){
+        let d2=0;g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,st.best[id]||0);});
+        out.push('<text x="'+(L.X0+c*L.DX)+'" y="'+(RY+14)+'" text-anchor="middle" font-size="8" fill="'+DIMc+'">dia '+(Math.round(d2*10)/10)+'</text>');
+      }
+    }
+  }
+  /* legenda de unidades */
+  const LY=H-LEG+16;
+  out.push('<text x="'+M+'" y="'+LY+'" font-size="9" fill="'+DIMc+'" font-weight="600">Unidades:</text>');
+  nosUsados.forEach((n,i)=>{
+    const col=i%3,row=Math.floor(i/3);
+    const x=M+70+col*((W-2*M-70)/3),y=LY+row*16;
+    out.push('<circle cx="'+x+'" cy="'+(y-3)+'" r="4" fill="'+hex(n.color)+'"/>');
+    out.push('<text x="'+(x+9)+'" y="'+y+'" font-size="8.5" fill="'+INKc+'">'+esc(n.name.slice(0,32))+'</text>');
+  });
+  /* título */
+  const cab='<text x="'+M+'" y="22" font-size="14" font-weight="700" fill="'+INKc+'">'+esc(p.name)+'</text>'+
+    '<text x="'+M+'" y="38" font-size="9" fill="'+DIMc+'">Diagrama de interações · ≈ '+esc(fmtDays(st.total))+
+    (Number.isFinite(p.prazo)?(' · prazo '+p.prazo+' dias'):'')+' · '+new Date().toLocaleDateString("pt-PT")+'</text>';
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+Math.ceil(W)+'" height="'+Math.ceil(H)+
+    '" viewBox="0 0 '+Math.ceil(W)+' '+Math.ceil(H)+'" font-family="Segoe UI, Arial, sans-serif">'+
+    '<defs>'+defs.join("")+'</defs>'+
+    '<rect x="0" y="0" width="'+Math.ceil(W)+'" height="'+Math.ceil(H)+'" fill="'+PANELc+'"/>'+
+    cab+out.join("")+'</svg>';
+  return {svg:svg,w:Math.ceil(W),h:Math.ceil(H)};
 }
 /* Pastilha opaca atrás de um rótulo — partilhada pelos dois modos. */
 function pastilhaSVG(parent,cx,cy,txt,fs,cor,peso){
@@ -9230,10 +9397,56 @@ function renderFeynman(p){
     ex.title="O caminho crítico ("+fmtDays(st.total)+") ultrapassa o prazo legal de "+p.prazo+" dias";
     stats.append(ex);
   }
+  const bFant=el("button","btn tiny","Fantasma…");
+  bFant.title="Sobrepor, a tracejado, as arestas deste procedimento numa versão guardada — o diff visual";
+  bFant.setAttribute("aria-pressed",String(!!(feyFantasma&&feyFantasma.pid===p.id)));
+  bFant.onclick=async()=>{
+    const vers=loadVersoes();
+    if(!vers.length){flash("Ainda não há versões guardadas — crie uma na página Dados.",{type:"err"});return;}
+    const ops=vers.slice().reverse().slice(0,8).map((v,i)=>({k:String(i),label:v.nome}));
+    if(feyFantasma&&feyFantasma.pid===p.id)ops.push({k:"tirar",label:"— tirar o fantasma —",danger:true});
+    const r=await askOpcoes("Fantasma de que versão?","As arestas dessa versão aparecem a tracejado por trás das atuais.",ops);
+    if(r===null||r===undefined)return;
+    if(r==="tirar"){feyFantasma=null;renderFeynman(p);return;}
+    const v=vers.slice().reverse()[+r];
+    let estado=null;try{estado=JSON.parse(v.state);}catch(e){}
+    const antigo=estado&&(estado.layers||[]).find(l=>l&&l.id===p.id);
+    if(!antigo){flash("Essa versão não tem este procedimento.",{type:"err"});return;}
+    feyFantasma={pid:p.id,nome:v.nome,tasks:(antigo.tasks||[]).map(tk=>({a:tk.a,b:tk.b}))};
+    renderFeynman(p);
+  };
   const bGarg=el("button","btn tiny","Gargalos");
   bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
   bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
   bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  const bExp=el("button","btn tiny","Exportar");
+  bExp.title="Guardar este diagrama como imagem (PNG) ou como SVG — com legenda, régua e fases";
+  bExp.onclick=async()=>{
+    const r=await askOpcoes("Exportar o diagrama de “"+p.name+"”",
+      "Sai no modo atual ("+(FEY_PREFS.pistas?"pistas":"colunas")+"), com legenda de unidades.",
+      [{k:"png",label:"Imagem PNG — para relatórios e ofícios",primary:true},
+       {k:"svg",label:"SVG — vetorial, escala sem perder definição"}]);
+    if(!r)return;
+    const modo=FEY_PREFS.pistas?"pistas":"colunas";
+    const feito=feySVG(p,modo);
+    const base="diagrama-"+String(p.name).replace(/[^\w\-]+/g,"_").slice(0,40);
+    if(r==="svg"){
+      const blob=new Blob([feito.svg],{type:"image/svg+xml;charset=utf-8"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=base+".svg";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      flash("Diagrama exportado em SVG.");
+    }else{
+      try{
+        const png=await svgToPNG(feito.svg,2);
+        const a=document.createElement("a");
+        a.href=png;a.download=base+".png";a.click();
+        flash("Diagrama exportado em PNG.");
+      }catch(e){flash("Não foi possível gerar a imagem.",{type:"err"});}
+    }
+  };
   const bFases=el("button","btn tiny","Fases…");
   bFases.title="Agrupar as colunas em fases nomeadas — Instrução, Decisão, Execução…";
   bFases.onclick=()=>abrirFasesDlg(p);
@@ -9260,7 +9473,7 @@ function renderFeynman(p){
     percWrap.append(percIn);
     stats.append(percWrap);
   }
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bFases,bGarg,bPista,stats);
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bFases,bGarg,bPista,bFant,bExp,stats);
   modalBody.append(acts);
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
   /* A duração de entrada é a referência da comparação do rascunho. */
@@ -9432,6 +9645,29 @@ function renderFeynman(p){
         stroke:fimCor,"stroke-width":1,"stroke-dasharray":p.done?"none":"4 4",opacity:0.75},svg);});
   }
 
+  /* ---- fantasma de versão: por trás de tudo o que é atual ---- */
+  if(feyFantasma&&feyFantasma.pid!==p.id)feyFantasma=null;
+  if(feyFantasma){
+    let fora=0;
+    const gF=svgEl("g",{class:"fey-fantasma","pointer-events":"none"},svg);
+    const vistosF={};
+    feyFantasma.tasks.forEach(tk=>{
+      const a=L.pos[tk.a],b=L.pos[tk.b];
+      if(!a||!b){fora++;return;}
+      const kpar=tk.a+"→"+tk.b,par=(vistosF[kpar]=(vistosF[kpar]||0));vistosF[kpar]++;
+      const ddx=b.x-a.x,ddy=b.y-a.y,len=Math.hypot(ddx,ddy)||1;
+      let nx=-ddy/len,ny=ddx/len;if(ny>0){nx=-nx;ny=-ny;}
+      const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+      const lado=(par%2===0)?1:-1;
+      const cxq=(a.x+b.x)/2+nx*amp*lado,cyq=(a.y+b.y)/2+ny*amp*lado;
+      svgEl("path",{d:"M"+a.x+" "+a.y+" Q "+cxq+" "+cyq+" "+b.x+" "+b.y,
+        fill:"none",stroke:dim,"stroke-width":2,"stroke-dasharray":"5 5",opacity:0.38},gF);
+    });
+    const chip=el("button","btn tiny fant-chip","fantasma: "+feyFantasma.nome+(fora?(" ("+fora+" fora do mapa)"):"")+" ×");
+    chip.title="Tirar a sobreposição da versão";
+    chip.onclick=()=>{feyFantasma=null;renderFeynman(p);};
+    stats.append(chip);
+  }
   // ---- arestas (tarefas) — em arco, com as paralelas separadas ----
   /* Índice de cada tarefa entre as que ligam o MESMO par de nódulos: é o que
      permite curvá-las para lados alternados em vez de as pousar em cima umas
@@ -12326,6 +12562,14 @@ async function __exportPDF(){
         ensure(h+12);
         doc.addImage(img,"PNG",M,y,w,h);
         y+=h+14;
+        const fey=feyImg.get(p);
+        if(fey){
+          let fw=CW,fh=fey.h*(CW/fey.w);
+          if(fh>maxH){fh=maxH;fw=fey.w*(fh/fey.h);}
+          ensure(fh+12);
+          doc.addImage(fey.png,"PNG",M,y,fw,fh);
+          y+=fh+14;
+        }
         return;
       }
       // Fallback (image generation unavailable): list the steps honestly
@@ -12346,9 +12590,12 @@ async function __exportPDF(){
     /* Pre-render every procedure through the shared layout engine, so the PDF
        shows the same branching diagram as the screen. */
     const fluxoImg=new Map();
+    const feyImg=new Map();
     for(const p of processes){
       if(!p.tasks.length)continue;
       try{fluxoImg.set(p,await svgToPNG(procSVG(p,"flow"),2));}catch(e){/* falls back to a text list */}
+      /* e o diagrama de interações — a vista mais rica também sai no papel */
+      try{const f=feySVG(p,"colunas");feyImg.set(p,{png:await svgToPNG(f.svg,2),w:f.w,h:f.h});}catch(e){}
     }
 
     /* ---- Assemble document ---- */
