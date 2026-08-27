@@ -224,6 +224,22 @@
   #mapaUnidades svg{display:block;min-width:300px;width:100%;height:auto;max-height:180px}
   .mapa-cx{cursor:pointer}
   .mapa-cx:hover rect{stroke-width:2}
+  /* Editor de fases */
+  #fasesDlg{position:fixed;inset:0;z-index:53;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #fasesDlg.open{display:grid;place-items:center}
+  #fasesCard{width:min(460px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px}
+  #fasesCard h3{font-size:.95rem;margin:0 0 4px;font-weight:600}
+  #fasesCard .sub{font-size:.74rem;color:var(--ink-dim);margin-bottom:10px}
+  .fase-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+  .fase-row input{flex:1;min-width:0;font:inherit;font-size:.8rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:5px 8px}
+  .fase-row input:focus{outline:none;border-color:var(--gold)}
+  .fase-row select{font:inherit;font-size:.74rem;color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);border-radius:7px;padding:5px 6px}
+  .fey-estado{cursor:pointer}
+  .fey-estado:hover{stroke:var(--gold);stroke-width:1.6}
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -2875,6 +2891,8 @@ function makeLayerData(name,color){
   // arranque ficava com undefined, era exportado como visible:false e
   // reaparecia invisível no 3D sem ninguém perceber porquê.
   const p={id:"L"+(++layerCounter), name, color, _visible:true, done:false,
+    gatilho:"", produto:"",           // o que dispara o procedimento e o que ele entrega
+    fases:[],                         // [{nome,ate}] — colunas agrupadas em fases nomeadas
     height:layerHeight(processes.length), tasks:[]};
   processes.push(p);
   return p;
@@ -8867,6 +8885,110 @@ function poeTrilho(titulo){
 function showFeynman(p){navigateTo({type:"feynman",layer:p});}
 /* Campo de renomear pousado sobre a pastilha da aresta: converte o ponto do
    SVG em coordenadas do ecrã e deixa o renomear acontecer onde o olho está. */
+/* Campo genérico pousado num ponto do diagrama (SVG→ecrã): serve o renomear
+   das arestas e a edição do gatilho e do produto nos medalhões. */
+function campoFey(sx,sy,svg,wrap,valor,ph,aplicar){
+  if(wrap.querySelector(".ren-aresta"))return;
+  const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
+  const m=svg.getScreenCTM();
+  if(!m)return;
+  const sp=pt.matrixTransform(m);
+  const wr=wrap.getBoundingClientRect();
+  const inp=document.createElement("input");
+  inp.className="ren-inline ren-aresta";
+  inp.type="text";inp.maxLength=80;
+  inp.value=valor||"";
+  inp.placeholder=ph||"";
+  inp.setAttribute("aria-label",ph||"Editar");
+  inp.style.left=(sp.x-wr.left-90)+"px";
+  inp.style.top=(sp.y-wr.top-14)+"px";
+  wrap.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,80);
+    inp.remove();
+    if(gravar&&v!==(valor||""))aplicar(v);
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* Editor de fases: linhas nome + "até à etapa N"; guardar valida a ordem. */
+function abrirFasesDlg(p){
+  let dlg=document.getElementById("fasesDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="fasesDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    const card=el("div","glass");card.id="fasesCard";
+    card.append(el("h3",null,"Fases do procedimento"));
+    card.append(el("div","sub","Cada fase vai até à etapa (coluna) escolhida — por ordem, sem sobreposição."));
+    const lista=el("div");lista.id="fasesLista";
+    card.append(lista);
+    const btns=el("div","card-btns");
+    const bAdd=el("button","btn tiny com-gplus");
+    bAdd.id="fasesAdd";
+    bAdd.innerHTML=gplusHTML(12)+"Fase";
+    const bOk=el("button","btn primary","Guardar");
+    bOk.id="fasesOk";
+    const bX=el("button","btn","Cancelar");
+    bX.onclick=()=>dlg.classList.remove("open");
+    btns.append(bAdd,el("span",null," "),bX,bOk);
+    card.append(btns);
+    dlg.append(card);
+    dlg.addEventListener("pointerdown",e=>{if(e.target===dlg)dlg.classList.remove("open");});
+    document.body.append(dlg);
+  }
+  const g=procGraph(p);
+  const maxCol=g.cyclic?Math.max(0,g.ids.length-1):Math.max(0,...g.ids.map(id=>g.layer[id]||0));
+  const lista=document.getElementById("fasesLista");
+  function linha(f){
+    const row=el("div","fase-row");
+    const inp=document.createElement("input");
+    inp.type="text";inp.maxLength=30;inp.placeholder="nome da fase — ex.: Instrução";
+    inp.value=f?f.nome:"";
+    const sel=document.createElement("select");
+    for(let c=0;c<=maxCol;c++){
+      const op=document.createElement("option");
+      op.value=String(c);op.textContent="até à etapa "+(c+1);
+      sel.append(op);
+    }
+    sel.value=String(f?Math.min(f.ate,maxCol):maxCol);
+    const del=el("button","btn tiny danger-btn","×");
+    del.setAttribute("aria-label","Remover fase");
+    del.onclick=()=>row.remove();
+    row.append(inp,sel,del);
+    lista.append(row);
+  }
+  lista.innerHTML="";
+  (p.fases||[]).forEach(linha);
+  if(!(p.fases||[]).length)linha(null);
+  document.getElementById("fasesAdd").onclick=()=>linha(null);
+  document.getElementById("fasesOk").onclick=()=>{
+    const novas=[...lista.querySelectorAll(".fase-row")].map(r=>({
+      nome:r.querySelector("input").value.trim().slice(0,30),
+      ate:+r.querySelector("select").value
+    })).filter(f=>f.nome);
+    novas.sort((a,b)=>a.ate-b.ate);
+    /* sem duas fases a acabar na mesma etapa */
+    for(let i=1;i<novas.length;i++){
+      if(novas[i].ate===novas[i-1].ate){
+        flash("Duas fases não podem acabar na mesma etapa.",{type:"err"});return;
+      }
+    }
+    p.fases=novas;
+    anotaHistorico("definir as fases de “"+p.name+"”");
+    markDirty();
+    dlg.classList.remove("open");
+    if(modalView&&modalView.type==="feynman")renderFeynman(p);
+  };
+  dlg.classList.add("open");
+}
 function renomearAresta(p,t,sx,sy,svg,wrap){
   if(wrap.querySelector(".ren-aresta"))return;
   const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
@@ -9024,7 +9146,9 @@ function feyLayout(p){
   g.ids.forEach(id=>{(porCol[col[id]]=porCol[col[id]]||[]).push(id);});
   const cols=Object.keys(porCol).map(Number).sort((a,b)=>a-b);
   const pos={};
-  const den=FEY_PREFS.denso;
+  /* Densidade automática: num ecrã estreito o modo denso entra sozinho —
+     o telemóvel não precisa que ninguém se lembre do comutador. */
+  const den=FEY_PREFS.denso||innerWidth<700;
   const X0=170,DX=den?184:236,DY=den?98:128,Y0=104;
   let maxLinhas=1;
   cols.forEach(c=>{
@@ -9110,6 +9234,9 @@ function renderFeynman(p){
   bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
   bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
   bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  const bFases=el("button","btn tiny","Fases…");
+  bFases.title="Agrupar as colunas em fases nomeadas — Instrução, Decisão, Execução…";
+  bFases.onclick=()=>abrirFasesDlg(p);
   const bPista=el("button","btn tiny","Pistas");
   bPista.title="Linhas = unidades; cada mudança de pista é uma transferência de responsabilidade";
   bPista.setAttribute("aria-pressed",String(!!FEY_PREFS.pistas));
@@ -9133,7 +9260,7 @@ function renderFeynman(p){
     percWrap.append(percIn);
     stats.append(percWrap);
   }
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bGarg,bPista,stats);
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bFases,bGarg,bPista,stats);
   modalBody.append(acts);
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
   /* A duração de entrada é a referência da comparação do rascunho. */
@@ -9215,6 +9342,31 @@ function renderFeynman(p){
     svgEl("rect",{x:L.X0+c*L.DX-L.DX*0.36,y:8,width:L.DX*0.72,height:L.H-16,
       rx:10,fill:"currentColor",opacity:0.045,"pointer-events":"none"},svg);
   }
+  /* ---- fases nomeadas ----
+     Colunas agrupadas na língua de quem decide ("Instrução", "Decisão"…),
+     com a duração somada; colunas fora de fase levam um "Etapa N" discreto. */
+  (function(){
+    const fases=(p.fases||[]).filter(f=>f.ate<=L.maxCol).sort((a,b)=>a.ate-b.ate);
+    const coberto=new Set();
+    let ini=0;
+    const diasCol=c=>{let d2=0;L.g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,(st.best&&st.best[id])||0);});return d2;};
+    fases.forEach(f=>{
+      const x1=L.X0+ini*L.DX-L.DX*0.42, x2=L.X0+f.ate*L.DX+L.DX*0.42;
+      for(let c=ini;c<=f.ate;c++)coberto.add(c);
+      svgEl("rect",{x:x1,y:6,width:x2-x1,height:17,rx:8,
+        fill:gold,opacity:0.09,"pointer-events":"none"},svg);
+      const durF=diasCol(f.ate)-(ini>0?diasCol(ini-1):0);
+      const tx2=svgEl("text",{x:(x1+x2)/2,y:18,"text-anchor":"middle","font-size":9.5,
+        fill:gold,"font-weight":600,"pointer-events":"none"},svg);
+      tx2.textContent=f.nome+(durF>0?"  ·  "+fmtDays(durF):"");
+      ini=f.ate+1;
+    });
+    for(let c=0;c<=L.maxCol;c++){
+      if(coberto.has(c))continue;
+      svgEl("text",{x:L.X0+c*L.DX,y:18,"text-anchor":"middle","font-size":8,
+        fill:dim,opacity:0.75,"pointer-events":"none"},svg).textContent="Etapa "+(c+1);
+    }
+  })();
   const pastilha=pastilhaSVG;
 
   // ---- terminais Início / Fim — medalhões; o Fim carimba ao finalizar ----
@@ -9224,6 +9376,22 @@ function renderFeynman(p){
   svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:4.5,fill:dim},gIni);
   svgEl("text",{x:L.inicio.x,y:L.inicio.y+30,"text-anchor":"middle","font-size":11,fill:dim},gIni)
     .textContent="Início";
+  /* O gatilho: o que dispara o procedimento. Clique edita, no sítio. */
+  const gtTxt=p.gatilho?("« "+(p.gatilho.length>22?p.gatilho.slice(0,21)+"…":p.gatilho)+" »"):"« gatilho? »";
+  const gtEl=svgEl("text",{x:L.inicio.x,y:L.inicio.y+44,"text-anchor":"middle",
+    "font-size":8.5,fill:p.gatilho?ink:dim,"font-style":"italic"},gIni);
+  gtEl.textContent=gtTxt;
+  svgEl("title",{},gIni).textContent=(p.gatilho?("Gatilho: "+p.gatilho):"O que dispara este procedimento?")+" — clique para editar";
+  gIni.style.cursor="pointer";
+  gIni.addEventListener("pointerdown",e=>e.stopPropagation());
+  gIni.addEventListener("click",e=>{
+    e.stopPropagation();
+    campoFey(L.inicio.x,L.inicio.y+44,svg,wrap,p.gatilho,"o que dispara — ex.: requerimento do munícipe",v=>{
+      p.gatilho=v;
+      anotaHistorico("definir o gatilho de “"+p.name+"”");
+      markDirty();renderFeynman(p);
+    });
+  });
   const gFim=svgEl("g",{class:"fey-vert fey-terminal"+((feyCarimbar===p.id)?" carimba":"")},svg);
   if(feyCarimbar===p.id)feyCarimbar=null;
   const fimCor=p.done?gold:"#E0554F";
@@ -9234,6 +9402,20 @@ function renderFeynman(p){
   if(p.done)svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:4.5,fill:gold},gFim);
   svgEl("text",{x:L.fim.x,y:L.fim.y+30,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
     .textContent="Fim";
+  /* O produto: o que o procedimento entrega. Clique edita, no sítio. */
+  const pdTxt=p.produto?("« "+(p.produto.length>22?p.produto.slice(0,21)+"…":p.produto)+" »"):"« produto? »";
+  svgEl("text",{x:L.fim.x,y:L.fim.y+44,"text-anchor":"middle",
+    "font-size":8.5,fill:p.produto?ink:dim,"font-style":"italic"},gFim).textContent=pdTxt;
+  gFim.style.cursor="pointer";
+  gFim.addEventListener("pointerdown",e=>e.stopPropagation());
+  gFim.addEventListener("click",e=>{
+    e.stopPropagation();
+    campoFey(L.fim.x,L.fim.y+44,svg,wrap,p.produto,"o que entrega — ex.: alvará emitido",v=>{
+      p.produto=v;
+      anotaHistorico("definir o produto de “"+p.name+"”");
+      markDirty();renderFeynman(p);
+    });
+  });
   if(!p.done){
     const fw=svgEl("g",{transform:"translate("+(L.fim.x+8)+","+(L.fim.y-24)+")"},gFim);
     fw.innerHTML=triSVG("red",13);
@@ -9301,11 +9483,21 @@ function renderFeynman(p){
     const rot=base.slice(0,24)+(base.length>24?"…":"");
     // pastilhas: nome por cima, responsável por baixo — legíveis sobre tudo
     pastilha(ga,lx,ly-11,rot,11,ink,600);
-    /* Ponto de estado do levantamento, encostado à esquerda da pastilha. */
+    /* Ponto de estado do levantamento — existe SEMPRE e cicla ao clique
+       direto (por confirmar → validado → aprovado), sem abrir o editor. */
     const wNome=Math.max(26,rot.length*11*0.60+14);
-    if(t.estado)svgEl("circle",{cx:lx-wNome/2-7,cy:ly-11,r:3.4,
-      fill:t.estado==="aprovado"?gold:"var(--steel)",stroke:"rgba(0,0,0,0.3)","stroke-width":0.6},ga)
-      .append(Object.assign(svgEl("title",{}),{textContent:rotuloEstado(t.estado)}));
+    const pe=svgEl("circle",{class:"fey-estado",cx:lx-wNome/2-7,cy:ly-11,r:4,
+      fill:t.estado?(t.estado==="aprovado"?gold:"var(--steel)"):"transparent",
+      stroke:t.estado?"rgba(0,0,0,0.3)":"var(--hairline)","stroke-width":t.estado?0.6:1.1},ga);
+    svgEl("title",{},pe).textContent="Estado: "+rotuloEstado(t.estado)+" — clique para avançar";
+    pe.addEventListener("pointerdown",e=>e.stopPropagation());
+    pe.addEventListener("click",e=>{
+      e.stopPropagation();
+      const ordem=["","validado","aprovado"];
+      t.estado=ordem[(ordem.indexOf(t.estado||"")+1)%ordem.length];
+      anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(t.estado)+"”");
+      markDirty();renderFeynman(p);
+    });
     /* Referência: um alvo próprio que abre a ligação noutro separador. */
     if(urlSegura(t.link)){
       const la=svgEl("a",{class:"fey-link",href:t.link,target:"_blank",rel:"noopener"},ga);
@@ -9383,6 +9575,27 @@ function renderFeynman(p){
     const gv=svgEl("g",{class:"fey-vert"},svg);
     svgEl("title",{},gv).textContent=n.name;
     svgEl("circle",{cx:q.x,cy:q.y,r:9,fill:hex(n.color),stroke:"rgba(0,0,0,0.35)","stroke-width":1.2},gv);
+    /* Anel de progresso: a fração das tarefas QUE DAQUI PARTEM já aprovadas —
+       o avanço do levantamento visto dentro do próprio diagrama. */
+    (function(){
+      const saem=(L.g.outOf[id]||[]);
+      if(!saem.length)return;
+      const fr=saem.filter(tt=>tt.estado==="aprovado").length/saem.length;
+      svgEl("circle",{cx:q.x,cy:q.y,r:13,fill:"none",stroke:"var(--hairline)",
+        "stroke-width":2,opacity:0.5,"pointer-events":"none"},gv);
+      if(fr<=0)return;
+      if(fr>=1){
+        svgEl("circle",{cx:q.x,cy:q.y,r:13,fill:"none",stroke:gold,
+          "stroke-width":2.4,"pointer-events":"none"},gv);
+        return;
+      }
+      const a0=-Math.PI/2, a1=a0+fr*Math.PI*2;
+      const x1=q.x+13*Math.cos(a0),y1=q.y+13*Math.sin(a0);
+      const x2=q.x+13*Math.cos(a1),y2=q.y+13*Math.sin(a1);
+      svgEl("path",{d:"M"+x1+" "+y1+" A 13 13 0 "+(fr>0.5?1:0)+" 1 "+x2+" "+y2,
+        fill:"none",stroke:gold,"stroke-width":2.4,"stroke-linecap":"round",
+        "pointer-events":"none"},gv);
+    })();
     const nome=n.name.length>20?n.name.slice(0,19)+"…":n.name;
     pastilha(gv,q.x,q.y+27,nome,11,ink,600);
     svgEl("text",{x:q.x,y:q.y+44,"text-anchor":"middle","font-size":8.5,fill:dim},gv).textContent=nodeAddress(n);
@@ -11170,6 +11383,8 @@ document.getElementById("procExpBtn").onclick=async()=>{
   if(!p2)return;
   const cfg={format:"procedimento-autarquias",version:1,exported:new Date().toISOString(),
     name:p2.name,prazo:Number.isFinite(p2.prazo)?p2.prazo:null,
+    gatilho:p2.gatilho||"",produto:p2.produto||"",
+    fases:(p2.fases||[]).map(f=>({nome:f.nome,ate:f.ate})),
     tasks:p2.tasks.map(t2=>({nome:t2.nome||"",desc:t2.desc,duration:t2.duration,
       estado:t2.estado||"",link:t2.link||"",
       aNome:(byId(t2.a)||{}).name||"?",bNome:(byId(t2.b)||{}).name||"?"}))};
@@ -11202,6 +11417,10 @@ function importarProcedimento(cfg,origem){
     p2._visible=true;
     p2.done=false;
     p2.prazo=Number.isFinite(cfg.prazo)?Math.max(0,cfg.prazo):null;
+    p2.gatilho=typeof cfg.gatilho==="string"?cfg.gatilho.slice(0,80):"";
+    p2.produto=typeof cfg.produto==="string"?cfg.produto.slice(0,80):"";
+    p2.fases=Array.isArray(cfg.fases)?cfg.fases.slice(0,12)
+      .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];
     addLayerRow(p2);
     /* O visual da camada tem de existir ANTES das tarefas: buildTaskVisual
        pendura cada arco no grupo 3D do procedimento (a ordem do restore). */
@@ -11277,6 +11496,8 @@ document.getElementById("exportBtn").onclick=()=>{
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      gatilho:p.gatilho||"",produto:p.produto||"",
+      fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
@@ -11413,7 +11634,11 @@ importFile.onchange=()=>{
         if(cl.name){p.name=String(cl.name).slice(0,28);if(p._nameEl)p._nameEl.textContent=p.name;p.refreshLabel();}
         if(typeof cl.visible==="boolean")p._visible=cl.visible;
         p.done=cl.done===undefined?true:!!cl.done;
-      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;   // mesma regra do restauro
+      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;
+      p.gatilho=typeof cl.gatilho==="string"?cl.gatilho.slice(0,80):"";
+      p.produto=typeof cl.produto==="string"?cl.produto.slice(0,80):"";
+      p.fases=Array.isArray(cl.fases)?cl.fases.slice(0,12).filter(f=>f&&typeof f==="object")
+        .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];   // mesma regra do restauro
         // Validar ANTES de destruir: com `tasks` a vir noutro formato, o
         // procedimento ficaria vazio em vez de intacto.
         const impTasks=Array.isArray(cl.tasks)?cl.tasks:[];
@@ -14777,6 +15002,8 @@ function snapshotState(){
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      gatilho:p.gatilho||"",produto:p.produto||"",
+      fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
     theme:themeId
@@ -14865,6 +15092,10 @@ function restoreState(json){
       // senão um dataset antigo acordava todo a vermelho sem ninguém lhe tocar.
       p.done=cl.done===undefined?true:!!cl.done;
       p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;
+      p.gatilho=typeof cl.gatilho==="string"?cl.gatilho.slice(0,80):"";
+      p.produto=typeof cl.produto==="string"?cl.produto.slice(0,80):"";
+      p.fases=Array.isArray(cl.fases)?cl.fases.slice(0,12).filter(f=>f&&typeof f==="object")
+        .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];
       addLayerRow(p);
       (cl.tasks||[]).forEach(ct=>{
         if(!ct||!byId(ct.a)||!byId(ct.b)||ct.a===ct.b)return;   // a===b seria um auto-laço
