@@ -366,6 +366,18 @@
   .sim-res .row{width:100%}
   /* Miniatura do fluxo no cartão de procedimento */
   .pp-mini{width:92px;height:30px;flex:none;color:var(--ink-dim);opacity:.9}
+  /* Renomear no sítio */
+  .ren-inline{font:inherit;color:var(--ink);background:transparent;
+    border:1px solid var(--gold);border-radius:6px;padding:1px 6px;
+    width:min(220px,60vw);min-width:90px}
+  .ren-inline:focus{outline:none}
+  /* Seleção múltipla: linha marcada e barra de lote */
+  .row.sel,.task-row.sel{outline:1.6px solid var(--gold);outline-offset:-1.6px;border-radius:8px}
+  #loteBar{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:60;
+    display:flex;gap:8px;align-items:center;padding:8px 14px;border-radius:999px;
+    border:1px solid var(--hairline)}
+  #loteBar[hidden]{display:none}
+  #loteBar .lote-n{font-size:.74rem;font-weight:600;color:var(--gold)}
   .te-grid input:focus,.te-grid textarea:focus{outline:none;border-color:var(--gold)}
   .te-grid .btn{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .danger-btn{border-color:#E0554F;color:#E0554F}
@@ -4891,6 +4903,32 @@ function closePage(){
 /* Explorador de procedimentos: cada procedimento com as suas tarefas à vista,
    para editar e ARRASTAR — uma tarefa larga-se no organograma simplificado
    para lhe mudar o destino. */
+/* Renomear no sítio: troca o texto por um campo, Enter (ou sair) grava,
+   Esc desiste. O clique dentro do campo não sobe à linha. */
+function renomearNoSitio(alvo,valor,aplicar){
+  if(alvo.querySelector("input.ren-inline"))return;
+  const antigo=alvo.textContent;
+  const inp=document.createElement("input");
+  inp.className="ren-inline";inp.type="text";inp.maxLength=40;inp.value=valor;
+  inp.setAttribute("aria-label","Novo nome");
+  alvo.textContent="";alvo.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,40);
+    inp.remove();
+    if(gravar&&v&&v!==valor)aplicar(v);
+    else alvo.textContent=antigo;
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
 /* Miniatura do fluxo: três traços que distinguem, à vista, um procedimento
    linear de um com bifurcações — antes de o abrir. */
 function miniFluxo(p){
@@ -4918,8 +4956,18 @@ function renderPageProcs(){
     card.style.borderLeft="3px solid "+hex(p.color);
     const head=el("div","pp-head");
     const nm=el("button","nm",p.name);
-    nm.title="Abrir o diagrama de interações";
-    nm.onclick=()=>showFeynman(p);
+    nm.title="Abrir o diagrama de interações · duplo clique renomeia";
+    nm.onclick=()=>{if(!nm.querySelector(".ren-inline"))showFeynman(p);};
+    nm.addEventListener("dblclick",e=>{
+      e.stopPropagation();
+      renomearNoSitio(nm,p.name,v=>{
+        anotaHistorico("renomear “"+p.name+"” para “"+v+"”");
+        p.name=v;
+        if(p._nameEl)p._nameEl.textContent=v;
+        markDirty();
+        if(document.body.dataset.page==="procedimentos"){devolveSeccoes();showPage("procedimentos");}
+      });
+    });
     const wr=el("span","warn-slot");wr.style.position="static";
     wr.innerHTML=avisoHTML(procAvisos(p));
     const cnt=el("span","count",p.tasks.length+" tarefa(s)");
@@ -4980,7 +5028,8 @@ function comecarArrasto(){
   if(svg){svg.removeAttribute("width");svg.removeAttribute("height");
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");}
   const T=document.getElementById("npTitle"),S=document.getElementById("npSub");
-  if(dragAtivo.tipo==="agente"){T.textContent="Largar “"+dragAtivo.rotulo+"” em…";S.textContent="Solte sobre o nódulo onde a pessoa passa a trabalhar.";}
+  if(dragAtivo.tipo==="agenteLote"){T.textContent="Largar "+dragAtivo.rotulo+" em…";S.textContent="Solte sobre o nódulo onde as pessoas selecionadas passam a trabalhar.";}
+  else if(dragAtivo.tipo==="agente"){T.textContent="Largar “"+dragAtivo.rotulo+"” em…";S.textContent="Solte sobre o nódulo onde a pessoa passa a trabalhar.";}
   else if(dragAtivo.tipo==="tarefa"){T.textContent="Novo destino de “"+dragAtivo.rotulo+"”";S.textContent="Solte sobre o nódulo de chegada da tarefa.";}
   else{T.textContent="Mudar “"+dragAtivo.rotulo+"” de lugar";S.textContent="Solte sobre o novo superior hierárquico.";}
   nodePickEl.classList.add("open");
@@ -5004,12 +5053,25 @@ addEventListener("pointerup",e=>{
   if(!caixa)return;                     // largou fora: cancela sem drama
   const alvo=byId(caixa.getAttribute("data-id"));
   if(!alvo)return;
-  if(st.tipo==="agente"){
+  if(st.tipo==="agenteLote"){
+    let movidos=0;
+    loteHistorico(()=>{
+      st.dados.ids.forEach(id=>{
+        const a=agentById(id);
+        if(a&&a.nodeId!==alvo.id){moveAgentToNode(a,alvo.id);movidos++;}
+      });
+      anotaHistorico("mover "+movidos+" pessoas para “"+alvo.name+"”");
+    });
+    selAgentes.clear();syncSelAgentes();
+    flash(movidos?(movidos+" pessoa(s) passaram para “"+alvo.name+"”."):"Já estavam todas nessa equipa.",
+      movidos?{actions:[{label:"Anular",fn:undoAction}]}:undefined);
+  }else if(st.tipo==="agente"){
     const a=agentById(st.dados.id);
     if(!a)return;
     if(a.nodeId===alvo.id){flash("Já está nessa equipa.");return;}
     moveAgentToNode(a,alvo.id);
-    flash("“"+a.name+"” passou para “"+alvo.name+"”.");
+    flash("“"+a.name+"” passou para “"+alvo.name+"”.",
+      {actions:[{label:"Anular",fn:undoAction}]});
   }else if(st.tipo==="tarefa"){
     const pr=layerById(st.dados.pid);
     const tk=pr&&pr.tasks.find(x=>x.id===st.dados.tid);
@@ -5026,7 +5088,8 @@ addEventListener("pointerup",e=>{
     if(n.parent===alvo.id){flash("Já responde a “"+alvo.name+"”.");return;}
     if(!canReparent(n,alvo)){flash("Não pode: ou é descendente, ou o único Executivo, ou não há níveis que cheguem.",{type:"err"});return;}
     reparentNode(n,alvo);
-    flash("“"+n.name+"” passou a responder a “"+alvo.name+"”.");
+    flash("“"+n.name+"” passou a responder a “"+alvo.name+"”.",
+      {actions:[{label:"Anular",fn:undoAction}]});
   }
 });
 addEventListener("pointercancel",()=>{
@@ -5054,7 +5117,12 @@ addEventListener("click",e=>{
     const r=e.target.closest(".row[data-aid]");
     if(!r)return;
     const a=agentById(r.dataset.aid);
-    if(a)armarArrasto("agente",{id:a.id,ancora:a.nodeId},a.name,e);
+    if(!a)return;
+    /* Se a linha pertence a uma seleção múltipla, o arrasto leva o grupo. */
+    if(selAgentes.has(a.id)&&selAgentes.size>1){
+      armarArrasto("agenteLote",{ids:[...selAgentes],ancora:a.nodeId},
+        selAgentes.size+" pessoas",e);
+    }else armarArrasto("agente",{id:a.id,ancora:a.nodeId},a.name,e);
   });
   const tl=document.getElementById("taskListAll");
   if(tl)tl.addEventListener("pointerdown",e=>{
@@ -5803,6 +5871,53 @@ agentList.parentNode.insertBefore(
   makeTabSearch("Pesquisar agentes…",v=>{agentSearch=v;renderAgentsTab();}),
   agentList
 );
+/* Duplo clique numa linha de unidade ou de pessoa renomeia no sítio. */
+document.getElementById("nodeList").addEventListener("dblclick",e=>{
+  const r=e.target.closest(".row[data-nid]");
+  if(!r)return;
+  const n=byId(r.dataset.nid);
+  const span=r.querySelector(".row-name")||r;
+  if(!n)return;
+  e.preventDefault();e.stopPropagation();
+  renomearNoSitio(span,n.name,v=>{
+    anotaHistorico("renomear “"+n.name+"” para “"+v+"”");
+    n.name=v;
+    refreshNodeVisual(n);renderNodeList();renderDetail();markDirty();
+  });
+});
+agentList.addEventListener("dblclick",e=>{
+  const r=e.target.closest(".row[data-aid]");
+  if(!r)return;
+  const a=agentById(r.dataset.aid);
+  const span=r.querySelector(".row-name")||r;
+  if(!a)return;
+  e.preventDefault();e.stopPropagation();
+  renomearNoSitio(span,a.name,v=>{
+    anotaHistorico("renomear “"+a.name+"” para “"+v+"”");
+    a.name=v;
+    const n=byId(a.nodeId);
+    if(n)refreshNodeVisual(n);
+    renderAgentsTab();renderDetail();markDirty();
+  });
+});
+/* ---- Seleção múltipla de pessoas ----
+   Ctrl+clique seleciona; arrastar uma linha selecionada leva o grupo todo
+   para o nódulo onde se largar. */
+const selAgentes=new Set();
+function syncSelAgentes(){
+  document.querySelectorAll("#agentList .row[data-aid]").forEach(r=>{
+    r.classList.toggle("sel",selAgentes.has(r.dataset.aid));
+  });
+}
+agentList.addEventListener("click",e=>{
+  if(!(e.ctrlKey||e.metaKey))return;
+  const r=e.target.closest(".row[data-aid]");
+  if(!r)return;
+  e.preventDefault();e.stopPropagation();
+  if(selAgentes.has(r.dataset.aid))selAgentes.delete(r.dataset.aid);
+  else selAgentes.add(r.dataset.aid);
+  syncSelAgentes();
+},true);
 /* ---- Simulação de ausências ----
    Marcar quem falta (férias, licença, saída) e ver de imediato as tarefas
    que ficam sem ninguém — contando com os substitutos — mais o ranking de
@@ -9443,7 +9558,7 @@ async function retargetAplica(p,t,n){
   updateLayerCounts();
   refreshTaskEditRows();
   if(modalView&&modalView.type==="feynman")renderFeynman(p);
-  flash("Destino atualizado.");
+  flash("Destino atualizado.",{actions:[{label:"Anular",fn:undoAction}]});
 }
 
 /* ---- Per-procedure export. One layout feeds the screen, the SVG and the PDF. ---- */
@@ -9560,6 +9675,70 @@ async function __exportProcPDF(p){
 
 let orgOrient="v";
 /* ---- Separador Tarefas: todas as tarefas, agrupadas por procedimento ---- */
+/* ---- Seleção múltipla de tarefas ----
+   Ctrl+clique junta tarefas de qualquer procedimento; uma barra ao fundo
+   oferece as operações em lote. A atribuição respeita a regra da casa: só
+   quem pertence à equipa de ORIGEM da tarefa pode ficar responsável. */
+const selTarefas=new Map();
+function limparSelTarefas(){
+  selTarefas.clear();
+  document.querySelectorAll("#taskListAll .task-row.sel").forEach(r=>r.classList.remove("sel"));
+  syncLoteBar();
+}
+function syncLoteBar(){
+  let bar=document.getElementById("loteBar");
+  [...selTarefas.entries()].forEach(([k,x])=>{
+    if(!processes.includes(x.p)||!x.p.tasks.includes(x.t))selTarefas.delete(k);
+  });
+  if(!selTarefas.size){if(bar)bar.hidden=true;return;}
+  if(!bar){
+    bar=el("div","glass");bar.id="loteBar";
+    const n=el("span","lote-n");
+    const bResp=el("button","btn tiny","Responsável…");
+    bResp.onclick=loteAtribuir;
+    const bDel=el("button","btn tiny danger-btn","Apagar");
+    bDel.onclick=loteApagar;
+    const bX=el("button","btn tiny","Limpar");
+    bX.onclick=limparSelTarefas;
+    bar.append(n,bResp,bDel,bX);
+    document.body.append(bar);
+  }
+  bar.hidden=false;
+  bar.querySelector(".lote-n").textContent=selTarefas.size+" selecionada(s)";
+}
+async function loteAtribuir(){
+  const items=[...selTarefas.values()];
+  if(!items.length)return;
+  const equipa=new Map();
+  items.forEach(x=>agentsOf(x.t.a).forEach(a=>equipa.set(a.id,a)));
+  const ops=[...equipa.values()].slice(0,24).map(a=>({k:a.id,label:a.name}));
+  ops.push({k:"limpar",label:"— sem responsável —",danger:true});
+  const r=await askOpcoes("Responsável para "+items.length+" tarefa(s)",
+    "Só quem pertence à equipa de origem pode ficar responsável — nas tarefas de outra origem a escolha fica sem efeito.",ops);
+  if(!r)return;
+  let aplicadas=0;
+  loteHistorico(()=>{
+    items.forEach(x=>{
+      if(r==="limpar"){x.t.agent=null;aplicadas++;return;}
+      const a=agentById(r);
+      if(a&&a.nodeId===x.t.a){x.t.agent=r;aplicadas++;}
+    });
+    anotaHistorico("atribuir responsável a "+aplicadas+" tarefa(s)");
+  });
+  limparSelTarefas();renderTaskListAll();
+  flash(aplicadas+" tarefa(s) atualizadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
+async function loteApagar(){
+  const items=[...selTarefas.values()];
+  if(!items.length)return;
+  if(!(await askConfirm("Apagar "+items.length+" tarefa(s) selecionada(s)?",{yes:"Apagar",danger:true})))return;
+  loteHistorico(()=>{
+    items.forEach(x=>deleteTask(x.t));
+    anotaHistorico("apagar "+items.length+" tarefa(s)");
+  });
+  limparSelTarefas();renderTaskListAll();
+  flash(items.length+" tarefa(s) apagadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
 function renderTaskListAll(){
   const host=document.getElementById("taskListAll");
   if(!host)return;
@@ -9589,7 +9768,17 @@ function renderTaskListAll(){
         (A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")
         +(ag?(" · "+ag.name):"")
         +(t.duration?(" · "+t.duration+" dia"+(t.duration===1?"":"s")):"")));
-      row.onclick=()=>selectTask(t);
+      if(selTarefas.has(p.id+"|"+t.id))row.classList.add("sel");
+      row.onclick=e=>{
+        if(e.ctrlKey||e.metaKey||e.shiftKey){
+          e.preventDefault();
+          const k=p.id+"|"+t.id;
+          if(selTarefas.has(k))selTarefas.delete(k);
+          else selTarefas.set(k,{p,t});
+          row.classList.toggle("sel",selTarefas.has(k));
+          syncLoteBar();
+        }else selectTask(t);
+      };
       host.append(row);
     });
   });
@@ -13166,18 +13355,29 @@ function paletteActions(){
     {kind:"Ação",label:"Ajuda e atalhos",run:openHelp}
   ];
 }
+/* Saltar da paleta para uma seleção no 3D com uma página aberta deixava a
+   seleção a acontecer ATRÁS da página opaca. Antes do salto, volta-se a casa. */
+function irDaPaleta(fn){
+  if(document.body.classList.contains("page-open"))setTab("home");
+  fn();
+}
 function buildPaletteItems(){
   const out=paletteActions();
-  nodes.forEach(n=>out.push({kind:"Nódulo",label:n.name,sub:"N"+n.tier,run:()=>selectNode(n)}));
+  /* Os tipos falam a língua da interface — Unidade e Pessoa — ainda que o
+     código continue a dizer nódulo e agente. */
+  nodes.forEach(n=>out.push({kind:"Unidade",label:n.name,sub:"N"+n.tier,run:()=>irDaPaleta(()=>selectNode(n))}));
   agents.forEach(a=>{
     const n=byId(a.nodeId);
-    out.push({kind:"Agente",label:a.name,sub:(n?abbrev(n.name):"")+" · "+a.category,run:()=>selectAgent(a)});
+    out.push({kind:"Pessoa",label:a.name,sub:(n?abbrev(n.name):"")+" · "+a.category,run:()=>irDaPaleta(()=>selectAgent(a))});
   });
   processes.forEach(p=>out.push({kind:"Procedimento",label:p.name,
     sub:p.tasks.length+" tarefa(s)",run:()=>showFlowchart(p)}));
   groups.forEach(g=>out.push({kind:"Grupo",label:g.name,
-    sub:g.layers.length+" proc.",run:()=>selectGroup(g)}));
-  processes.forEach(p=>p.tasks.forEach(t=>out.push({kind:"Tarefa",label:t.desc,
+    sub:g.layers.length+" proc.",run:()=>irDaPaleta(()=>selectGroup(g))}));
+  /* O nome curto do diagrama e a descrição entram AMBOS no rótulo: qualquer
+     um deles encontra a tarefa. */
+  processes.forEach(p=>p.tasks.forEach(t=>out.push({kind:"Tarefa",
+    label:t.nome?(t.nome+" — "+String(t.desc||"").slice(0,60)):t.desc,
     sub:p.name,run:()=>showFlowchart(p,t)})));
   return out;
 }
