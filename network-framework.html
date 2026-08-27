@@ -189,6 +189,41 @@
   @media (prefers-reduced-motion:reduce){.fey-dia .fey-aresta.pt-curso .tr{animation:none}}
   #feyToken{filter:drop-shadow(0 0 4px var(--gold))}
   .notas-chip{color:#E08A3C;border-color:#E08A3C}
+  /* Chips de filtro (Tarefas) e chip de ramo (Unidades) */
+  .filtro-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px;align-items:center}
+  .chip{font:inherit;font-size:.68rem;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--hairline);border-radius:999px;padding:3px 10px;cursor:pointer}
+  .chip.on{color:var(--gold);border-color:var(--gold);font-weight:600}
+  .chip.acao{color:var(--steel);border-color:var(--steel)}
+  .chip-select{font:inherit;font-size:.68rem;color:var(--ink-dim);background:transparent;
+    border:1px solid var(--hairline);border-radius:999px;padding:3px 8px}
+  .ramo-chip{margin:0 0 8px}
+  /* Azulejos de qualidade (Dados) */
+  #qualidadeRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:8px;margin:4px 0 12px}
+  .q-tile{font:inherit;display:flex;flex-direction:column;gap:2px;align-items:flex-start;
+    padding:10px 12px;border:1px solid var(--hairline);border-radius:10px;
+    background:transparent;color:var(--ink);cursor:pointer;text-align:left}
+  .q-tile:hover{border-color:var(--gold)}
+  .q-val{font-size:1.15rem;font-weight:700;color:var(--gold)}
+  .q-rot{font-size:.66rem;color:var(--ink-dim)}
+  /* Perfil de pessoa no sítio */
+  .ag-perfil{border:1px solid var(--hairline);border-left:3px solid var(--gold);
+    border-radius:0 8px 8px 0;padding:8px 10px;margin:2px 0 6px 14px}
+  .agp-topo{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .agp-nome{font-size:.78rem;font-weight:600;color:var(--ink)}
+  .agp-linha{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;
+    font-size:.7rem;color:var(--ink-dim)}
+  .agp-linha select{font:inherit;font-size:.7rem;color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);border-radius:6px;padding:2px 6px;max-width:170px}
+  .agp-tarefas .row{width:100%}
+  /* Mapa da hierarquia (página Unidades) */
+  #mapaUnidades{display:none}
+  #pageBody #mapaUnidades{display:block;margin:2px 0 10px;border:1px solid var(--hairline);
+    border-radius:10px;padding:6px;overflow-x:auto}
+  #mapaUnidades svg{display:block;min-width:300px;width:100%;height:auto;max-height:180px}
+  .mapa-cx{cursor:pointer}
+  .mapa-cx:hover rect{stroke-width:2}
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -2291,6 +2326,8 @@
   <details id="secDados">
     <summary>Dados</summary>
     <div class="sec-body">
+      <div class="mini-title">Qualidade do levantamento</div>
+      <div id="qualidadeRow"></div>
       <div class="setup-btns">
         <button class="btn" id="pasteImportBtn" title="Criar nódulos em massa a partir de colunas coladas do Excel">Colar do Excel</button>
         <button class="btn" id="newDatasetBtn">Nova rede</button>
@@ -4928,6 +4965,7 @@ function setTab(id){
   }else{
     document.body.dataset.tab=id;
     if(id==="tarefas")renderTaskListAll();
+    if(id==="dados")renderQualidade();
     showPage(id);
   }
   /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
@@ -5973,7 +6011,87 @@ function renderNodeList(){
   nodes.filter(n=>!n.parent||!byId(n.parent))
     .sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name))
     .forEach(root=>addRow(root,0));
+  aplicaFiltroUnidades();
 }
+/* Mapa da hierarquia na página Unidades: clicar numa caixa filtra a lista
+   ao ramo dela; o chip diz onde se está e devolve tudo. Só existe na página
+   — no painel estreito a lista chega. */
+let unidadeRamo=null;
+function subArvore(id){
+  const s=new Set([id]);
+  let mudou=true;
+  while(mudou){
+    mudou=false;
+    nodes.forEach(n=>{if(n.parent&&s.has(n.parent)&&!s.has(n.id)){s.add(n.id);mudou=true;}});
+  }
+  return s;
+}
+function aplicaFiltroUnidades(){
+  const host=document.getElementById("mapaUnidades");
+  if(host)desenhaMapaUnidades(host);
+  const lista=document.getElementById("nodeList");
+  if(!lista)return;
+  const chipVelho=lista.parentNode.querySelector(".ramo-chip");
+  if(chipVelho)chipVelho.remove();
+  if(!unidadeRamo||!byId(unidadeRamo)){
+    unidadeRamo=null;
+    lista.querySelectorAll(".row[data-nid]").forEach(r=>{r.style.display="";});
+    return;
+  }
+  const s=subArvore(unidadeRamo);
+  lista.querySelectorAll(".row[data-nid]").forEach(r=>{
+    r.style.display=s.has(r.dataset.nid)?"":"none";
+  });
+  const chip=el("button","chip on ramo-chip","A mostrar: "+byId(unidadeRamo).name+" ×");
+  chip.type="button";
+  chip.title="Voltar a mostrar todas as unidades";
+  chip.onclick=()=>{unidadeRamo=null;renderNodeList();};
+  lista.parentNode.insertBefore(chip,lista);
+}
+function desenhaMapaUnidades(host){
+  host.innerHTML="";
+  const porTier={};
+  nodes.forEach(n=>{(porTier[n.tier]=porTier[n.tier]||[]).push(n);});
+  const tiers=Object.keys(porTier).map(Number).sort((a,b)=>a-b);
+  const CW=92,CH=20,GX=8,GY=12;
+  const maxN=Math.max(...tiers.map(t2=>porTier[t2].length));
+  const W=Math.max(300,maxN*(CW+GX)+20);
+  const H=tiers.length*(CH+GY)+8;
+  const svg=svgEl("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
+    "aria-label":"Mapa da hierarquia — clique para filtrar a lista"},host);
+  const posM={};
+  tiers.forEach((t2,r)=>{
+    const linha=porTier[t2].slice().sort((a,b)=>a.name.localeCompare(b.name));
+    const larg=linha.length*(CW+GX)-GX;
+    linha.forEach((n,i)=>{
+      const x=(W-larg)/2+i*(CW+GX), y=6+r*(CH+GY);
+      posM[n.id]={x:x+CW/2,y:y+CH};
+      const g2=svgEl("g",{class:"mapa-cx"+(unidadeRamo===n.id?" on":""),tabindex:0,role:"button"},svg);
+      svgEl("title",{},g2).textContent=n.name+" — clique para ver só este ramo";
+      svgEl("rect",{x:x,y:y,width:CW,height:CH,rx:5,fill:"var(--panel)",
+        stroke:unidadeRamo===n.id?"var(--gold)":hex(n.color),
+        "stroke-width":unidadeRamo===n.id?2:1.2},g2);
+      const nome=n.name.length>13?n.name.slice(0,12)+"…":n.name;
+      svgEl("text",{x:x+CW/2,y:y+CH/2+3.4,"text-anchor":"middle","font-size":8.6,
+        fill:"var(--ink)"},g2).textContent=nome;
+      const vai=()=>{unidadeRamo=(unidadeRamo===n.id)?null:n.id;renderNodeList();};
+      g2.addEventListener("click",vai);
+      g2.addEventListener("keydown",e2=>{if(e2.key==="Enter"||e2.key===" "){e2.preventDefault();vai();}});
+    });
+  });
+  nodes.forEach(n=>{
+    if(!n.parent||!posM[n.id]||!posM[n.parent])return;
+    svgEl("line",{x1:posM[n.parent].x,y1:posM[n.parent].y,
+      x2:posM[n.id].x,y2:posM[n.id].y-CH,stroke:"var(--hairline)","stroke-width":1},svg);
+  });
+}
+(function(){
+  const lista=document.getElementById("nodeList");
+  if(!lista)return;
+  const host=el("div");
+  host.id="mapaUnidades";
+  lista.parentNode.insertBefore(host,lista);
+})();
 document.getElementById("addNodeBtn").onclick=()=>{
   const n=createNode();
   selectNode(n);
@@ -6117,12 +6235,86 @@ agentList.addEventListener("click",e=>{
   }
   det.addEventListener("toggle",()=>{if(det.open)calc();});
   window.recalcSimAus=()=>{if(det.open)calc();};
+  window.abrirSimulacao=()=>{det.open=true;calc();try{det.scrollIntoView({block:"nearest"});}catch(e){}};
+  window.simMarcarAusencia=id=>{marcados.add(id);window.abrirSimulacao();};
 })();
 /* Quantas tarefas esta pessoa tem a cargo, em todos os procedimentos. */
 function cargaDe(agentId){
   let n=0;
   processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===agentId)n++;}));
   return n;
+}
+/* Perfil de pessoa no sítio (página Pessoas): carga, tarefas com salto,
+   substituto editável, ausência, e o atalho para simular a falta. */
+function togglePerfilAgente(a,row){
+  const aberto=row.nextElementSibling&&row.nextElementSibling.classList&&
+    row.nextElementSibling.classList.contains("ag-perfil");
+  document.querySelectorAll(".ag-perfil").forEach(e2=>e2.remove());
+  if(aberto)return;
+  const card=el("div","ag-perfil");
+  const minhas=[];
+  processes.forEach(p=>p.tasks.forEach(t=>{if(t.agent===a.id)minhas.push({p,t});}));
+  const topo=el("div","agp-topo");
+  topo.append(el("span","agp-nome",a.name+" — "+a.category));
+  const cg=el("span","carga "+(minhas.length>=5?"c-alta":minhas.length>=3?"c-media":minhas.length?"c-normal":"c-zero"),String(minhas.length));
+  cg.title=minhas.length+" tarefa(s) a cargo";
+  topo.append(cg);
+  card.append(topo);
+  if(minhas.length){
+    const lst=el("div","agp-tarefas");
+    minhas.slice(0,8).forEach(x=>{
+      const b=el("button","row");
+      b.type="button";
+      b.append(el("span","t-desc",x.t.nome||String(x.t.desc||"tarefa").slice(0,32)));
+      b.append(el("span","t-route",x.p.name));
+      b.title="Abrir o diagrama de “"+x.p.name+"”";
+      b.onclick=()=>showFeynman(x.p);
+      lst.append(b);
+    });
+    if(minhas.length>8)lst.append(el("div","foot-note","… e mais "+(minhas.length-8)+"."));
+    card.append(lst);
+  }
+  const linha=el("div","agp-linha");
+  const lb=el("label",null,"Substituto ");
+  const sel=document.createElement("select");
+  const op0=document.createElement("option");
+  op0.value="";op0.textContent="— nenhum —";
+  sel.append(op0);
+  agents.filter(x=>x.id!==a.id).sort((x,y)=>x.name.localeCompare(y.name)).forEach(x=>{
+    const op=document.createElement("option");
+    op.value=x.id;op.textContent=x.name;
+    sel.append(op);
+  });
+  sel.value=a.subst||"";
+  sel.onchange=()=>{
+    anotaHistorico("definir o substituto de “"+a.name+"”");
+    a.subst=sel.value||null;
+    markDirty();
+    flash(sel.value?("Substituto de "+a.name+": "+agentById(sel.value).name+"."):"Substituto retirado.",
+      {actions:[{label:"Anular",fn:undoAction}]});
+  };
+  lb.append(sel);
+  linha.append(lb);
+  const swA=el("button","switch"+(a.absent?" on":""));
+  swA.setAttribute("role","switch");
+  swA.setAttribute("aria-checked",String(!!a.absent));
+  swA.setAttribute("aria-label","Marcar "+a.name+" como ausente");
+  const lbA=el("label",null,"Ausente ");
+  lbA.append(swA);
+  swA.onclick=()=>{
+    anotaHistorico((a.absent?"repor":"marcar a ausência de")+" “"+a.name+"”");
+    a.absent=!a.absent;
+    swA.classList.toggle("on",a.absent);
+    swA.setAttribute("aria-checked",String(a.absent));
+    markDirty();
+  };
+  linha.append(lbA);
+  const bSim=el("button","btn tiny","Simular a ausência");
+  bSim.title="Abrir a simulação com "+a.name+" marcado(a)";
+  bSim.onclick=()=>{if(typeof window.simMarcarAusencia==="function")window.simMarcarAusencia(a.id);};
+  linha.append(bSim);
+  card.append(linha);
+  row.after(card);
 }
 function agentRowBtn(a,tagText){
   const row=el("button","row");
@@ -6141,7 +6333,14 @@ function agentRowBtn(a,tagText){
   carga.title=nCarga===1?"1 tarefa a cargo":nCarga+" tarefas a cargo";
   row.append(star,iniChip(a,"sm"),name,carga,tag);
   row.title=a.name+" — "+a.category;
-  row.onclick=()=>selectAgent(a);
+  /* Na PÁGINA, o clique abre um perfil no sítio; na Home continua a abrir o
+     painel 3D — cada contexto com o gesto que lhe serve. */
+  row.onclick=()=>{
+    if(document.body.dataset.tab==="agentes"&&document.body.classList.contains("page-open")){
+      togglePerfilAgente(a,row);return;
+    }
+    selectAgent(a);
+  };
 
   row.draggable=true;
   row.addEventListener("dragstart",e=>{
@@ -10388,13 +10587,89 @@ async function loteApagar(){
   limparSelTarefas();renderTaskListAll();
   flash(items.length+" tarefa(s) apagadas.",{actions:[{label:"Anular",fn:undoAction}]});
 }
+/* Filtro por fatia do separador Tarefas. A fatia "excedido" apanha as
+   tarefas dos procedimentos cujo caminho crítico ultrapassa o prazo. */
+let filtroTarefas={k:"tudo",pessoa:null};
+function tarefaPassaFiltro(t,p,excedidos){
+  switch(filtroTarefas.k){
+    case "semresp":return !t.agent;
+    case "porconfirmar":return !(t.estado==="validado"||t.estado==="aprovado");
+    case "validado":return t.estado==="validado";
+    case "aprovado":return t.estado==="aprovado";
+    case "excedido":return excedidos.has(p.id);
+    case "pessoa":return t.agent===filtroTarefas.pessoa;
+    default:return true;
+  }
+}
 function renderTaskListAll(){
   const host=document.getElementById("taskListAll");
   if(!host)return;
   host.innerHTML="";
+  const excedidos=new Set();
+  processes.forEach(p=>{
+    if(Number.isFinite(p.prazo)){
+      try{if(procStats(p).total>p.prazo)excedidos.add(p.id);}catch(e){}
+    }
+  });
+  /* barra de chips com contagens */
+  const chips=el("div","filtro-chips");
+  const conta=k=>{
+    const guarda=filtroTarefas;filtroTarefas={k:k,pessoa:guarda.pessoa};
+    let n=0;
+    processes.forEach(p=>p.tasks.forEach(t=>{if(tarefaPassaFiltro(t,p,excedidos))n++;}));
+    filtroTarefas=guarda;return n;
+  };
+  [["tudo","Tudo"],["semresp","Sem responsável"],["porconfirmar","Por confirmar"],
+   ["validado","Validado"],["aprovado","Aprovado"],["excedido","Prazo excedido"]]
+  .forEach(([k,rot])=>{
+    const n=conta(k);
+    const b=el("button","chip"+(filtroTarefas.k===k?" on":""),rot+" · "+n);
+    b.type="button";
+    b.onclick=()=>{filtroTarefas={k:k,pessoa:null};renderTaskListAll();};
+    chips.append(b);
+  });
+  /* filtro por pessoa: só quem tem tarefas */
+  const comTarefas=new Map();
+  processes.forEach(p=>p.tasks.forEach(t=>{
+    if(t.agent){const a=agentById(t.agent);if(a)comTarefas.set(a.id,a);}
+  }));
+  if(comTarefas.size){
+    const sel=document.createElement("select");
+    sel.className="chip-select";
+    sel.setAttribute("aria-label","Filtrar por pessoa");
+    const op0=document.createElement("option");
+    op0.value="";op0.textContent="Por pessoa…";
+    sel.append(op0);
+    [...comTarefas.values()].sort((a,b)=>a.name.localeCompare(b.name)).forEach(a=>{
+      const op=document.createElement("option");
+      op.value=a.id;op.textContent=a.name;
+      sel.append(op);
+    });
+    if(filtroTarefas.k==="pessoa")sel.value=filtroTarefas.pessoa||"";
+    sel.onchange=()=>{
+      filtroTarefas=sel.value?{k:"pessoa",pessoa:sel.value}:{k:"tudo",pessoa:null};
+      renderTaskListAll();
+    };
+    chips.append(sel);
+  }
+  /* a fatia alimenta a barra de lote que já existe */
+  if(filtroTarefas.k!=="tudo"){
+    const bSel=el("button","chip acao","Selecionar estas");
+    bSel.type="button";
+    bSel.title="Junta a fatia inteira à seleção múltipla — a barra de lote aparece ao fundo";
+    bSel.onclick=()=>{
+      processes.forEach(p=>p.tasks.forEach(t=>{
+        if(tarefaPassaFiltro(t,p,excedidos))selTarefas.set(p.id+"|"+t.id,{p,t});
+      }));
+      renderTaskListAll();syncLoteBar();
+    };
+    chips.append(bSel);
+  }
+  host.append(chips);
   let total=0;
   processes.forEach(p=>{
     if(!p.tasks.length)return;
+    if(!p.tasks.some(t=>tarefaPassaFiltro(t,p,excedidos)))return;
     const head=el("div","mini-title");
     const dot=el("span","swatch");
     dot.style.background=hex(p.color);
@@ -10403,6 +10678,7 @@ function renderTaskListAll(){
     head.append(dot,document.createTextNode(p.name+" · "+p.tasks.length));
     host.append(head);
     p.tasks.forEach(t=>{
+      if(!tarefaPassaFiltro(t,p,excedidos))return;
       total++;
       const A=byId(t.a),B=byId(t.b);
       const ag=t.agent?agentById(t.agent):null;
@@ -10433,7 +10709,9 @@ function renderTaskListAll(){
   });
   if(!total){
     host.append(el("div","foot-note",
-      "Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma."));
+      filtroTarefas.k==="tudo"
+        ?"Ainda não há tarefas. Crie a primeira no modo ligar (L) — arraste de um nódulo para outro — ou dentro de um fluxograma."
+        :"Nada nesta fatia. Escolha outro filtro, ou “Tudo”."));
   }
 }
 /* O separador só se redesenha quando está à vista, e no máximo uma vez por
@@ -10725,6 +11003,54 @@ function flash(msg,opts){
 /* ============================================================
    VERSÕES COM NOME + PROCEDIMENTOS AVULSOS E MODELOS
 ============================================================ */
+/* Painel de qualidade: quatro azulejos que dizem quanto falta para acabar o
+   levantamento — e cada um salta para o sítio onde se resolve. */
+function renderQualidade(){
+  const host=document.getElementById("qualidadeRow");
+  if(!host)return;
+  host.innerHTML="";
+  let nT=0,nApr=0,nSem=0;
+  processes.forEach(p=>p.tasks.forEach(t=>{
+    nT++;
+    if(t.estado==="aprovado")nApr++;
+    if(!t.agent)nSem++;
+  }));
+  const semPrazo=processes.filter(p=>p.tasks.length&&!Number.isFinite(p.prazo));
+  const fora=id=>{const x=id?agentById(id):null;return !x||x.absent;};
+  const spof=agents.filter(a=>{
+    let n=0;
+    processes.forEach(p=>p.tasks.forEach(t=>{
+      if(t.agent===a.id&&(!a.subst||fora(a.subst)))n++;
+    }));
+    return n>0;
+  }).length;
+  const tile=(rot,valor,tit,fn)=>{
+    const b=el("button","q-tile");
+    b.type="button";b.title=tit;
+    b.append(el("span","q-val",valor));
+    b.append(el("span","q-rot",rot));
+    b.onclick=fn;
+    host.append(b);
+  };
+  tile("aprovadas",nT?Math.round(nApr/nT*100)+"%":"—",
+    nApr+" de "+nT+" tarefas aprovadas — clique para ver as que faltam",
+    ()=>{filtroTarefas={k:"porconfirmar",pessoa:null};setTab("tarefas");});
+  tile("sem responsável",String(nSem),
+    "Tarefas sem responsável — clique para as listar",
+    ()=>{filtroTarefas={k:"semresp",pessoa:null};setTab("tarefas");});
+  tile("sem prazo",String(semPrazo.length),
+    "Procedimentos sem prazo legal definido — clique para escolher um e defini-lo",
+    async()=>{
+      if(!semPrazo.length){flash("Todos os procedimentos têm prazo. ✓");return;}
+      const r=await askOpcoes("Definir prazo — qual procedimento?","O prazo edita-se na barra do diagrama.",
+        semPrazo.slice(0,12).map(p=>({k:p.id,label:p.name})));
+      const alvo=r&&layerById(r);
+      if(alvo)showFeynman(alvo);
+    });
+  tile("pontos únicos",String(spof),
+    "Pessoas que são a única cobertura de alguma tarefa — clique para abrir a simulação de ausências",
+    ()=>{setTab("agentes");if(typeof window.abrirSimulacao==="function")window.abrirSimulacao();});
+}
 const VER_KEY="of.versions.v1";
 function loadVersoes(){
   try{const l=JSON.parse(storageGet(VER_KEY)||"[]");return Array.isArray(l)?l:[];}catch(e){return [];}
