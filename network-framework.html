@@ -7905,7 +7905,7 @@ function renderFlowchart(p){
       if(!midId){flash("Escolha o nódulo intermédio.",{type:"err"});return;}
       const tail=createTask(idx,midId,oldB,d.value.trim()||undefined,
         (primaryOf(midId)||{}).id||null,du.value.trim()||undefined);
-      // Only rewire the original once the second half actually exists
+      // Só religar a original quando a segunda metade existir de facto
       if(!tail){flash("Não foi possível inserir o passo.",{type:"err"});return;}
       t.b=midId;
       rebuildTaskVisual(t);
@@ -10770,7 +10770,7 @@ function animate(){
     });
   }
 
-  // Hover kinship recomputed only when the hovered node actually changes
+  // O parentesco do pairar só se recalcula quando o nódulo pairado muda
   if(hoverNode!==lastHoverNode){lastHoverNode=hoverNode;computeHoverKin();}
   const kinOn=!!hoverKin&&!focusActive;
 
@@ -11309,8 +11309,8 @@ function spaceTaken(){
   const r=a.getAttribute("role");
   return r==="button"||r==="switch"||r==="checkbox"||r==="tab"||r==="menuitem";
 }
-/* Global keyboard shortcuts. The tour keys were documented in the README but
-   never actually bound — this is where they live now. */
+/* Atalhos de teclado globais. As teclas da visita estavam documentadas no
+   README mas nunca tinham sido ligadas — é aqui que vivem agora. */
 addEventListener("keydown",e=>{
   const el0=e.target;
   const tag=((el0&&el0.tagName)||"").toLowerCase();
