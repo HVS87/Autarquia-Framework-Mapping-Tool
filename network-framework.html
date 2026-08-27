@@ -269,6 +269,47 @@
     font-size:.62rem;color:var(--ink-dim);cursor:pointer}
   .chip-ord span:hover{color:var(--gold);border-color:var(--gold)}
   /* Transição colunas↔pistas */
+  /* Ícones dos separadores: só em ecrã largo — leitura periférica sem crescer */
+  .tab-ic{display:none}
+  @media (min-width:900px){
+    .tab .tab-ic{display:inline-flex;margin-right:5px;vertical-align:-2px}
+  }
+  /* Tabela raio-X (Procedimentos) */
+  .pp-topo{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .raiox-wrap{overflow-x:auto;border:1px solid var(--hairline);border-radius:10px;margin-top:6px}
+  .raiox{border-collapse:collapse;width:100%;font-size:.74rem;min-width:640px}
+  .raiox th{position:sticky;top:0;background:var(--panel);color:var(--ink-dim);
+    text-align:left;padding:7px 9px;font-size:.66rem;letter-spacing:.05em;
+    text-transform:uppercase;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--hairline)}
+  .raiox th:hover{color:var(--gold)}
+  .raiox td{padding:6px 9px;border-bottom:1px solid var(--hairline);color:var(--ink);white-space:nowrap}
+  .raiox td.nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  .raiox td.bom{color:#5CC46A;font-weight:600}
+  .raiox td.mau{color:#E0554F;font-weight:600}
+  .raiox tr{cursor:pointer}
+  .raiox tr:hover td{background:rgba(127,127,127,0.07)}
+  /* Matriz pessoa × procedimento */
+  .matriz-wrap{overflow-x:auto;margin-top:8px}
+  .matriz{border-collapse:collapse;font-size:.7rem}
+  .matriz th{padding:5px 7px;color:var(--ink-dim);font-size:.62rem;text-align:center;
+    max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .matriz td{padding:4px 7px;text-align:center;color:var(--ink);border:1px solid var(--hairline);min-width:30px}
+  .matriz td.nm{text-align:left;font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+  .matriz td.tot{font-weight:700;color:var(--gold)}
+  /* Diário */
+  #secDiario{margin-top:10px;border:1px solid var(--hairline);border-radius:10px;padding:8px 10px}
+  #secDiario>summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--gold)}
+  .diario-dia{font-size:.66rem;font-weight:700;color:var(--steel);margin:8px 0 2px;
+    text-transform:capitalize}
+  .diario-row{display:flex;gap:8px;font-size:.72rem;padding:2px 0;border-bottom:1px dashed var(--hairline)}
+  .diario-row .hh{flex:none;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+  .diario-row .tx{color:var(--ink)}
+  #diarioLista .btn{margin-top:8px}
+  /* Cartão de retoma */
+  #retoma{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    padding:8px 12px;border-radius:10px;margin-bottom:8px}
+  .ret-tit{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+  .ret-ver{font-size:.68rem;color:var(--ink-dim)}
   .fey-entra{animation:feyEntra .24s ease-out}
   @keyframes feyEntra{from{opacity:0;transform:translateY(6px) scale(0.988)}}
   @media (prefers-reduced-motion:reduce){.fey-entra{animation:none}}
@@ -2207,14 +2248,14 @@
 
 <header>
   <nav id="tabbar" role="tablist" aria-label="Navegação principal">
-    <button class="tab on" role="tab" data-tab="home" aria-selected="true">Home</button>
-    <button class="tab" role="tab" data-tab="organograma" aria-selected="false">Organograma</button>
-    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false">Unidades</button>
-    <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false">Procedimentos</button>
-    <button class="tab" role="tab" data-tab="agentes" aria-selected="false">Pessoas</button>
-    <button class="tab" role="tab" data-tab="tarefas" aria-selected="false">Tarefas</button>
-    <button class="tab" role="tab" data-tab="dados" aria-selected="false">Dados</button>
-    <button class="tab" role="tab" data-tab="definicoes" aria-selected="false">Definições</button>
+    <button class="tab on" role="tab" data-tab="home" aria-selected="true"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span>Home</button>
+    <button class="tab" role="tab" data-tab="organograma" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="16" width="6" height="5" rx="1"/><rect x="16" y="16" width="6" height="5" rx="1"/><path d="M12 7v4M5 16v-3h14v3"/></svg></span>Organograma</button>
+    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span>Unidades</button>
+    <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="12" r="2.5"/><circle cx="5" cy="18" r="2.5"/><path d="M7.5 6.8 16.5 11M7.5 17.2 16.5 13"/></svg></span>Procedimentos</button>
+    <button class="tab" role="tab" data-tab="agentes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c1-3.6 3.6-5.4 6.5-5.4S14.5 16.4 15.5 20"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.6c2.6.2 4.3 1.8 5 5.4"/></svg></span>Pessoas</button>
+    <button class="tab" role="tab" data-tab="tarefas" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 6 8.5 9.5 5M4 13.5 6 15.5 9.5 12M4 20.3 6 22.3 9.5 19"/><path d="M13 7h8M13 14h8M13 21h8"/></svg></span>Tarefas</button>
+    <button class="tab" role="tab" data-tab="dados" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Dados</button>
+    <button class="tab" role="tab" data-tab="definicoes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>Definições</button>
   </nav>
   <div class="brand">
     <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
@@ -2413,6 +2454,9 @@
       </div>
       <div id="verLista"></div>
       <div class="foot-note">As versões ficam neste aparelho (no máximo 8 — a mais antiga sai). "Comparar" mostra o que mudou entre a versão e o estado atual; "Repor" volta lá, com direito a Anular.</div>
+      <details id="secDiario"><summary>Diário de alterações</summary>
+        <div id="diarioLista"></div>
+      </details>
       <div class="mini-title" style="margin-top:12px">Procedimentos avulsos e modelos</div>
       <div class="setup-btns">
         <button class="btn" id="procExpBtn" title="Guardar UM procedimento num ficheiro, com os nódulos identificados por nome — para partilhar entre câmaras">Exportar um procedimento</button>
@@ -5035,7 +5079,7 @@ function setTab(id){
   }else{
     document.body.dataset.tab=id;
     if(id==="tarefas")renderTaskListAll();
-    if(id==="dados")renderQualidade();
+    if(id==="dados"){renderQualidade();renderDiario();}
     showPage(id);
   }
   /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
@@ -5153,10 +5197,88 @@ function miniFluxo(p){
   });
   return s;
 }
+/* Vista da página Procedimentos: cartões (a omissão) ou a tabela raio-X. */
+let procsVista="cartoes";
+let procsOrd={k:"nome",dir:1};
 function renderPageProcs(){
   const host=el("div");
   host.id="procExplore";
-  host.append(el("div","mini-title","Tarefas por procedimento — arraste uma tarefa para lhe mudar o destino"));
+  const topo=el("div","pp-topo");
+  topo.append(el("div","mini-title","Tarefas por procedimento — arraste uma tarefa para lhe mudar o destino"));
+  const vst=el("div","layer-pick");
+  [["cartoes","Cartões"],["tabela","Tabela"]].forEach(([k,rot])=>{
+    const b=el("button",procsVista===k?"sel":"",rot);
+    b.style.color="var(--steel)";
+    b.onclick=()=>{procsVista=k;devolveSeccoes();showPage("procedimentos");};
+    vst.append(b);
+  });
+  topo.append(vst);
+  host.append(topo);
+  if(procsVista==="tabela"){
+    /* raio-X: uma linha por procedimento, colunas ordenáveis — é aqui que
+       se escolhe por onde atacar o levantamento. */
+    const dados=processes.map(p=>{
+      let st=null;try{st=procStats(p);}catch(e){}
+      const r=ramosDe(p);
+      const av=procAvisos(p);
+      const nA=p.tasks.filter(t2=>t2.estado==="aprovado").length;
+      return {p,nome:p.name,etapas:st?st.graph.ids.length:0,tarefas:p.tasks.length,
+        dur:st?st.total:0,prazo:Number.isFinite(p.prazo)?p.prazo:null,
+        folga:(st&&Number.isFinite(p.prazo))?(p.prazo-st.total):null,
+        aprov:p.tasks.length?Math.round(nA/p.tasks.length*100):0,
+        notas:p.tasks.filter(t2=>t2.nota).length,
+        ramos:r.convergentes.length+r.divergentes.length,
+        selos:(av.vermelho?1:0)+(av.amarelo?1:0)};
+    });
+    const COLS=[["nome","Procedimento"],["etapas","Etapas"],["tarefas","Tarefas"],
+      ["dur","Duração"],["prazo","Prazo"],["folga","Folga"],["aprov","% Aprov."],
+      ["notas","Notas"],["ramos","Ramos"],["selos","Selos"]];
+    dados.sort((a,b)=>{
+      const k=procsOrd.k;
+      const va=a[k],vb=b[k];
+      if(va===null&&vb===null)return 0;
+      if(va===null)return 1;
+      if(vb===null)return -1;
+      return (typeof va==="string"?va.localeCompare(vb):va-vb)*procsOrd.dir;
+    });
+    const wrapT=el("div","raiox-wrap");
+    const tb=document.createElement("table");
+    tb.className="raiox";
+    const thr=document.createElement("tr");
+    COLS.forEach(([k,rot])=>{
+      const th=document.createElement("th");
+      th.textContent=rot+(procsOrd.k===k?(procsOrd.dir>0?" ↑":" ↓"):"");
+      th.title="Ordenar por "+rot;
+      th.onclick=()=>{
+        if(procsOrd.k===k)procsOrd.dir*=-1;else procsOrd={k,dir:k==="nome"?1:-1};
+        devolveSeccoes();showPage("procedimentos");
+      };
+      thr.append(th);
+    });
+    tb.append(thr);
+    dados.forEach(d=>{
+      const tr=document.createElement("tr");
+      tr.tabIndex=0;
+      tr.title="Abrir “"+d.nome+"” no diagrama";
+      const cel=(v,cls)=>{const td=document.createElement("td");td.textContent=v;if(cls)td.className=cls;tr.append(td);};
+      cel(d.nome,"nm");
+      cel(d.etapas);cel(d.tarefas);
+      cel(fmtDays(d.dur));
+      cel(d.prazo===null?"—":d.prazo+" d");
+      cel(d.folga===null?"—":(Math.round(d.folga*10)/10)+" d",d.folga!==null?(d.folga<0?"mau":"bom"):"");
+      cel(d.aprov+"%",d.aprov===100?"bom":"");
+      cel(d.notas||"—");
+      cel(d.ramos||"—");
+      cel(d.selos?("!".repeat(d.selos)):"—",d.selos?"mau":"");
+      tr.onclick=()=>showFeynman(d.p);
+      tr.addEventListener("keydown",e=>{if(e.key==="Enter")showFeynman(d.p);});
+      tb.append(tr);
+    });
+    wrapT.append(tb);
+    host.append(wrapT);
+    pageBody.append(host);
+    return;
+  }
   processes.forEach(p=>{
     const card=el("div","pp-card");
     card.style.borderLeft="3px solid "+hex(p.color);
@@ -6262,6 +6384,69 @@ agentList.addEventListener("click",e=>{
   const res=el("div","sim-res");
   det.append(escolha,res);
   agentList.parentNode.insertBefore(det,agentList.nextSibling);
+  /* ---- matriz pessoa × procedimento ----
+     Um heatmap de quem toca em quê: as pessoas-charneira — que aparecem em
+     muitos procedimentos — veem-se numa linha cheia, e é nelas que a
+     continuidade se joga. */
+  const detM=document.createElement("details");
+  detM.id="matrizPP";detM.className="sim-aus";
+  const sumM=document.createElement("summary");
+  sumM.textContent="Matriz pessoa × procedimento — quem toca em quê";
+  detM.append(sumM);
+  const corpoM=el("div","matriz-wrap");
+  detM.append(corpoM);
+  det.parentNode.insertBefore(detM,det.nextSibling);
+  function calcMatriz(){
+    corpoM.innerHTML="";
+    const procs2=processes.filter(p2=>p2.tasks.length);
+    const contas=new Map();
+    procs2.forEach(p2=>p2.tasks.forEach(t2=>{
+      if(!t2.agent)return;
+      if(!contas.has(t2.agent))contas.set(t2.agent,new Map());
+      const m2=contas.get(t2.agent);
+      m2.set(p2.id,(m2.get(p2.id)||0)+1);
+    }));
+    if(!contas.size){corpoM.append(el("div","foot-note","Ainda não há tarefas com responsável."));return;}
+    let maxCel=1;
+    contas.forEach(m2=>m2.forEach(v=>{if(v>maxCel)maxCel=v;}));
+    const linhas=[...contas.entries()].map(([aid,m2])=>{
+      let tot=0;m2.forEach(v=>tot+=v);
+      return {a:agentById(aid),m:m2,tot};
+    }).filter(x=>x.a).sort((x,y)=>y.tot-x.tot);
+    const tb=document.createElement("table");
+    tb.className="matriz";
+    const thr=document.createElement("tr");
+    thr.append(document.createElement("th"));
+    procs2.forEach(p2=>{
+      const th=document.createElement("th");
+      th.textContent=abbrev(p2.name);
+      th.title=p2.name;
+      thr.append(th);
+    });
+    const thT=document.createElement("th");thT.textContent="Σ";thr.append(thT);
+    tb.append(thr);
+    linhas.forEach(x=>{
+      const tr=document.createElement("tr");
+      const tdN=document.createElement("td");tdN.className="nm";tdN.textContent=x.a.name;tr.append(tdN);
+      procs2.forEach(p2=>{
+        const td=document.createElement("td");
+        const v=x.m.get(p2.id)||0;
+        if(v){
+          td.textContent=v;
+          td.style.background="rgba(232,180,76,"+(0.12+0.5*(v/maxCel))+")";
+          td.title=x.a.name+" · "+p2.name+" · "+v+" tarefa(s) — abrir o diagrama";
+          td.style.cursor="pointer";
+          td.onclick=()=>showFeynman(p2);
+        }
+        tr.append(td);
+      });
+      const tdT=document.createElement("td");tdT.className="tot";tdT.textContent=x.tot;tr.append(tdT);
+      tb.append(tr);
+    });
+    corpoM.append(tb);
+  }
+  detM.addEventListener("toggle",()=>{if(detM.open)calcMatriz();});
+  window.recalcMatrizPP=()=>{if(detM.open)calcMatriz();};
   const marcados=new Set();
   /* Devolve o responsável "descoberto", ou null se a tarefa está coberta:
      o titular presente, ou o substituto dele presente, cobrem-na. */
@@ -8983,7 +9168,53 @@ function poeTrilho(titulo){
   volta.onclick=()=>{feyTrilho.pop();trilhoManter=true;showFlowchart(de);};
   titulo.prepend(volta);
 }
-function showFeynman(p){navigateTo({type:"feynman",layer:p});}
+function showFeynman(p){
+  try{storageSet("of.ultimo.v1",JSON.stringify({pid:p.id,at:new Date().toISOString()}));}catch(e){}
+  if(booted)renderRetoma();
+  navigateTo({type:"feynman",layer:p});
+}
+/* ---- cartão de retoma (Home) ----
+   O regresso de segunda-feira de manhã em um clique: o último diagrama
+   aberto, as notas por resolver, e a última versão guardada. */
+function renderRetoma(){
+  let host=document.getElementById("retoma");
+  const panelEl2=document.getElementById("panel");
+  if(!panelEl2)return;
+  if(!host){
+    host=el("div","glass");
+    host.id="retoma";
+    panelEl2.insertBefore(host,panelEl2.firstChild);
+  }
+  host.innerHTML="";
+  const pecas=[];
+  let ult=null;
+  try{ult=JSON.parse(storageGet("of.ultimo.v1")||"null");}catch(e){}
+  const pUlt=ult&&layerById(ult.pid);
+  if(pUlt){
+    const b=el("button","btn tiny","▸ "+pUlt.name);
+    b.title="Retomar o último diagrama aberto";
+    b.onclick=()=>showFeynman(pUlt);
+    pecas.push(b);
+  }
+  let nNotas=0;
+  processes.forEach(p2=>p2.tasks.forEach(t2=>{if(t2.nota)nNotas++;}));
+  if(nNotas){
+    const b=el("button","btn tiny",nNotas+" nota(s) por resolver");
+    b.title="Abrir a página de Procedimentos — os cartões contam as notas";
+    b.onclick=()=>setTab("procedimentos");
+    pecas.push(b);
+  }
+  const vers=loadVersoes();
+  if(vers.length){
+    const v=vers[vers.length-1];
+    const sp=el("span","ret-ver","versão: "+v.nome);
+    sp.title="Última versão guardada — gerir na página Dados";
+    pecas.push(sp);
+  }
+  if(!pecas.length){host.remove();return;}
+  host.append(el("span","ret-tit","Retomar"));
+  pecas.forEach(x=>host.append(x));
+}
 /* Campo de renomear pousado sobre a pastilha da aresta: converte o ponto do
    SVG em coordenadas do ecrã e deixa o renomear acontecer onde o olho está. */
 /* Campo genérico pousado num ponto do diagrama (SVG→ecrã): serve o renomear
@@ -11669,6 +11900,52 @@ function renderQualidade(){
   tile("pontos únicos",String(spof),
     "Pessoas que são a única cobertura de alguma tarefa — clique para abrir a simulação de ausências",
     ()=>{setTab("agentes");if(typeof window.abrirSimulacao==="function")window.abrirSimulacao();});
+}
+/* ---- diário de alterações ----
+   As legendas que o histórico já escreve, guardadas com data e hora numa
+   lista consultável — auditoria leve, sem custo novo. Máx. 200 entradas. */
+const DIARIO_KEY="of.diario.v1";
+function diarioAnota(txt){
+  try{
+    const l=JSON.parse(storageGet(DIARIO_KEY)||"[]");
+    l.push({at:new Date().toISOString(),txt:String(txt||"alteração").slice(0,90)});
+    while(l.length>200)l.shift();
+    storageSet(DIARIO_KEY,JSON.stringify(l));
+  }catch(e){}
+}
+function renderDiario(){
+  const host=document.getElementById("diarioLista");
+  if(!host)return;
+  host.innerHTML="";
+  let l=[];
+  try{l=JSON.parse(storageGet(DIARIO_KEY)||"[]");}catch(e){}
+  if(!Array.isArray(l)||!l.length){
+    host.append(el("div","foot-note","Ainda sem registos — cada alteração aplicada fica aqui com data e hora."));
+    return;
+  }
+  const hoje=new Date().toDateString();
+  const deHoje=l.filter(e2=>new Date(e2.at).toDateString()===hoje).length;
+  host.append(el("div","mini-title","Hoje: "+deHoje+" alteração(ões) · total registado: "+l.length));
+  let ultimaData="";
+  l.slice().reverse().slice(0,60).forEach(e2=>{
+    const d=new Date(e2.at);
+    const dia=d.toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short"});
+    if(dia!==ultimaData){
+      ultimaData=dia;
+      host.append(el("div","diario-dia",dia));
+    }
+    const row=el("div","diario-row");
+    row.append(el("span","hh",d.toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"})));
+    row.append(el("span","tx",e2.txt));
+    host.append(row);
+  });
+  const bLimpar=el("button","btn tiny danger-btn","Limpar o diário");
+  bLimpar.onclick=async()=>{
+    if(!(await askConfirm("Limpar o diário de alterações? (não mexe nos dados)",{yes:"Limpar",danger:true})))return;
+    storageSet(DIARIO_KEY,"[]");
+    renderDiario();
+  };
+  host.append(bLimpar);
 }
 const VER_KEY="of.versions.v1";
 function loadVersoes(){
@@ -15621,6 +15898,7 @@ function recordHistory(){
   if(lastSnap!==null){
     undoStack.push(lastSnap);
     undoRotulos.push(rotuloPendente);
+    diarioAnota(rotuloPendente);
     if(undoStack.length>HISTORY_MAX){undoStack.shift();undoRotulos.shift();}
     redoStack.length=0;redoRotulos.length=0;
   }
@@ -15721,6 +15999,7 @@ updateEmptyHint();
 renderBookmarks();
 renderCodeKey();
 renderQuest();
+renderRetoma();
 settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
