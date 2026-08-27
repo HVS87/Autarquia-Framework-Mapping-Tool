@@ -224,6 +224,115 @@
   #mapaUnidades svg{display:block;min-width:300px;width:100%;height:auto;max-height:180px}
   .mapa-cx{cursor:pointer}
   .mapa-cx:hover rect{stroke-width:2}
+  /* Editor de fases */
+  #fasesDlg{position:fixed;inset:0;z-index:53;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #fasesDlg.open{display:grid;place-items:center}
+  #fasesCard{width:min(460px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px}
+  #fasesCard h3{font-size:.95rem;margin:0 0 4px;font-weight:600}
+  #fasesCard .sub{font-size:.74rem;color:var(--ink-dim);margin-bottom:10px}
+  .fase-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+  .fase-row input{flex:1;min-width:0;font:inherit;font-size:.8rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:5px 8px}
+  .fase-row input:focus{outline:none;border-color:var(--gold)}
+  .fase-row select{font:inherit;font-size:.74rem;color:var(--ink);background:transparent;
+    border:1px solid var(--hairline);border-radius:7px;padding:5px 6px}
+  .fey-estado{cursor:pointer}
+  .fey-estado:hover{stroke:var(--gold);stroke-width:1.6}
+  .fant-chip{color:var(--ink-dim);border-style:dashed}
+  /* Validação em sessão */
+  #sessaoDlg{position:fixed;inset:0;z-index:55;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #sessaoDlg.open{display:grid;place-items:center}
+  #sessaoDlg:focus{outline:none}
+  #sessaoCard{width:min(560px,calc(100vw - 40px));max-height:calc(100vh - 56px);overflow:auto;
+    padding:22px 24px;border-radius:14px}
+  .ss-topo{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-dim);margin-bottom:10px}
+  #ssProg{font-weight:700;color:var(--gold)}
+  #ssNome{font-size:1.15rem;font-weight:700;color:var(--ink);margin-bottom:2px}
+  #ssRota{font-size:.78rem;color:var(--steel);margin-bottom:8px}
+  #ssDesc{font-size:.84rem;line-height:1.55;color:var(--ink);margin-bottom:8px}
+  #ssMeta{font-size:.72rem;color:var(--ink-dim);margin-bottom:14px}
+  .ss-estados{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .ss-estados .btn{flex:1;min-width:120px}
+  .ss-estados .btn.sel{border-color:var(--gold);color:var(--gold);font-weight:600}
+  .ss-estados b{opacity:.6;margin-right:4px}
+  .ss-dica{font-size:.64rem;color:var(--ink-dim);margin-top:10px;text-align:center}
+  /* Presets das preferências */
+  .fey-presets{display:flex;gap:8px;margin-bottom:8px}
+  /* Reordenar nos chips */
+  .chip-ord{display:inline-flex;gap:2px;margin-left:6px;opacity:0;transition:opacity .12s}
+  .pp-chip:hover .chip-ord,.pp-chip:focus-within .chip-ord{opacity:1}
+  .chip-ord span{display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;border:1px solid var(--hairline);border-radius:4px;
+    font-size:.62rem;color:var(--ink-dim);cursor:pointer}
+  .chip-ord span:hover{color:var(--gold);border-color:var(--gold)}
+  /* Transição colunas↔pistas */
+  /* Ícones dos separadores: só em ecrã largo — leitura periférica sem crescer */
+  .tab-ic{display:none}
+  @media (min-width:900px){
+    .tab .tab-ic{display:inline-flex;margin-right:5px;vertical-align:-2px}
+  }
+  /* Tabela raio-X (Procedimentos) */
+  .pp-topo{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .raiox-wrap{overflow-x:auto;border:1px solid var(--hairline);border-radius:10px;margin-top:6px}
+  .raiox{border-collapse:collapse;width:100%;font-size:.74rem;min-width:640px}
+  .raiox th{position:sticky;top:0;background:var(--panel);color:var(--ink-dim);
+    text-align:left;padding:7px 9px;font-size:.66rem;letter-spacing:.05em;
+    text-transform:uppercase;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--hairline)}
+  .raiox th:hover{color:var(--gold)}
+  .raiox td{padding:6px 9px;border-bottom:1px solid var(--hairline);color:var(--ink);white-space:nowrap}
+  .raiox td.nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  .raiox td.bom{color:#5CC46A;font-weight:600}
+  .raiox td.mau{color:#E0554F;font-weight:600}
+  .raiox tr{cursor:pointer}
+  .raiox tr:hover td{background:rgba(127,127,127,0.07)}
+  /* Matriz pessoa × procedimento */
+  .matriz-wrap{overflow-x:auto;margin-top:8px}
+  .matriz{border-collapse:collapse;font-size:.7rem}
+  .matriz th{padding:5px 7px;color:var(--ink-dim);font-size:.62rem;text-align:center;
+    max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .matriz td{padding:4px 7px;text-align:center;color:var(--ink);border:1px solid var(--hairline);min-width:30px}
+  .matriz td.nm{text-align:left;font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+  .matriz td.tot{font-weight:700;color:var(--gold)}
+  /* Diário */
+  #secDiario{margin-top:10px;border:1px solid var(--hairline);border-radius:10px;padding:8px 10px}
+  #secDiario>summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--gold)}
+  .diario-dia{font-size:.66rem;font-weight:700;color:var(--steel);margin:8px 0 2px;
+    text-transform:capitalize}
+  .diario-row{display:flex;gap:8px;font-size:.72rem;padding:2px 0;border-bottom:1px dashed var(--hairline)}
+  .diario-row .hh{flex:none;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+  .diario-row .tx{color:var(--ink)}
+  #diarioLista .btn{margin-top:8px}
+  /* Cartão de retoma */
+  #retoma{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    padding:8px 12px;border-radius:10px;margin-bottom:8px}
+  .ret-tit{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+  .ret-ver{font-size:.68rem;color:var(--ink-dim)}
+  .fey-entra{animation:feyEntra .24s ease-out}
+  @keyframes feyEntra{from{opacity:0;transform:translateY(6px) scale(0.988)}}
+  @media (prefers-reduced-motion:reduce){.fey-entra{animation:none}}
+  /* ---- folha de impressão ----
+     Ctrl+P com o diagrama (ou o fluxograma) aberto imprime SÓ o conteúdo do
+     modal, em fundo branco com tintas escuras — os cromas do ecrã ficam no
+     ecrã. As variáveis são redefinidas dentro do print, por isso todas as
+     pastilhas e traços seguem sozinhos. */
+  @media print{
+    :root{--panel:#fff;--ink:#111;--ink-dim:#555;--hairline:#999;
+      --gold:#8a6a1c;--steel:#333;--bg-mid:#fff;--bg-deep:#fff;--scrim:#fff}
+    header,#tabbar,#panel,#page,#detail,#stage,#toastHost,#stepper,#quest,
+    #whereBar,#radarWrap,#trailMenu,#emptyHint,#loteBar,#modalClose,
+    .fey-acts,.fey-rascunho,#feyMini,.skip-link{display:none!important}
+    body{background:#fff!important}
+    #modal{position:static!important;display:block!important;padding:0!important;
+      background:#fff!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+    #modalCard{position:static!important;width:100%!important;max-width:none!important;
+      height:auto!important;max-height:none!important;border:none!important;
+      box-shadow:none!important;background:#fff!important;overflow:visible!important}
+    #feyWrap{border:none!important;overflow:visible!important}
+    #feySvg{width:100%!important;height:auto!important}
+  }
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -2139,14 +2248,14 @@
 
 <header>
   <nav id="tabbar" role="tablist" aria-label="Navegação principal">
-    <button class="tab on" role="tab" data-tab="home" aria-selected="true">Home</button>
-    <button class="tab" role="tab" data-tab="organograma" aria-selected="false">Organograma</button>
-    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false">Unidades</button>
-    <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false">Procedimentos</button>
-    <button class="tab" role="tab" data-tab="agentes" aria-selected="false">Pessoas</button>
-    <button class="tab" role="tab" data-tab="tarefas" aria-selected="false">Tarefas</button>
-    <button class="tab" role="tab" data-tab="dados" aria-selected="false">Dados</button>
-    <button class="tab" role="tab" data-tab="definicoes" aria-selected="false">Definições</button>
+    <button class="tab on" role="tab" data-tab="home" aria-selected="true"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span>Home</button>
+    <button class="tab" role="tab" data-tab="organograma" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="16" width="6" height="5" rx="1"/><rect x="16" y="16" width="6" height="5" rx="1"/><path d="M12 7v4M5 16v-3h14v3"/></svg></span>Organograma</button>
+    <button class="tab" role="tab" data-tab="nodulos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span>Unidades</button>
+    <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="12" r="2.5"/><circle cx="5" cy="18" r="2.5"/><path d="M7.5 6.8 16.5 11M7.5 17.2 16.5 13"/></svg></span>Procedimentos</button>
+    <button class="tab" role="tab" data-tab="agentes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c1-3.6 3.6-5.4 6.5-5.4S14.5 16.4 15.5 20"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.6c2.6.2 4.3 1.8 5 5.4"/></svg></span>Pessoas</button>
+    <button class="tab" role="tab" data-tab="tarefas" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 6 8.5 9.5 5M4 13.5 6 15.5 9.5 12M4 20.3 6 22.3 9.5 19"/><path d="M13 7h8M13 14h8M13 21h8"/></svg></span>Tarefas</button>
+    <button class="tab" role="tab" data-tab="dados" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Dados</button>
+    <button class="tab" role="tab" data-tab="definicoes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>Definições</button>
   </nav>
   <div class="brand">
     <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
@@ -2345,6 +2454,9 @@
       </div>
       <div id="verLista"></div>
       <div class="foot-note">As versões ficam neste aparelho (no máximo 8 — a mais antiga sai). "Comparar" mostra o que mudou entre a versão e o estado atual; "Repor" volta lá, com direito a Anular.</div>
+      <details id="secDiario"><summary>Diário de alterações</summary>
+        <div id="diarioLista"></div>
+      </details>
       <div class="mini-title" style="margin-top:12px">Procedimentos avulsos e modelos</div>
       <div class="setup-btns">
         <button class="btn" id="procExpBtn" title="Guardar UM procedimento num ficheiro, com os nódulos identificados por nome — para partilhar entre câmaras">Exportar um procedimento</button>
@@ -2875,6 +2987,8 @@ function makeLayerData(name,color){
   // arranque ficava com undefined, era exportado como visible:false e
   // reaparecia invisível no 3D sem ninguém perceber porquê.
   const p={id:"L"+(++layerCounter), name, color, _visible:true, done:false,
+    gatilho:"", produto:"",           // o que dispara o procedimento e o que ele entrega
+    fases:[],                         // [{nome,ate}] — colunas agrupadas em fases nomeadas
     height:layerHeight(processes.length), tasks:[]};
   processes.push(p);
   return p;
@@ -4965,7 +5079,7 @@ function setTab(id){
   }else{
     document.body.dataset.tab=id;
     if(id==="tarefas")renderTaskListAll();
-    if(id==="dados")renderQualidade();
+    if(id==="dados"){renderQualidade();renderDiario();}
     showPage(id);
   }
   /* Trocar de separador esconde ou repõe o cartão de arranque, e a altura dele
@@ -5083,10 +5197,88 @@ function miniFluxo(p){
   });
   return s;
 }
+/* Vista da página Procedimentos: cartões (a omissão) ou a tabela raio-X. */
+let procsVista="cartoes";
+let procsOrd={k:"nome",dir:1};
 function renderPageProcs(){
   const host=el("div");
   host.id="procExplore";
-  host.append(el("div","mini-title","Tarefas por procedimento — arraste uma tarefa para lhe mudar o destino"));
+  const topo=el("div","pp-topo");
+  topo.append(el("div","mini-title","Tarefas por procedimento — arraste uma tarefa para lhe mudar o destino"));
+  const vst=el("div","layer-pick");
+  [["cartoes","Cartões"],["tabela","Tabela"]].forEach(([k,rot])=>{
+    const b=el("button",procsVista===k?"sel":"",rot);
+    b.style.color="var(--steel)";
+    b.onclick=()=>{procsVista=k;devolveSeccoes();showPage("procedimentos");};
+    vst.append(b);
+  });
+  topo.append(vst);
+  host.append(topo);
+  if(procsVista==="tabela"){
+    /* raio-X: uma linha por procedimento, colunas ordenáveis — é aqui que
+       se escolhe por onde atacar o levantamento. */
+    const dados=processes.map(p=>{
+      let st=null;try{st=procStats(p);}catch(e){}
+      const r=ramosDe(p);
+      const av=procAvisos(p);
+      const nA=p.tasks.filter(t2=>t2.estado==="aprovado").length;
+      return {p,nome:p.name,etapas:st?st.graph.ids.length:0,tarefas:p.tasks.length,
+        dur:st?st.total:0,prazo:Number.isFinite(p.prazo)?p.prazo:null,
+        folga:(st&&Number.isFinite(p.prazo))?(p.prazo-st.total):null,
+        aprov:p.tasks.length?Math.round(nA/p.tasks.length*100):0,
+        notas:p.tasks.filter(t2=>t2.nota).length,
+        ramos:r.convergentes.length+r.divergentes.length,
+        selos:(av.vermelho?1:0)+(av.amarelo?1:0)};
+    });
+    const COLS=[["nome","Procedimento"],["etapas","Etapas"],["tarefas","Tarefas"],
+      ["dur","Duração"],["prazo","Prazo"],["folga","Folga"],["aprov","% Aprov."],
+      ["notas","Notas"],["ramos","Ramos"],["selos","Selos"]];
+    dados.sort((a,b)=>{
+      const k=procsOrd.k;
+      const va=a[k],vb=b[k];
+      if(va===null&&vb===null)return 0;
+      if(va===null)return 1;
+      if(vb===null)return -1;
+      return (typeof va==="string"?va.localeCompare(vb):va-vb)*procsOrd.dir;
+    });
+    const wrapT=el("div","raiox-wrap");
+    const tb=document.createElement("table");
+    tb.className="raiox";
+    const thr=document.createElement("tr");
+    COLS.forEach(([k,rot])=>{
+      const th=document.createElement("th");
+      th.textContent=rot+(procsOrd.k===k?(procsOrd.dir>0?" ↑":" ↓"):"");
+      th.title="Ordenar por "+rot;
+      th.onclick=()=>{
+        if(procsOrd.k===k)procsOrd.dir*=-1;else procsOrd={k,dir:k==="nome"?1:-1};
+        devolveSeccoes();showPage("procedimentos");
+      };
+      thr.append(th);
+    });
+    tb.append(thr);
+    dados.forEach(d=>{
+      const tr=document.createElement("tr");
+      tr.tabIndex=0;
+      tr.title="Abrir “"+d.nome+"” no diagrama";
+      const cel=(v,cls)=>{const td=document.createElement("td");td.textContent=v;if(cls)td.className=cls;tr.append(td);};
+      cel(d.nome,"nm");
+      cel(d.etapas);cel(d.tarefas);
+      cel(fmtDays(d.dur));
+      cel(d.prazo===null?"—":d.prazo+" d");
+      cel(d.folga===null?"—":(Math.round(d.folga*10)/10)+" d",d.folga!==null?(d.folga<0?"mau":"bom"):"");
+      cel(d.aprov+"%",d.aprov===100?"bom":"");
+      cel(d.notas||"—");
+      cel(d.ramos||"—");
+      cel(d.selos?("!".repeat(d.selos)):"—",d.selos?"mau":"");
+      tr.onclick=()=>showFeynman(d.p);
+      tr.addEventListener("keydown",e=>{if(e.key==="Enter")showFeynman(d.p);});
+      tb.append(tr);
+    });
+    wrapT.append(tb);
+    host.append(wrapT);
+    pageBody.append(host);
+    return;
+  }
   processes.forEach(p=>{
     const card=el("div","pp-card");
     card.style.borderLeft="3px solid "+hex(p.color);
@@ -5145,6 +5337,30 @@ function renderPageProcs(){
         chip.append(el("span",null,tk.nome||String(tk.desc||"").slice(0,26)));
         if(!tk.agent){const w=el("span");w.innerHTML=triSVG("yellow",11);chip.append(w);}
         chip.append(el("span","rota",(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")+" · "+tk.duration));
+        /* Reordenar na ordem do procedimento: controla a leitura vertical das
+           tarefas paralelas no diagrama. (spans com role, não <button> — um
+           botão dentro de um botão é HTML inválido.) */
+        const ord=el("span","chip-ord");
+        [["↑",-1],["↓",1]].forEach(([seta,delta])=>{
+          const bo=el("span",null,seta);
+          bo.setAttribute("role","button");
+          bo.setAttribute("tabindex","0");
+          bo.title=delta<0?"Subir na ordem do procedimento":"Descer na ordem do procedimento";
+          const move=ev=>{
+            ev.stopPropagation();ev.preventDefault();
+            const i=p.tasks.indexOf(tk),j=i+delta;
+            if(j<0||j>=p.tasks.length)return;
+            p.tasks.splice(i,1);p.tasks.splice(j,0,tk);
+            anotaHistorico("reordenar as tarefas de “"+p.name+"”");
+            markDirty();
+            if(document.body.dataset.page==="procedimentos"){devolveSeccoes();showPage("procedimentos");}
+          };
+          bo.addEventListener("click",move);
+          bo.addEventListener("pointerdown",ev=>ev.stopPropagation());
+          bo.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" ")move(ev);});
+          ord.append(bo);
+        });
+        chip.append(ord);
         chip.title="Clique: editar · Arraste: mudar o destino no organograma";
         chip.onclick=()=>{if(!dragFoi)openTaskEdit(p,tk);};
         lista.append(chip);
@@ -6168,6 +6384,69 @@ agentList.addEventListener("click",e=>{
   const res=el("div","sim-res");
   det.append(escolha,res);
   agentList.parentNode.insertBefore(det,agentList.nextSibling);
+  /* ---- matriz pessoa × procedimento ----
+     Um heatmap de quem toca em quê: as pessoas-charneira — que aparecem em
+     muitos procedimentos — veem-se numa linha cheia, e é nelas que a
+     continuidade se joga. */
+  const detM=document.createElement("details");
+  detM.id="matrizPP";detM.className="sim-aus";
+  const sumM=document.createElement("summary");
+  sumM.textContent="Matriz pessoa × procedimento — quem toca em quê";
+  detM.append(sumM);
+  const corpoM=el("div","matriz-wrap");
+  detM.append(corpoM);
+  det.parentNode.insertBefore(detM,det.nextSibling);
+  function calcMatriz(){
+    corpoM.innerHTML="";
+    const procs2=processes.filter(p2=>p2.tasks.length);
+    const contas=new Map();
+    procs2.forEach(p2=>p2.tasks.forEach(t2=>{
+      if(!t2.agent)return;
+      if(!contas.has(t2.agent))contas.set(t2.agent,new Map());
+      const m2=contas.get(t2.agent);
+      m2.set(p2.id,(m2.get(p2.id)||0)+1);
+    }));
+    if(!contas.size){corpoM.append(el("div","foot-note","Ainda não há tarefas com responsável."));return;}
+    let maxCel=1;
+    contas.forEach(m2=>m2.forEach(v=>{if(v>maxCel)maxCel=v;}));
+    const linhas=[...contas.entries()].map(([aid,m2])=>{
+      let tot=0;m2.forEach(v=>tot+=v);
+      return {a:agentById(aid),m:m2,tot};
+    }).filter(x=>x.a).sort((x,y)=>y.tot-x.tot);
+    const tb=document.createElement("table");
+    tb.className="matriz";
+    const thr=document.createElement("tr");
+    thr.append(document.createElement("th"));
+    procs2.forEach(p2=>{
+      const th=document.createElement("th");
+      th.textContent=abbrev(p2.name);
+      th.title=p2.name;
+      thr.append(th);
+    });
+    const thT=document.createElement("th");thT.textContent="Σ";thr.append(thT);
+    tb.append(thr);
+    linhas.forEach(x=>{
+      const tr=document.createElement("tr");
+      const tdN=document.createElement("td");tdN.className="nm";tdN.textContent=x.a.name;tr.append(tdN);
+      procs2.forEach(p2=>{
+        const td=document.createElement("td");
+        const v=x.m.get(p2.id)||0;
+        if(v){
+          td.textContent=v;
+          td.style.background="rgba(232,180,76,"+(0.12+0.5*(v/maxCel))+")";
+          td.title=x.a.name+" · "+p2.name+" · "+v+" tarefa(s) — abrir o diagrama";
+          td.style.cursor="pointer";
+          td.onclick=()=>showFeynman(p2);
+        }
+        tr.append(td);
+      });
+      const tdT=document.createElement("td");tdT.className="tot";tdT.textContent=x.tot;tr.append(tdT);
+      tb.append(tr);
+    });
+    corpoM.append(tb);
+  }
+  detM.addEventListener("toggle",()=>{if(detM.open)calcMatriz();});
+  window.recalcMatrizPP=()=>{if(detM.open)calcMatriz();};
   const marcados=new Set();
   /* Devolve o responsável "descoberto", ou null se a tarefa está coberta:
      o titular presente, ou o substituto dele presente, cobrem-na. */
@@ -8789,10 +9068,31 @@ function vbValido(v,L){
   return v&&[v.x,v.y,v.w,v.h].every(Number.isFinite)&&v.w>L.W/10&&v.w<L.W*5;
 }
 /* A interface das preferências vive nas Definições: comutadores simples,
-   aplicados na hora se o diagrama estiver aberto. */
-(function(){
+   aplicados na hora se o diagrama estiver aberto. Dois PRESETS mudam o fato
+   inteiro: Levantamento (tudo visível) e Apresentação (limpo). */
+function renderFeyPrefsUI(){
   const host=document.getElementById("feyPrefsRow");
   if(!host)return;
+  host.innerHTML="";
+  const presets=el("div","fey-presets");
+  [["Levantamento",{resp:true,dur:true,anim:true,denso:false,gargalos:true,gente:true,pistas:false},
+    "Tudo visível: responsáveis, durações, equipas, gargalos"],
+   ["Apresentação",{resp:false,dur:false,anim:true,denso:false,gargalos:false,gente:false,pistas:false},
+    "Limpo, para projetar: só a estrutura e os nomes"]]
+  .forEach(([rot,cfg,tit])=>{
+    const b=el("button","btn tiny",rot);
+    b.title=tit;
+    b.onclick=()=>{
+      Object.assign(FEY_PREFS,cfg);
+      guardaFeyPrefs();
+      renderFeyPrefsUI();
+      document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+      if(modalView&&modalView.type==="feynman")renderFeynman(modalView.layer);
+      flash("Perfil “"+rot+"” aplicado ao diagrama.");
+    };
+    presets.append(b);
+  });
+  host.append(presets);
   [["resp","Responsáveis nas tarefas"],["dur","Durações junto ao responsável"],
    ["anim","Fluxo animado ao pairar"],["denso","Espaçamento compacto"],
    ["gargalos","Modo gargalos — espessura pela duração"],["gente","Equipas nos nódulos"]]
@@ -8815,7 +9115,8 @@ function vbValido(v,L){
     host.append(row);
   });
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
-})();
+}
+renderFeyPrefsUI();
 /* ---- Rascunho: o modo-padrão de alterar um procedimento ----
    Com o diagrama aberto, as mudanças não entram no histórico: acumulam num
    rascunho com comparação de durações à vista. Aplicar (ou simplesmente sair
@@ -8853,6 +9154,9 @@ function descartarRascunho(){
    procedimento de onde se veio, e o título ganha um "‹ voltar". Abrir um
    procedimento por qualquer OUTRO caminho limpa o trilho. */
 let feyTrilho=[],trilhoManter=false;
+/* Fantasma de versão: as arestas de uma versão guardada, a tracejado por
+   trás das atuais — "o que mudou desde setembro" sem ler relatório nenhum. */
+let feyFantasma=null;   // {pid,nome,tasks:[{a,b}]}
 function poeTrilho(titulo){
   if(!trilhoManter)feyTrilho.length=0;
   trilhoManter=false;
@@ -8864,9 +9168,239 @@ function poeTrilho(titulo){
   volta.onclick=()=>{feyTrilho.pop();trilhoManter=true;showFlowchart(de);};
   titulo.prepend(volta);
 }
-function showFeynman(p){navigateTo({type:"feynman",layer:p});}
+function showFeynman(p){
+  try{storageSet("of.ultimo.v1",JSON.stringify({pid:p.id,at:new Date().toISOString()}));}catch(e){}
+  if(booted)renderRetoma();
+  navigateTo({type:"feynman",layer:p});
+}
+/* ---- cartão de retoma (Home) ----
+   O regresso de segunda-feira de manhã em um clique: o último diagrama
+   aberto, as notas por resolver, e a última versão guardada. */
+function renderRetoma(){
+  let host=document.getElementById("retoma");
+  const panelEl2=document.getElementById("panel");
+  if(!panelEl2)return;
+  if(!host){
+    host=el("div","glass");
+    host.id="retoma";
+    panelEl2.insertBefore(host,panelEl2.firstChild);
+  }
+  host.innerHTML="";
+  const pecas=[];
+  let ult=null;
+  try{ult=JSON.parse(storageGet("of.ultimo.v1")||"null");}catch(e){}
+  const pUlt=ult&&layerById(ult.pid);
+  if(pUlt){
+    const b=el("button","btn tiny","▸ "+pUlt.name);
+    b.title="Retomar o último diagrama aberto";
+    b.onclick=()=>showFeynman(pUlt);
+    pecas.push(b);
+  }
+  let nNotas=0;
+  processes.forEach(p2=>p2.tasks.forEach(t2=>{if(t2.nota)nNotas++;}));
+  if(nNotas){
+    const b=el("button","btn tiny",nNotas+" nota(s) por resolver");
+    b.title="Abrir a página de Procedimentos — os cartões contam as notas";
+    b.onclick=()=>setTab("procedimentos");
+    pecas.push(b);
+  }
+  const vers=loadVersoes();
+  if(vers.length){
+    const v=vers[vers.length-1];
+    const sp=el("span","ret-ver","versão: "+v.nome);
+    sp.title="Última versão guardada — gerir na página Dados";
+    pecas.push(sp);
+  }
+  if(!pecas.length){host.remove();return;}
+  host.append(el("span","ret-tit","Retomar"));
+  pecas.forEach(x=>host.append(x));
+}
 /* Campo de renomear pousado sobre a pastilha da aresta: converte o ponto do
    SVG em coordenadas do ecrã e deixa o renomear acontecer onde o olho está. */
+/* Campo genérico pousado num ponto do diagrama (SVG→ecrã): serve o renomear
+   das arestas e a edição do gatilho e do produto nos medalhões. */
+function campoFey(sx,sy,svg,wrap,valor,ph,aplicar){
+  if(wrap.querySelector(".ren-aresta"))return;
+  const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
+  const m=svg.getScreenCTM();
+  if(!m)return;
+  const sp=pt.matrixTransform(m);
+  const wr=wrap.getBoundingClientRect();
+  const inp=document.createElement("input");
+  inp.className="ren-inline ren-aresta";
+  inp.type="text";inp.maxLength=80;
+  inp.value=valor||"";
+  inp.placeholder=ph||"";
+  inp.setAttribute("aria-label",ph||"Editar");
+  inp.style.left=(sp.x-wr.left-90)+"px";
+  inp.style.top=(sp.y-wr.top-14)+"px";
+  wrap.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,80);
+    inp.remove();
+    if(gravar&&v!==(valor||""))aplicar(v);
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* ---- Validação em sessão ----
+   A reunião com o serviço valida tarefa a tarefa: este modo percorre-as em
+   cartão grande — 1/2/3 marcam o estado e avançam, Espaço/setas navegam.
+   As mudanças caem no rascunho do diagrama, como tudo. */
+function abrirSessao(p){
+  const g=procGraph(p);
+  const ordem=p.tasks.slice().sort((a,b)=>(g.layer[a.a]||0)-(g.layer[b.a]||0));
+  if(!ordem.length){flash("Este procedimento ainda não tem tarefas.");return;}
+  let dlg=document.getElementById("sessaoDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="sessaoDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    dlg.tabIndex=-1;
+    const card=el("div","glass");card.id="sessaoCard";
+    card.innerHTML='<div class="ss-topo"><span id="ssProg"></span><span id="ssProc"></span></div>'+
+      '<div id="ssNome"></div><div id="ssRota"></div><div id="ssDesc"></div><div id="ssMeta"></div>'+
+      '<div class="ss-estados">'+
+      '<button class="btn" data-e="" id="ssE0"><b>1</b> Por confirmar</button>'+
+      '<button class="btn" data-e="validado" id="ssE1"><b>2</b> Validado</button>'+
+      '<button class="btn" data-e="aprovado" id="ssE2"><b>3</b> Aprovado</button></div>'+
+      '<div class="card-btns"><button class="btn tiny" id="ssAnt">‹ Anterior</button>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn tiny" id="ssSeg">Seguinte ›</button>'+
+      '<button class="btn primary" id="ssFim">Terminar sessão</button></div>'+
+      '<div class="ss-dica">1/2/3 marcam e avançam · Espaço ou → seguinte · ← anterior · Esc termina</div>';
+    dlg.append(card);
+    document.body.append(dlg);
+  }
+  let idx=0;
+  function pinta(){
+    const t2=ordem[idx];
+    const A=byId(t2.a),B=byId(t2.b);
+    const ag=t2.agent?agentById(t2.agent):null;
+    document.getElementById("ssProg").textContent=(idx+1)+" / "+ordem.length;
+    document.getElementById("ssProc").textContent=p.name;
+    document.getElementById("ssNome").textContent=t2.nome||String(t2.desc||"Tarefa").slice(0,60);
+    document.getElementById("ssRota").textContent=(A?A.name:"?")+" → "+(B?B.name:"?");
+    document.getElementById("ssDesc").textContent=t2.desc||"";
+    document.getElementById("ssMeta").textContent=(ag?("Responsável: "+ag.name):"Sem responsável")+
+      " · "+t2.duration+(t2.nota?(" · Nota: "+t2.nota):"");
+    ["ssE0","ssE1","ssE2"].forEach(id2=>{
+      const b=document.getElementById(id2);
+      b.classList.toggle("sel",(t2.estado||"")===b.dataset.e);
+    });
+  }
+  function marca(e2){
+    const t2=ordem[idx];
+    if((t2.estado||"")!==e2){
+      t2.estado=e2;
+      anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(e2)+"”");
+      markDirty();
+    }
+    if(idx<ordem.length-1){idx++;pinta();}
+    else fecha();
+  }
+  function fecha(){
+    dlg.classList.remove("open");
+    dlg.removeEventListener("keydown",teclas);
+    if(modalView&&modalView.type==="feynman")renderFeynman(p);
+  }
+  function teclas(e){
+    e.stopPropagation();
+    if(e.key==="1"){e.preventDefault();marca("");}
+    else if(e.key==="2"){e.preventDefault();marca("validado");}
+    else if(e.key==="3"){e.preventDefault();marca("aprovado");}
+    else if(e.key===" "||e.key==="ArrowRight"){e.preventDefault();if(idx<ordem.length-1){idx++;pinta();}else fecha();}
+    else if(e.key==="ArrowLeft"){e.preventDefault();if(idx>0){idx--;pinta();}}
+    else if(e.key==="Escape"){e.preventDefault();fecha();}
+  }
+  ["ssE0","ssE1","ssE2"].forEach(id2=>{
+    document.getElementById(id2).onclick=()=>marca(document.getElementById(id2).dataset.e);
+  });
+  document.getElementById("ssAnt").onclick=()=>{if(idx>0){idx--;pinta();}};
+  document.getElementById("ssSeg").onclick=()=>{if(idx<ordem.length-1){idx++;pinta();}else fecha();};
+  document.getElementById("ssFim").onclick=fecha;
+  dlg.addEventListener("keydown",teclas);
+  pinta();
+  dlg.classList.add("open");
+  setTimeout(()=>dlg.focus(),0);
+}
+/* Editor de fases: linhas nome + "até à etapa N"; guardar valida a ordem. */
+function abrirFasesDlg(p){
+  let dlg=document.getElementById("fasesDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="fasesDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    const card=el("div","glass");card.id="fasesCard";
+    card.append(el("h3",null,"Fases do procedimento"));
+    card.append(el("div","sub","Cada fase vai até à etapa (coluna) escolhida — por ordem, sem sobreposição."));
+    const lista=el("div");lista.id="fasesLista";
+    card.append(lista);
+    const btns=el("div","card-btns");
+    const bAdd=el("button","btn tiny com-gplus");
+    bAdd.id="fasesAdd";
+    bAdd.innerHTML=gplusHTML(12)+"Fase";
+    const bOk=el("button","btn primary","Guardar");
+    bOk.id="fasesOk";
+    const bX=el("button","btn","Cancelar");
+    bX.onclick=()=>dlg.classList.remove("open");
+    btns.append(bAdd,el("span",null," "),bX,bOk);
+    card.append(btns);
+    dlg.append(card);
+    dlg.addEventListener("pointerdown",e=>{if(e.target===dlg)dlg.classList.remove("open");});
+    document.body.append(dlg);
+  }
+  const g=procGraph(p);
+  const maxCol=g.cyclic?Math.max(0,g.ids.length-1):Math.max(0,...g.ids.map(id=>g.layer[id]||0));
+  const lista=document.getElementById("fasesLista");
+  function linha(f){
+    const row=el("div","fase-row");
+    const inp=document.createElement("input");
+    inp.type="text";inp.maxLength=30;inp.placeholder="nome da fase — ex.: Instrução";
+    inp.value=f?f.nome:"";
+    const sel=document.createElement("select");
+    for(let c=0;c<=maxCol;c++){
+      const op=document.createElement("option");
+      op.value=String(c);op.textContent="até à etapa "+(c+1);
+      sel.append(op);
+    }
+    sel.value=String(f?Math.min(f.ate,maxCol):maxCol);
+    const del=el("button","btn tiny danger-btn","×");
+    del.setAttribute("aria-label","Remover fase");
+    del.onclick=()=>row.remove();
+    row.append(inp,sel,del);
+    lista.append(row);
+  }
+  lista.innerHTML="";
+  (p.fases||[]).forEach(linha);
+  if(!(p.fases||[]).length)linha(null);
+  document.getElementById("fasesAdd").onclick=()=>linha(null);
+  document.getElementById("fasesOk").onclick=()=>{
+    const novas=[...lista.querySelectorAll(".fase-row")].map(r=>({
+      nome:r.querySelector("input").value.trim().slice(0,30),
+      ate:+r.querySelector("select").value
+    })).filter(f=>f.nome);
+    novas.sort((a,b)=>a.ate-b.ate);
+    /* sem duas fases a acabar na mesma etapa */
+    for(let i=1;i<novas.length;i++){
+      if(novas[i].ate===novas[i-1].ate){
+        flash("Duas fases não podem acabar na mesma etapa.",{type:"err"});return;
+      }
+    }
+    p.fases=novas;
+    anotaHistorico("definir as fases de “"+p.name+"”");
+    markDirty();
+    dlg.classList.remove("open");
+    if(modalView&&modalView.type==="feynman")renderFeynman(p);
+  };
+  dlg.classList.add("open");
+}
 function renomearAresta(p,t,sx,sy,svg,wrap){
   if(wrap.querySelector(".ren-aresta"))return;
   const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
@@ -8902,6 +9436,149 @@ function renomearAresta(p,t,sx,sy,svg,wrap){
   });
   inp.addEventListener("blur",()=>fecha(true));
   ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* ---- feySVG: o diagrama num SVG autónomo ----
+   Cores do tema resolvidas em concreto (um ficheiro não tem as variáveis da
+   página), título com duração e data, régua, fases e legenda de unidades.
+   Serve o botão Exportar (PNG/SVG) e o PDF geral. */
+function feySVG(p,modo){
+  const cs=getComputedStyle(document.documentElement);
+  const cor=k=>(cs.getPropertyValue(k)||"").trim();
+  const INKc=cor("--ink")||"#222",DIMc=cor("--ink-dim")||"#777";
+  const GOLDc=cor("--gold")||"#8a6a1c",PANELc="#FFFFFF";
+  const HAIRc="#C9C2B4";
+  const st=procStats(p);
+  const g=st.graph;
+  const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const out=[];
+  const defs=[];
+  let W,H;
+  const M=26,TOPO=54;
+  const nosUsados=[...new Set(g.ids)].map(byId).filter(Boolean);
+  const LEG=Math.ceil(nosUsados.length/3)*16+26;
+  function pill(cx,cy,txt,fs,c,peso){
+    const w=Math.max(26,txt.length*fs*0.60+14);
+    out.push('<rect x="'+(cx-w/2)+'" y="'+(cy-fs*0.80)+'" width="'+w+'" height="'+(fs*1.55)+
+      '" rx="'+(fs*0.75)+'" fill="'+PANELc+'" stroke="'+HAIRc+'" stroke-width="0.6"/>');
+    out.push('<text x="'+cx+'" y="'+(cy+fs*0.34)+'" text-anchor="middle" font-size="'+fs+
+      '" fill="'+c+'"'+(peso?' font-weight="'+peso+'"':'')+'>'+esc(txt)+'</text>');
+  }
+  if(modo==="pistas"&&!g.cyclic){
+    const lanes=nosUsados.slice().sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name));
+    const laneY={};
+    const LX0=210,DXT=190,DYL=64,LY0=TOPO+22;
+    lanes.forEach((n,i)=>{laneY[n.id]=LY0+i*DYL;});
+    const ordem=p.tasks.slice().sort((a,b)=>(g.layer[a.a]||0)-(g.layer[b.a]||0));
+    W=LX0+Math.max(1,ordem.length)*DXT+60;
+    H=LY0+lanes.length*DYL+LEG;
+    lanes.forEach((n,i)=>{
+      const y=laneY[n.id];
+      if(i%2)out.push('<rect x="0" y="'+(y-DYL/2)+'" width="'+W+'" height="'+DYL+'" fill="'+INKc+'" opacity="0.05"/>');
+      out.push('<circle cx="16" cy="'+y+'" r="6" fill="'+hex(n.color)+'"/>');
+      out.push('<text x="28" y="'+(y+3.5)+'" font-size="10.5" fill="'+INKc+'" font-weight="600">'+
+        esc(n.name.length>24?n.name.slice(0,23)+"…":n.name)+'</text>');
+    });
+    ordem.forEach((tk,k)=>{
+      const yA=laneY[tk.a],yB=laneY[tk.b];
+      if(yA===undefined||yB===undefined)return;
+      const x1=LX0+k*DXT,x2=x1+DXT*0.74,mX=(x1+x2)/2,mY=(yA+yB)/2;
+      const cA=hex((byId(tk.a)||{color:p.color}).color),cB=hex((byId(tk.b)||{color:p.color}).color);
+      const gid="xg"+k;
+      defs.push('<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+x1+'" y1="'+yA+
+        '" x2="'+x2+'" y2="'+yB+'"><stop offset="0%" stop-color="'+cA+'"/><stop offset="100%" stop-color="'+cB+'"/></linearGradient>');
+      const d=(yA===yB)?("M"+x1+" "+yA+" L"+x2+" "+yB)
+        :("M"+x1+" "+yA+" C "+mX+" "+yA+", "+mX+" "+yB+", "+x2+" "+yB);
+      if(st.critical.has(tk.id))out.push('<path d="'+d+'" fill="none" stroke="'+GOLDc+'" stroke-width="6" opacity="0.3"/>');
+      out.push('<path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="2.2"/>');
+      out.push('<circle cx="'+x2+'" cy="'+yB+'" r="3" fill="'+cB+'"/>');
+      pill(mX,mY-10,(tk.nome||tk.desc||"").slice(0,20),9.5,INKc,600);
+    });
+  }else{
+    const L=feyLayout(p);
+    W=L.W+M;H=L.H+TOPO+LEG;
+    const dy=TOPO;
+    for(let c=0;c<=L.maxCol;c++){
+      if(c%2)out.push('<rect x="'+(L.X0+c*L.DX-L.DX*0.36)+'" y="'+(8+dy)+'" width="'+(L.DX*0.72)+
+        '" height="'+(L.H-16)+'" rx="10" fill="'+INKc+'" opacity="0.05"/>');
+    }
+    /* fases */
+    (function(){
+      const fases=(p.fases||[]).filter(f=>f.ate<=L.maxCol).sort((a,b)=>a.ate-b.ate);
+      let ini=0;
+      fases.forEach(f=>{
+        const x1=L.X0+ini*L.DX-L.DX*0.42,x2=L.X0+f.ate*L.DX+L.DX*0.42;
+        out.push('<rect x="'+x1+'" y="'+(6+dy)+'" width="'+(x2-x1)+'" height="17" rx="8" fill="'+GOLDc+'" opacity="0.14"/>');
+        out.push('<text x="'+((x1+x2)/2)+'" y="'+(18+dy)+'" text-anchor="middle" font-size="9.5" fill="'+GOLDc+'" font-weight="600">'+esc(f.nome)+'</text>');
+        ini=f.ate+1;
+      });
+    })();
+    const vistos={};
+    p.tasks.forEach((tk,i)=>{
+      const a=L.pos[tk.a],b=L.pos[tk.b];
+      if(!a||!b)return;
+      const kpar=tk.a+"→"+tk.b,par=(vistos[kpar]=(vistos[kpar]||0));vistos[kpar]++;
+      const ddx=b.x-a.x,ddy=b.y-a.y,len=Math.hypot(ddx,ddy)||1;
+      let nx=-ddy/len,ny=ddx/len;if(ny>0){nx=-nx;ny=-ny;}
+      const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+      const lado=(par%2===0)?1:-1;
+      const cxq=(a.x+b.x)/2+nx*amp*lado,cyq=(a.y+b.y)/2+ny*amp*lado;
+      const d="M"+a.x+" "+(a.y+dy)+" Q "+cxq+" "+(cyq+dy)+" "+b.x+" "+(b.y+dy);
+      const lx=0.25*a.x+0.5*cxq+0.25*b.x,ly=0.25*a.y+0.5*cyq+0.25*b.y+dy;
+      const cA=hex((byId(tk.a)||{color:p.color}).color),cB=hex((byId(tk.b)||{color:p.color}).color);
+      const gid="xg"+i;
+      defs.push('<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+a.x+'" y1="'+(a.y+dy)+
+        '" x2="'+b.x+'" y2="'+(b.y+dy)+'"><stop offset="0%" stop-color="'+cA+'"/><stop offset="100%" stop-color="'+cB+'"/></linearGradient>');
+      if(st.critical.has(tk.id))out.push('<path d="'+d+'" fill="none" stroke="'+GOLDc+'" stroke-width="6" opacity="0.3"/>');
+      out.push('<path d="'+d+'" fill="none" stroke="url(#'+gid+')" stroke-width="2.2"/>');
+      out.push('<circle cx="'+b.x+'" cy="'+(b.y+dy)+'" r="3" fill="'+cB+'"/>');
+      const base=String(tk.nome||tk.desc||"");
+      pill(lx,ly-11,base.slice(0,24)+(base.length>24?"…":""),11,INKc,600);
+      const ag=tk.agent?agentById(tk.agent):null;
+      pill(lx,ly+11,(ag?ag.name:"—")+" · "+tk.duration,8.5,DIMc);
+    });
+    g.ids.forEach(id=>{
+      const n=byId(id),q=L.pos[id];
+      if(!n||!q)return;
+      out.push('<circle cx="'+q.x+'" cy="'+(q.y+dy)+'" r="9" fill="'+hex(n.color)+'" stroke="rgba(0,0,0,0.35)" stroke-width="1.2"/>');
+      pill(q.x,q.y+27+dy,n.name.length>20?n.name.slice(0,19)+"…":n.name,10.5,INKc,600);
+    });
+    /* terminais + gatilho/produto */
+    out.push('<circle cx="'+L.inicio.x+'" cy="'+(L.inicio.y+dy)+'" r="10" fill="none" stroke="'+DIMc+'" stroke-width="1.6"/>');
+    out.push('<text x="'+L.inicio.x+'" y="'+(L.inicio.y+28+dy)+'" text-anchor="middle" font-size="10" fill="'+DIMc+'">Início</text>');
+    if(p.gatilho)out.push('<text x="'+L.inicio.x+'" y="'+(L.inicio.y+42+dy)+'" text-anchor="middle" font-size="8" font-style="italic" fill="'+INKc+'">« '+esc(p.gatilho.slice(0,26))+' »</text>');
+    const fimC=p.done?GOLDc:"#B0402F";
+    out.push('<circle cx="'+L.fim.x+'" cy="'+(L.fim.y+dy)+'" r="10" fill="none" stroke="'+fimC+'" stroke-width="2"'+(p.done?'':' stroke-dasharray="3 3"')+'/>');
+    out.push('<text x="'+L.fim.x+'" y="'+(L.fim.y+28+dy)+'" text-anchor="middle" font-size="10" fill="'+fimC+'">Fim</text>');
+    if(p.produto)out.push('<text x="'+L.fim.x+'" y="'+(L.fim.y+42+dy)+'" text-anchor="middle" font-size="8" font-style="italic" fill="'+INKc+'">« '+esc(p.produto.slice(0,26))+' »</text>');
+    /* régua */
+    if(!g.cyclic&&st.total>0){
+      const RY=L.H-22+dy;
+      out.push('<line x1="'+(L.inicio.x-6)+'" y1="'+RY+'" x2="'+(L.fim.x+12)+'" y2="'+RY+'" stroke="'+DIMc+'" stroke-width="1" opacity="0.6"/>');
+      for(let c=0;c<=L.maxCol;c++){
+        let d2=0;g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,st.best[id]||0);});
+        out.push('<text x="'+(L.X0+c*L.DX)+'" y="'+(RY+14)+'" text-anchor="middle" font-size="8" fill="'+DIMc+'">dia '+(Math.round(d2*10)/10)+'</text>');
+      }
+    }
+  }
+  /* legenda de unidades */
+  const LY=H-LEG+16;
+  out.push('<text x="'+M+'" y="'+LY+'" font-size="9" fill="'+DIMc+'" font-weight="600">Unidades:</text>');
+  nosUsados.forEach((n,i)=>{
+    const col=i%3,row=Math.floor(i/3);
+    const x=M+70+col*((W-2*M-70)/3),y=LY+row*16;
+    out.push('<circle cx="'+x+'" cy="'+(y-3)+'" r="4" fill="'+hex(n.color)+'"/>');
+    out.push('<text x="'+(x+9)+'" y="'+y+'" font-size="8.5" fill="'+INKc+'">'+esc(n.name.slice(0,32))+'</text>');
+  });
+  /* título */
+  const cab='<text x="'+M+'" y="22" font-size="14" font-weight="700" fill="'+INKc+'">'+esc(p.name)+'</text>'+
+    '<text x="'+M+'" y="38" font-size="9" fill="'+DIMc+'">Diagrama de interações · ≈ '+esc(fmtDays(st.total))+
+    (Number.isFinite(p.prazo)?(' · prazo '+p.prazo+' dias'):'')+' · '+new Date().toLocaleDateString("pt-PT")+'</text>';
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+Math.ceil(W)+'" height="'+Math.ceil(H)+
+    '" viewBox="0 0 '+Math.ceil(W)+' '+Math.ceil(H)+'" font-family="Segoe UI, Arial, sans-serif">'+
+    '<defs>'+defs.join("")+'</defs>'+
+    '<rect x="0" y="0" width="'+Math.ceil(W)+'" height="'+Math.ceil(H)+'" fill="'+PANELc+'"/>'+
+    cab+out.join("")+'</svg>';
+  return {svg:svg,w:Math.ceil(W),h:Math.ceil(H)};
 }
 /* Pastilha opaca atrás de um rótulo — partilhada pelos dois modos. */
 function pastilhaSVG(parent,cx,cy,txt,fs,cor,peso){
@@ -9024,7 +9701,9 @@ function feyLayout(p){
   g.ids.forEach(id=>{(porCol[col[id]]=porCol[col[id]]||[]).push(id);});
   const cols=Object.keys(porCol).map(Number).sort((a,b)=>a-b);
   const pos={};
-  const den=FEY_PREFS.denso;
+  /* Densidade automática: num ecrã estreito o modo denso entra sozinho —
+     o telemóvel não precisa que ninguém se lembre do comutador. */
+  const den=FEY_PREFS.denso||innerWidth<700;
   const X0=170,DX=den?184:236,DY=den?98:128,Y0=104;
   let maxLinhas=1;
   cols.forEach(c=>{
@@ -9106,14 +9785,76 @@ function renderFeynman(p){
     ex.title="O caminho crítico ("+fmtDays(st.total)+") ultrapassa o prazo legal de "+p.prazo+" dias";
     stats.append(ex);
   }
+  const bFant=el("button","btn tiny","Fantasma…");
+  bFant.title="Sobrepor, a tracejado, as arestas deste procedimento numa versão guardada — o diff visual";
+  bFant.setAttribute("aria-pressed",String(!!(feyFantasma&&feyFantasma.pid===p.id)));
+  bFant.onclick=async()=>{
+    const vers=loadVersoes();
+    if(!vers.length){flash("Ainda não há versões guardadas — crie uma na página Dados.",{type:"err"});return;}
+    const ops=vers.slice().reverse().slice(0,8).map((v,i)=>({k:String(i),label:v.nome}));
+    if(feyFantasma&&feyFantasma.pid===p.id)ops.push({k:"tirar",label:"— tirar o fantasma —",danger:true});
+    const r=await askOpcoes("Fantasma de que versão?","As arestas dessa versão aparecem a tracejado por trás das atuais.",ops);
+    if(r===null||r===undefined)return;
+    if(r==="tirar"){feyFantasma=null;renderFeynman(p);return;}
+    const v=vers.slice().reverse()[+r];
+    let estado=null;try{estado=JSON.parse(v.state);}catch(e){}
+    const antigo=estado&&(estado.layers||[]).find(l=>l&&l.id===p.id);
+    if(!antigo){flash("Essa versão não tem este procedimento.",{type:"err"});return;}
+    feyFantasma={pid:p.id,nome:v.nome,tasks:(antigo.tasks||[]).map(tk=>({a:tk.a,b:tk.b}))};
+    renderFeynman(p);
+  };
   const bGarg=el("button","btn tiny","Gargalos");
   bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
   bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
   bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  const bSessao=el("button","btn tiny","Sessão");
+  bSessao.title="Validar em sessão — percorrer as tarefas uma a uma, 1/2/3 marcam o estado";
+  bSessao.onclick=()=>abrirSessao(p);
+  const bExp=el("button","btn tiny","Exportar");
+  bExp.title="Guardar este diagrama como imagem (PNG) ou como SVG — com legenda, régua e fases";
+  bExp.onclick=async()=>{
+    const r=await askOpcoes("Exportar o diagrama de “"+p.name+"”",
+      "Sai no modo atual ("+(FEY_PREFS.pistas?"pistas":"colunas")+"), com legenda de unidades.",
+      [{k:"png",label:"Imagem PNG — para relatórios e ofícios",primary:true},
+       {k:"svg",label:"SVG — vetorial, escala sem perder definição"}]);
+    if(!r)return;
+    const modo=FEY_PREFS.pistas?"pistas":"colunas";
+    const feito=feySVG(p,modo);
+    const base="diagrama-"+String(p.name).replace(/[^\w\-]+/g,"_").slice(0,40);
+    if(r==="svg"){
+      const blob=new Blob([feito.svg],{type:"image/svg+xml;charset=utf-8"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=base+".svg";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      flash("Diagrama exportado em SVG.");
+    }else{
+      try{
+        const png=await svgToPNG(feito.svg,2);
+        const a=document.createElement("a");
+        a.href=png;a.download=base+".png";a.click();
+        flash("Diagrama exportado em PNG.");
+      }catch(e){flash("Não foi possível gerar a imagem.",{type:"err"});}
+    }
+  };
+  const bFases=el("button","btn tiny","Fases…");
+  bFases.title="Agrupar as colunas em fases nomeadas — Instrução, Decisão, Execução…";
+  bFases.onclick=()=>abrirFasesDlg(p);
   const bPista=el("button","btn tiny","Pistas");
   bPista.title="Linhas = unidades; cada mudança de pista é uma transferência de responsabilidade";
   bPista.setAttribute("aria-pressed",String(!!FEY_PREFS.pistas));
-  bPista.onclick=()=>{FEY_PREFS.pistas=!FEY_PREFS.pistas;guardaFeyPrefs();renderFeynman(p);};
+  bPista.onclick=()=>{
+    FEY_PREFS.pistas=!FEY_PREFS.pistas;
+    guardaFeyPrefs();
+    renderFeynman(p);
+    /* o cruzamento entre leituras faz-se com um fade+deslize curto — trocar
+       de repente perdia a âncora do olhar */
+    if(!reduceMotion){
+      const w=document.getElementById("feyWrap");
+      if(w){w.classList.add("fey-entra");setTimeout(()=>w.classList.remove("fey-entra"),260);}
+    }
+  };
   /* Percurso: o cursor de dias arrasta a fronteira do "já devia estar feito";
      o ▶ anima do dia 0 ao fim. Só faz sentido nas colunas e com durações. */
   let percIn=null,percBtn=null,percTimer=0;
@@ -9133,7 +9874,7 @@ function renderFeynman(p){
     percWrap.append(percIn);
     stats.append(percWrap);
   }
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bGarg,bPista,stats);
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bSessao,bFases,bGarg,bPista,bFant,bExp,stats);
   modalBody.append(acts);
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
   /* A duração de entrada é a referência da comparação do rascunho. */
@@ -9215,6 +9956,31 @@ function renderFeynman(p){
     svgEl("rect",{x:L.X0+c*L.DX-L.DX*0.36,y:8,width:L.DX*0.72,height:L.H-16,
       rx:10,fill:"currentColor",opacity:0.045,"pointer-events":"none"},svg);
   }
+  /* ---- fases nomeadas ----
+     Colunas agrupadas na língua de quem decide ("Instrução", "Decisão"…),
+     com a duração somada; colunas fora de fase levam um "Etapa N" discreto. */
+  (function(){
+    const fases=(p.fases||[]).filter(f=>f.ate<=L.maxCol).sort((a,b)=>a.ate-b.ate);
+    const coberto=new Set();
+    let ini=0;
+    const diasCol=c=>{let d2=0;L.g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,(st.best&&st.best[id])||0);});return d2;};
+    fases.forEach(f=>{
+      const x1=L.X0+ini*L.DX-L.DX*0.42, x2=L.X0+f.ate*L.DX+L.DX*0.42;
+      for(let c=ini;c<=f.ate;c++)coberto.add(c);
+      svgEl("rect",{x:x1,y:6,width:x2-x1,height:17,rx:8,
+        fill:gold,opacity:0.09,"pointer-events":"none"},svg);
+      const durF=diasCol(f.ate)-(ini>0?diasCol(ini-1):0);
+      const tx2=svgEl("text",{x:(x1+x2)/2,y:18,"text-anchor":"middle","font-size":9.5,
+        fill:gold,"font-weight":600,"pointer-events":"none"},svg);
+      tx2.textContent=f.nome+(durF>0?"  ·  "+fmtDays(durF):"");
+      ini=f.ate+1;
+    });
+    for(let c=0;c<=L.maxCol;c++){
+      if(coberto.has(c))continue;
+      svgEl("text",{x:L.X0+c*L.DX,y:18,"text-anchor":"middle","font-size":8,
+        fill:dim,opacity:0.75,"pointer-events":"none"},svg).textContent="Etapa "+(c+1);
+    }
+  })();
   const pastilha=pastilhaSVG;
 
   // ---- terminais Início / Fim — medalhões; o Fim carimba ao finalizar ----
@@ -9224,6 +9990,22 @@ function renderFeynman(p){
   svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:4.5,fill:dim},gIni);
   svgEl("text",{x:L.inicio.x,y:L.inicio.y+30,"text-anchor":"middle","font-size":11,fill:dim},gIni)
     .textContent="Início";
+  /* O gatilho: o que dispara o procedimento. Clique edita, no sítio. */
+  const gtTxt=p.gatilho?("« "+(p.gatilho.length>22?p.gatilho.slice(0,21)+"…":p.gatilho)+" »"):"« gatilho? »";
+  const gtEl=svgEl("text",{x:L.inicio.x,y:L.inicio.y+44,"text-anchor":"middle",
+    "font-size":8.5,fill:p.gatilho?ink:dim,"font-style":"italic"},gIni);
+  gtEl.textContent=gtTxt;
+  svgEl("title",{},gIni).textContent=(p.gatilho?("Gatilho: "+p.gatilho):"O que dispara este procedimento?")+" — clique para editar";
+  gIni.style.cursor="pointer";
+  gIni.addEventListener("pointerdown",e=>e.stopPropagation());
+  gIni.addEventListener("click",e=>{
+    e.stopPropagation();
+    campoFey(L.inicio.x,L.inicio.y+44,svg,wrap,p.gatilho,"o que dispara — ex.: requerimento do munícipe",v=>{
+      p.gatilho=v;
+      anotaHistorico("definir o gatilho de “"+p.name+"”");
+      markDirty();renderFeynman(p);
+    });
+  });
   const gFim=svgEl("g",{class:"fey-vert fey-terminal"+((feyCarimbar===p.id)?" carimba":"")},svg);
   if(feyCarimbar===p.id)feyCarimbar=null;
   const fimCor=p.done?gold:"#E0554F";
@@ -9234,6 +10016,20 @@ function renderFeynman(p){
   if(p.done)svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:4.5,fill:gold},gFim);
   svgEl("text",{x:L.fim.x,y:L.fim.y+30,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
     .textContent="Fim";
+  /* O produto: o que o procedimento entrega. Clique edita, no sítio. */
+  const pdTxt=p.produto?("« "+(p.produto.length>22?p.produto.slice(0,21)+"…":p.produto)+" »"):"« produto? »";
+  svgEl("text",{x:L.fim.x,y:L.fim.y+44,"text-anchor":"middle",
+    "font-size":8.5,fill:p.produto?ink:dim,"font-style":"italic"},gFim).textContent=pdTxt;
+  gFim.style.cursor="pointer";
+  gFim.addEventListener("pointerdown",e=>e.stopPropagation());
+  gFim.addEventListener("click",e=>{
+    e.stopPropagation();
+    campoFey(L.fim.x,L.fim.y+44,svg,wrap,p.produto,"o que entrega — ex.: alvará emitido",v=>{
+      p.produto=v;
+      anotaHistorico("definir o produto de “"+p.name+"”");
+      markDirty();renderFeynman(p);
+    });
+  });
   if(!p.done){
     const fw=svgEl("g",{transform:"translate("+(L.fim.x+8)+","+(L.fim.y-24)+")"},gFim);
     fw.innerHTML=triSVG("red",13);
@@ -9250,6 +10046,29 @@ function renderFeynman(p){
         stroke:fimCor,"stroke-width":1,"stroke-dasharray":p.done?"none":"4 4",opacity:0.75},svg);});
   }
 
+  /* ---- fantasma de versão: por trás de tudo o que é atual ---- */
+  if(feyFantasma&&feyFantasma.pid!==p.id)feyFantasma=null;
+  if(feyFantasma){
+    let fora=0;
+    const gF=svgEl("g",{class:"fey-fantasma","pointer-events":"none"},svg);
+    const vistosF={};
+    feyFantasma.tasks.forEach(tk=>{
+      const a=L.pos[tk.a],b=L.pos[tk.b];
+      if(!a||!b){fora++;return;}
+      const kpar=tk.a+"→"+tk.b,par=(vistosF[kpar]=(vistosF[kpar]||0));vistosF[kpar]++;
+      const ddx=b.x-a.x,ddy=b.y-a.y,len=Math.hypot(ddx,ddy)||1;
+      let nx=-ddy/len,ny=ddx/len;if(ny>0){nx=-nx;ny=-ny;}
+      const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+      const lado=(par%2===0)?1:-1;
+      const cxq=(a.x+b.x)/2+nx*amp*lado,cyq=(a.y+b.y)/2+ny*amp*lado;
+      svgEl("path",{d:"M"+a.x+" "+a.y+" Q "+cxq+" "+cyq+" "+b.x+" "+b.y,
+        fill:"none",stroke:dim,"stroke-width":2,"stroke-dasharray":"5 5",opacity:0.38},gF);
+    });
+    const chip=el("button","btn tiny fant-chip","fantasma: "+feyFantasma.nome+(fora?(" ("+fora+" fora do mapa)"):"")+" ×");
+    chip.title="Tirar a sobreposição da versão";
+    chip.onclick=()=>{feyFantasma=null;renderFeynman(p);};
+    stats.append(chip);
+  }
   // ---- arestas (tarefas) — em arco, com as paralelas separadas ----
   /* Índice de cada tarefa entre as que ligam o MESMO par de nódulos: é o que
      permite curvá-las para lados alternados em vez de as pousar em cima umas
@@ -9301,11 +10120,21 @@ function renderFeynman(p){
     const rot=base.slice(0,24)+(base.length>24?"…":"");
     // pastilhas: nome por cima, responsável por baixo — legíveis sobre tudo
     pastilha(ga,lx,ly-11,rot,11,ink,600);
-    /* Ponto de estado do levantamento, encostado à esquerda da pastilha. */
+    /* Ponto de estado do levantamento — existe SEMPRE e cicla ao clique
+       direto (por confirmar → validado → aprovado), sem abrir o editor. */
     const wNome=Math.max(26,rot.length*11*0.60+14);
-    if(t.estado)svgEl("circle",{cx:lx-wNome/2-7,cy:ly-11,r:3.4,
-      fill:t.estado==="aprovado"?gold:"var(--steel)",stroke:"rgba(0,0,0,0.3)","stroke-width":0.6},ga)
-      .append(Object.assign(svgEl("title",{}),{textContent:rotuloEstado(t.estado)}));
+    const pe=svgEl("circle",{class:"fey-estado",cx:lx-wNome/2-7,cy:ly-11,r:4,
+      fill:t.estado?(t.estado==="aprovado"?gold:"var(--steel)"):"transparent",
+      stroke:t.estado?"rgba(0,0,0,0.3)":"var(--hairline)","stroke-width":t.estado?0.6:1.1},ga);
+    svgEl("title",{},pe).textContent="Estado: "+rotuloEstado(t.estado)+" — clique para avançar";
+    pe.addEventListener("pointerdown",e=>e.stopPropagation());
+    pe.addEventListener("click",e=>{
+      e.stopPropagation();
+      const ordem=["","validado","aprovado"];
+      t.estado=ordem[(ordem.indexOf(t.estado||"")+1)%ordem.length];
+      anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(t.estado)+"”");
+      markDirty();renderFeynman(p);
+    });
     /* Referência: um alvo próprio que abre a ligação noutro separador. */
     if(urlSegura(t.link)){
       const la=svgEl("a",{class:"fey-link",href:t.link,target:"_blank",rel:"noopener"},ga);
@@ -9383,6 +10212,27 @@ function renderFeynman(p){
     const gv=svgEl("g",{class:"fey-vert"},svg);
     svgEl("title",{},gv).textContent=n.name;
     svgEl("circle",{cx:q.x,cy:q.y,r:9,fill:hex(n.color),stroke:"rgba(0,0,0,0.35)","stroke-width":1.2},gv);
+    /* Anel de progresso: a fração das tarefas QUE DAQUI PARTEM já aprovadas —
+       o avanço do levantamento visto dentro do próprio diagrama. */
+    (function(){
+      const saem=(L.g.outOf[id]||[]);
+      if(!saem.length)return;
+      const fr=saem.filter(tt=>tt.estado==="aprovado").length/saem.length;
+      svgEl("circle",{cx:q.x,cy:q.y,r:13,fill:"none",stroke:"var(--hairline)",
+        "stroke-width":2,opacity:0.5,"pointer-events":"none"},gv);
+      if(fr<=0)return;
+      if(fr>=1){
+        svgEl("circle",{cx:q.x,cy:q.y,r:13,fill:"none",stroke:gold,
+          "stroke-width":2.4,"pointer-events":"none"},gv);
+        return;
+      }
+      const a0=-Math.PI/2, a1=a0+fr*Math.PI*2;
+      const x1=q.x+13*Math.cos(a0),y1=q.y+13*Math.sin(a0);
+      const x2=q.x+13*Math.cos(a1),y2=q.y+13*Math.sin(a1);
+      svgEl("path",{d:"M"+x1+" "+y1+" A 13 13 0 "+(fr>0.5?1:0)+" 1 "+x2+" "+y2,
+        fill:"none",stroke:gold,"stroke-width":2.4,"stroke-linecap":"round",
+        "pointer-events":"none"},gv);
+    })();
     const nome=n.name.length>20?n.name.slice(0,19)+"…":n.name;
     pastilha(gv,q.x,q.y+27,nome,11,ink,600);
     svgEl("text",{x:q.x,y:q.y+44,"text-anchor":"middle","font-size":8.5,fill:dim},gv).textContent=nodeAddress(n);
@@ -11051,6 +11901,52 @@ function renderQualidade(){
     "Pessoas que são a única cobertura de alguma tarefa — clique para abrir a simulação de ausências",
     ()=>{setTab("agentes");if(typeof window.abrirSimulacao==="function")window.abrirSimulacao();});
 }
+/* ---- diário de alterações ----
+   As legendas que o histórico já escreve, guardadas com data e hora numa
+   lista consultável — auditoria leve, sem custo novo. Máx. 200 entradas. */
+const DIARIO_KEY="of.diario.v1";
+function diarioAnota(txt){
+  try{
+    const l=JSON.parse(storageGet(DIARIO_KEY)||"[]");
+    l.push({at:new Date().toISOString(),txt:String(txt||"alteração").slice(0,90)});
+    while(l.length>200)l.shift();
+    storageSet(DIARIO_KEY,JSON.stringify(l));
+  }catch(e){}
+}
+function renderDiario(){
+  const host=document.getElementById("diarioLista");
+  if(!host)return;
+  host.innerHTML="";
+  let l=[];
+  try{l=JSON.parse(storageGet(DIARIO_KEY)||"[]");}catch(e){}
+  if(!Array.isArray(l)||!l.length){
+    host.append(el("div","foot-note","Ainda sem registos — cada alteração aplicada fica aqui com data e hora."));
+    return;
+  }
+  const hoje=new Date().toDateString();
+  const deHoje=l.filter(e2=>new Date(e2.at).toDateString()===hoje).length;
+  host.append(el("div","mini-title","Hoje: "+deHoje+" alteração(ões) · total registado: "+l.length));
+  let ultimaData="";
+  l.slice().reverse().slice(0,60).forEach(e2=>{
+    const d=new Date(e2.at);
+    const dia=d.toLocaleDateString("pt-PT",{weekday:"short",day:"numeric",month:"short"});
+    if(dia!==ultimaData){
+      ultimaData=dia;
+      host.append(el("div","diario-dia",dia));
+    }
+    const row=el("div","diario-row");
+    row.append(el("span","hh",d.toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"})));
+    row.append(el("span","tx",e2.txt));
+    host.append(row);
+  });
+  const bLimpar=el("button","btn tiny danger-btn","Limpar o diário");
+  bLimpar.onclick=async()=>{
+    if(!(await askConfirm("Limpar o diário de alterações? (não mexe nos dados)",{yes:"Limpar",danger:true})))return;
+    storageSet(DIARIO_KEY,"[]");
+    renderDiario();
+  };
+  host.append(bLimpar);
+}
 const VER_KEY="of.versions.v1";
 function loadVersoes(){
   try{const l=JSON.parse(storageGet(VER_KEY)||"[]");return Array.isArray(l)?l:[];}catch(e){return [];}
@@ -11170,6 +12066,8 @@ document.getElementById("procExpBtn").onclick=async()=>{
   if(!p2)return;
   const cfg={format:"procedimento-autarquias",version:1,exported:new Date().toISOString(),
     name:p2.name,prazo:Number.isFinite(p2.prazo)?p2.prazo:null,
+    gatilho:p2.gatilho||"",produto:p2.produto||"",
+    fases:(p2.fases||[]).map(f=>({nome:f.nome,ate:f.ate})),
     tasks:p2.tasks.map(t2=>({nome:t2.nome||"",desc:t2.desc,duration:t2.duration,
       estado:t2.estado||"",link:t2.link||"",
       aNome:(byId(t2.a)||{}).name||"?",bNome:(byId(t2.b)||{}).name||"?"}))};
@@ -11202,6 +12100,10 @@ function importarProcedimento(cfg,origem){
     p2._visible=true;
     p2.done=false;
     p2.prazo=Number.isFinite(cfg.prazo)?Math.max(0,cfg.prazo):null;
+    p2.gatilho=typeof cfg.gatilho==="string"?cfg.gatilho.slice(0,80):"";
+    p2.produto=typeof cfg.produto==="string"?cfg.produto.slice(0,80):"";
+    p2.fases=Array.isArray(cfg.fases)?cfg.fases.slice(0,12)
+      .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];
     addLayerRow(p2);
     /* O visual da camada tem de existir ANTES das tarefas: buildTaskVisual
        pendura cada arco no grupo 3D do procedimento (a ordem do restore). */
@@ -11277,6 +12179,8 @@ document.getElementById("exportBtn").onclick=()=>{
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      gatilho:p.gatilho||"",produto:p.produto||"",
+      fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
@@ -11413,7 +12317,11 @@ importFile.onchange=()=>{
         if(cl.name){p.name=String(cl.name).slice(0,28);if(p._nameEl)p._nameEl.textContent=p.name;p.refreshLabel();}
         if(typeof cl.visible==="boolean")p._visible=cl.visible;
         p.done=cl.done===undefined?true:!!cl.done;
-      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;   // mesma regra do restauro
+      p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;
+      p.gatilho=typeof cl.gatilho==="string"?cl.gatilho.slice(0,80):"";
+      p.produto=typeof cl.produto==="string"?cl.produto.slice(0,80):"";
+      p.fases=Array.isArray(cl.fases)?cl.fases.slice(0,12).filter(f=>f&&typeof f==="object")
+        .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];   // mesma regra do restauro
         // Validar ANTES de destruir: com `tasks` a vir noutro formato, o
         // procedimento ficaria vazio em vez de intacto.
         const impTasks=Array.isArray(cl.tasks)?cl.tasks:[];
@@ -12101,6 +13009,14 @@ async function __exportPDF(){
         ensure(h+12);
         doc.addImage(img,"PNG",M,y,w,h);
         y+=h+14;
+        const fey=feyImg.get(p);
+        if(fey){
+          let fw=CW,fh=fey.h*(CW/fey.w);
+          if(fh>maxH){fh=maxH;fw=fey.w*(fh/fey.h);}
+          ensure(fh+12);
+          doc.addImage(fey.png,"PNG",M,y,fw,fh);
+          y+=fh+14;
+        }
         return;
       }
       // Fallback (image generation unavailable): list the steps honestly
@@ -12121,9 +13037,12 @@ async function __exportPDF(){
     /* Pre-render every procedure through the shared layout engine, so the PDF
        shows the same branching diagram as the screen. */
     const fluxoImg=new Map();
+    const feyImg=new Map();
     for(const p of processes){
       if(!p.tasks.length)continue;
       try{fluxoImg.set(p,await svgToPNG(procSVG(p,"flow"),2));}catch(e){/* falls back to a text list */}
+      /* e o diagrama de interações — a vista mais rica também sai no papel */
+      try{const f=feySVG(p,"colunas");feyImg.set(p,{png:await svgToPNG(f.svg,2),w:f.w,h:f.h});}catch(e){}
     }
 
     /* ---- Assemble document ---- */
@@ -14777,6 +15696,8 @@ function snapshotState(){
       primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
+      gatilho:p.gatilho||"",produto:p.produto||"",
+      fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
       tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
     theme:themeId
@@ -14865,6 +15786,10 @@ function restoreState(json){
       // senão um dataset antigo acordava todo a vermelho sem ninguém lhe tocar.
       p.done=cl.done===undefined?true:!!cl.done;
       p.prazo=Number.isFinite(cl.prazo)?Math.max(0,cl.prazo):null;
+      p.gatilho=typeof cl.gatilho==="string"?cl.gatilho.slice(0,80):"";
+      p.produto=typeof cl.produto==="string"?cl.produto.slice(0,80):"";
+      p.fases=Array.isArray(cl.fases)?cl.fases.slice(0,12).filter(f=>f&&typeof f==="object")
+        .map(f=>({nome:String(f.nome||"").slice(0,30),ate:Math.max(0,f.ate|0)})):[];
       addLayerRow(p);
       (cl.tasks||[]).forEach(ct=>{
         if(!ct||!byId(ct.a)||!byId(ct.b)||ct.a===ct.b)return;   // a===b seria um auto-laço
@@ -14973,6 +15898,7 @@ function recordHistory(){
   if(lastSnap!==null){
     undoStack.push(lastSnap);
     undoRotulos.push(rotuloPendente);
+    diarioAnota(rotuloPendente);
     if(undoStack.length>HISTORY_MAX){undoStack.shift();undoRotulos.shift();}
     redoStack.length=0;redoRotulos.length=0;
   }
@@ -15073,6 +15999,7 @@ updateEmptyHint();
 renderBookmarks();
 renderCodeKey();
 renderQuest();
+renderRetoma();
 settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
