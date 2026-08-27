@@ -175,6 +175,12 @@
   .pp-prog .pv{background:var(--steel)}
   #feyPrefsRow .row{display:flex;align-items:center;gap:8px}
   #feyPrefsRow .row-name{flex:1}
+  /* Foco de teclado no diagrama */
+  #feySvg:focus{outline:none}
+  #feySvg:focus-visible{outline:2px solid var(--gold);outline-offset:-2px;border-radius:10px}
+  .fey-vert.focado>circle{stroke:var(--gold);stroke-width:3}
+  /* Campo de renomear pousado na aresta */
+  .ren-aresta{position:absolute;z-index:5;width:180px;background:var(--panel)}
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -8554,6 +8560,20 @@ const FEY_PREFS=(function(){
   return d;
 })();
 function guardaFeyPrefs(){storageSet("of.feyprefs.v1",JSON.stringify(FEY_PREFS));}
+/* Cada procedimento lembra o seu enquadramento (zoom/pan) — na sessão e
+   entre sessões. */
+const feyVBs=(function(){
+  try{const s=JSON.parse(storageGet("of.feyvb.v1")||"{}");
+    return (s&&typeof s==="object"&&!Array.isArray(s))?s:{};}catch(e){return {};}
+})();
+let feyVBsTimer=0;
+function guardaFeyVBs(){
+  clearTimeout(feyVBsTimer);
+  feyVBsTimer=setTimeout(()=>{try{storageSet("of.feyvb.v1",JSON.stringify(feyVBs));}catch(e){}},800);
+}
+function vbValido(v,L){
+  return v&&[v.x,v.y,v.w,v.h].every(Number.isFinite)&&v.w>L.W/10&&v.w<L.W*5;
+}
 /* A interface das preferências vive nas Definições: comutadores simples,
    aplicados na hora se o diagrama estiver aberto. */
 (function(){
@@ -8605,7 +8625,13 @@ function aplicarRascunho(silencioso){
 function descartarRascunho(){
   if(!rascunho)return;
   const b=rascunho.base;rascunho=null;
-  restoreState(b);
+  if(!b||!restoreState(b)){
+    /* Sem estado de entrada legível não há a que voltar — antes assumir as
+       alterações do que fingir que se descartou. */
+    updateHistoryUI();
+    flash("Não foi possível repor o estado de entrada — as alterações mantêm-se.",{type:"err"});
+    return;
+  }
   updateHistoryUI();
   flash("Rascunho descartado — o procedimento voltou ao que era.");
 }
@@ -8625,6 +8651,44 @@ function poeTrilho(titulo){
   titulo.prepend(volta);
 }
 function showFeynman(p){navigateTo({type:"feynman",layer:p});}
+/* Campo de renomear pousado sobre a pastilha da aresta: converte o ponto do
+   SVG em coordenadas do ecrã e deixa o renomear acontecer onde o olho está. */
+function renomearAresta(p,t,sx,sy,svg,wrap){
+  if(wrap.querySelector(".ren-aresta"))return;
+  const pt=svg.createSVGPoint();pt.x=sx;pt.y=sy;
+  const m=svg.getScreenCTM();
+  if(!m)return;
+  const sp=pt.matrixTransform(m);
+  const wr=wrap.getBoundingClientRect();
+  const inp=document.createElement("input");
+  inp.className="ren-inline ren-aresta";
+  inp.type="text";inp.maxLength=40;
+  inp.value=t.nome||"";
+  inp.placeholder=String(t.desc||"").slice(0,30);
+  inp.setAttribute("aria-label","Novo nome da tarefa");
+  inp.style.left=(sp.x-wr.left-90)+"px";
+  inp.style.top=(sp.y-wr.top-14)+"px";
+  wrap.append(inp);
+  inp.focus();inp.select();
+  let feito=false;
+  const fecha=gravar=>{
+    if(feito)return;feito=true;
+    const v=inp.value.trim().slice(0,40);
+    inp.remove();
+    if(gravar&&v!==(t.nome||"")){
+      t.nome=v;
+      anotaHistorico("renomear a tarefa");
+      markDirty();renderFeynman(p);
+    }
+  };
+  inp.addEventListener("keydown",e=>{
+    e.stopPropagation();
+    if(e.key==="Enter")fecha(true);
+    else if(e.key==="Escape")fecha(false);
+  });
+  inp.addEventListener("blur",()=>fecha(true));
+  ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
 function feyLayout(p){
   const g=procGraph(p);
   // coluna por camada topológica; num ciclo (importado) cai-se na ordem de chegada
@@ -8913,6 +8977,12 @@ function renderFeynman(p){
     const abrir=()=>openTaskEdit(p,t);
     ga.addEventListener("pointerdown",e=>e.stopPropagation());
     ga.addEventListener("click",abrir);
+    /* Duplo clique renomeia no sítio: um campo pousa sobre a pastilha do
+       nome — Enter grava (no rascunho, como tudo), Esc desiste. */
+    ga.addEventListener("dblclick",e=>{
+      e.stopPropagation();e.preventDefault();
+      renomearAresta(p,t,lx,ly-11,svg,wrap);
+    });
     ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
     /* O responsável é um alvo próprio: clicar troca; pairar ilumina TODAS as
        tarefas da mesma pessoa neste procedimento. Ocultável nas Definições. */
@@ -9082,9 +9152,57 @@ function renderFeynman(p){
       "font-size":12,fill:dim},svg).textContent="Cadeia vazia — comece com “+ Nova tarefa”.";
   }
 
+  /* ---- teclado ----
+     Setas saltam entre vértices (anel dourado no focado), N cria uma tarefa
+     a partir dele, Enter edita a primeira saída, F volta a enquadrar. */
+  svg.setAttribute("tabindex","0");
+  let feyFoco=null;
+  const focaVert=id=>{
+    svg.querySelectorAll(".fey-vert.focado").forEach(e2=>e2.classList.remove("focado"));
+    feyFoco=id;
+    if(id&&gvPorNo[id])gvPorNo[id].classList.add("focado");
+  };
+  svg.addEventListener("keydown",e=>{
+    const setas={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]};
+    if(setas[e.key]){
+      e.preventDefault();
+      const [dx2,dy2]=setas[e.key];
+      const ids=L.g.ids.filter(id=>L.pos[id]);
+      if(!ids.length)return;
+      if(!feyFoco||!L.pos[feyFoco]){
+        focaVert(ids.slice().sort((a2,b2)=>L.pos[a2].x-L.pos[b2].x||L.pos[a2].y-L.pos[b2].y)[0]);
+        return;
+      }
+      const o=L.pos[feyFoco];
+      let melhor=null,melhorPeso=Infinity;
+      ids.forEach(id=>{
+        if(id===feyFoco)return;
+        const q2=L.pos[id];
+        const ax=q2.x-o.x,ay=q2.y-o.y;
+        const frente=ax*dx2+ay*dy2;           // componente na direção pedida
+        if(frente<=4)return;
+        const lado=Math.abs(ax*dy2)+Math.abs(ay*dx2);
+        const peso=frente+lado*2.2;
+        if(peso<melhorPeso){melhorPeso=peso;melhor=id;}
+      });
+      if(melhor)focaVert(melhor);
+    }else if((e.key==="n"||e.key==="N")&&feyFoco){
+      e.preventDefault();
+      const n2=byId(feyFoco);
+      if(n2)startAddTask(p,n2);
+    }else if(e.key==="Enter"&&feyFoco){
+      e.preventDefault();
+      const saida=(L.g.outOf[feyFoco]||[])[0];
+      if(saida)openTaskEdit(p,saida);
+    }else if(e.key==="f"||e.key==="F"){
+      e.preventDefault();
+      bFit.onclick();
+    }
+  });
   // ---- zoom e deslocação ----
   const fit=()=>({x:0,y:0,w:L.W,h:L.H});
-  let vb=feyVB&&feyProcId===p.id?feyVB:fit();
+  let vb=(feyVB&&feyProcId===p.id)?feyVB:
+    (vbValido(feyVBs[p.id],L)?{...feyVBs[p.id]}:fit());
   /* Minimapa: o "onde estou" quando o diagrama está ampliado. Pontos nas
      cores dos nódulos, retângulo dourado a marcar a janela, clique salta. */
   const mini=el("div");mini.id="feyMini";mini.hidden=true;
@@ -9102,6 +9220,7 @@ function renderFeynman(p){
   });
   const aplicaVB=()=>{
     svg.setAttribute("viewBox",vb.x+" "+vb.y+" "+vb.w+" "+vb.h);feyVB=vb;
+    feyVBs[p.id]=vb;guardaFeyVBs();
     mini.hidden=vb.w>=L.W*0.96;
     if(!mini.hidden){miniVis.setAttribute("x",vb.x);miniVis.setAttribute("y",vb.y);
       miniVis.setAttribute("width",vb.w);miniVis.setAttribute("height",vb.h);}
@@ -9116,7 +9235,7 @@ function renderFeynman(p){
   const centro=()=>({x:vb.x+vb.w/2,y:vb.y+vb.h/2});
   bMais.onclick=()=>{const c=centro();zoomEm(c.x,c.y,0.8);};
   bMenos.onclick=()=>{const c=centro();zoomEm(c.x,c.y,1.25);};
-  bFit.onclick=()=>{vb=fit();aplicaVB();};
+  bFit.onclick=()=>{vb=fit();aplicaVB();delete feyVBs[p.id];guardaFeyVBs();};
   const paraSvg=(ev)=>{
     const r=svg.getBoundingClientRect();
     return {x:vb.x+(ev.clientX-r.left)/r.width*vb.w,
@@ -14354,7 +14473,36 @@ function redoAction(){
   updateHistoryUI();scheduleAutosave();
   flash(rot?("Refeito: "+rot+"."):"Refeito.");
 }
-document.getElementById("undoBtn").onclick=undoAction;
+/* Premir-e-segurar o Anular abre a lista das últimas ações com legenda —
+   escolher uma recua até lá de uma vez. O clique curto continua a anular um. */
+(function(){
+  const u=document.getElementById("undoBtn");
+  let timer=0,abriuLista=false;
+  async function abreLista(){
+    abriuLista=true;
+    if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
+    if(!undoStack.length){flash("Nada para anular.");return;}
+    const n=Math.min(8,undoStack.length);
+    const ops=[];
+    for(let i=0;i<n;i++){
+      const rot=undoRotulos[undoRotulos.length-1-i];
+      ops.push({k:String(i),label:(i+1)+(i?" passos":" passo")+" atrás"+(rot?(" — "+rot):"")});
+    }
+    const r=await askOpcoes("Recuar no histórico",
+      "Anula tudo até ao passo escolhido, inclusive.",ops);
+    if(r===null||r===undefined)return;
+    const vezes=+r+1;
+    for(let i=0;i<vezes;i++)undoAction();
+  }
+  u.addEventListener("pointerdown",()=>{
+    abriuLista=false;
+    clearTimeout(timer);
+    timer=setTimeout(abreLista,550);
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+    u.addEventListener(ev,()=>clearTimeout(timer)));
+  u.onclick=()=>{if(abriuLista){abriuLista=false;return;}undoAction();};
+})();
 document.getElementById("redoBtn").onclick=redoAction;
 
 /* ============================================================
@@ -14379,6 +14527,10 @@ syncThemeButtons();
 applyScene(0);
 syncPlay();
 booted=true;
+/* O histórico ancora aqui: com o lastSnap semeado no arranque, a PRIMEIRA
+   alteração já é anulável, e um rascunho aberto de imediato tem sempre um
+   estado de entrada a que o Descartar pode voltar. */
+lastSnap=snapshotState();
 updateDirtyUI();
 syncDensityRange();
 updateEmptyHint();
