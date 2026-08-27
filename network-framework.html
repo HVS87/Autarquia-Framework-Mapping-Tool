@@ -5531,7 +5531,10 @@ async function abrirReceita(p){
   if(!ops.length)return;
   const r=await askOpcoes("O que falta em “"+p.name+"”",
     "Cada item leva ao sítio onde se resolve.",ops);
-  if(!r)return;
+  /* Enquanto o diálogo esteve aberto o mundo pode ter mudado (um Anular, um
+     repor de versão): se o procedimento já não for o do modelo, não há sítio
+     para onde saltar. */
+  if(!r||!processes.includes(p))return;
   if(r==="fim"){showFeynman(p);return;}
   if(r.indexOf("t:")===0){
     const tk=p.tasks.find(x=>x.id===r.slice(2));
@@ -10314,7 +10317,7 @@ const MODELOS_PROC=[
   {format:"procedimento-autarquias",version:1,name:"Atendimento e reclamações",prazo:15,tasks:[
     {nome:"Registo",desc:"Registo da reclamação e encaminhamento para o serviço competente.",duration:"1 dia",aNome:"Atendimento",bNome:"Serviço Competente"},
     {nome:"Instrução",desc:"Análise, instrução e proposta de resposta.",duration:"8 dias",aNome:"Serviço Competente",bNome:"Atendimento"},
-    {nome:"Resposta",desc:"Resposta ao munícipe e arquivo do processo.",duration:"2 dias",aNome:"Atendimento",bNome:"Expediente"}]},
+    {nome:"Resposta",desc:"Resposta ao munícipe e arquivamento do processo.",duration:"2 dias",aNome:"Atendimento",bNome:"Expediente"}]},
   {format:"procedimento-autarquias",version:1,name:"Contratação (consulta prévia)",prazo:30,tasks:[
     {nome:"Requisição",desc:"Requisição interna e cabimento orçamental.",duration:"3 dias",aNome:"Serviço Requisitante",bNome:"Contratação Pública"},
     {nome:"Peças",desc:"Elaboração das peças do procedimento e envio de convites.",duration:"5 dias",aNome:"Contratação Pública",bNome:"Executivo"},
