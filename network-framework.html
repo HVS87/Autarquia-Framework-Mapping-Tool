@@ -241,6 +241,37 @@
   .fey-estado{cursor:pointer}
   .fey-estado:hover{stroke:var(--gold);stroke-width:1.6}
   .fant-chip{color:var(--ink-dim);border-style:dashed}
+  /* Validação em sessão */
+  #sessaoDlg{position:fixed;inset:0;z-index:55;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #sessaoDlg.open{display:grid;place-items:center}
+  #sessaoDlg:focus{outline:none}
+  #sessaoCard{width:min(560px,calc(100vw - 40px));max-height:calc(100vh - 56px);overflow:auto;
+    padding:22px 24px;border-radius:14px}
+  .ss-topo{display:flex;justify-content:space-between;font-size:.72rem;color:var(--ink-dim);margin-bottom:10px}
+  #ssProg{font-weight:700;color:var(--gold)}
+  #ssNome{font-size:1.15rem;font-weight:700;color:var(--ink);margin-bottom:2px}
+  #ssRota{font-size:.78rem;color:var(--steel);margin-bottom:8px}
+  #ssDesc{font-size:.84rem;line-height:1.55;color:var(--ink);margin-bottom:8px}
+  #ssMeta{font-size:.72rem;color:var(--ink-dim);margin-bottom:14px}
+  .ss-estados{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .ss-estados .btn{flex:1;min-width:120px}
+  .ss-estados .btn.sel{border-color:var(--gold);color:var(--gold);font-weight:600}
+  .ss-estados b{opacity:.6;margin-right:4px}
+  .ss-dica{font-size:.64rem;color:var(--ink-dim);margin-top:10px;text-align:center}
+  /* Presets das preferências */
+  .fey-presets{display:flex;gap:8px;margin-bottom:8px}
+  /* Reordenar nos chips */
+  .chip-ord{display:inline-flex;gap:2px;margin-left:6px;opacity:0;transition:opacity .12s}
+  .pp-chip:hover .chip-ord,.pp-chip:focus-within .chip-ord{opacity:1}
+  .chip-ord span{display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;border:1px solid var(--hairline);border-radius:4px;
+    font-size:.62rem;color:var(--ink-dim);cursor:pointer}
+  .chip-ord span:hover{color:var(--gold);border-color:var(--gold)}
+  /* Transição colunas↔pistas */
+  .fey-entra{animation:feyEntra .24s ease-out}
+  @keyframes feyEntra{from{opacity:0;transform:translateY(6px) scale(0.988)}}
+  @media (prefers-reduced-motion:reduce){.fey-entra{animation:none}}
   /* ---- folha de impressão ----
      Ctrl+P com o diagrama (ou o fluxograma) aberto imprime SÓ o conteúdo do
      modal, em fundo branco com tintas escuras — os cromas do ecrã ficam no
@@ -5184,6 +5215,30 @@ function renderPageProcs(){
         chip.append(el("span",null,tk.nome||String(tk.desc||"").slice(0,26)));
         if(!tk.agent){const w=el("span");w.innerHTML=triSVG("yellow",11);chip.append(w);}
         chip.append(el("span","rota",(A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")+" · "+tk.duration));
+        /* Reordenar na ordem do procedimento: controla a leitura vertical das
+           tarefas paralelas no diagrama. (spans com role, não <button> — um
+           botão dentro de um botão é HTML inválido.) */
+        const ord=el("span","chip-ord");
+        [["↑",-1],["↓",1]].forEach(([seta,delta])=>{
+          const bo=el("span",null,seta);
+          bo.setAttribute("role","button");
+          bo.setAttribute("tabindex","0");
+          bo.title=delta<0?"Subir na ordem do procedimento":"Descer na ordem do procedimento";
+          const move=ev=>{
+            ev.stopPropagation();ev.preventDefault();
+            const i=p.tasks.indexOf(tk),j=i+delta;
+            if(j<0||j>=p.tasks.length)return;
+            p.tasks.splice(i,1);p.tasks.splice(j,0,tk);
+            anotaHistorico("reordenar as tarefas de “"+p.name+"”");
+            markDirty();
+            if(document.body.dataset.page==="procedimentos"){devolveSeccoes();showPage("procedimentos");}
+          };
+          bo.addEventListener("click",move);
+          bo.addEventListener("pointerdown",ev=>ev.stopPropagation());
+          bo.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" ")move(ev);});
+          ord.append(bo);
+        });
+        chip.append(ord);
         chip.title="Clique: editar · Arraste: mudar o destino no organograma";
         chip.onclick=()=>{if(!dragFoi)openTaskEdit(p,tk);};
         lista.append(chip);
@@ -8828,10 +8883,31 @@ function vbValido(v,L){
   return v&&[v.x,v.y,v.w,v.h].every(Number.isFinite)&&v.w>L.W/10&&v.w<L.W*5;
 }
 /* A interface das preferências vive nas Definições: comutadores simples,
-   aplicados na hora se o diagrama estiver aberto. */
-(function(){
+   aplicados na hora se o diagrama estiver aberto. Dois PRESETS mudam o fato
+   inteiro: Levantamento (tudo visível) e Apresentação (limpo). */
+function renderFeyPrefsUI(){
   const host=document.getElementById("feyPrefsRow");
   if(!host)return;
+  host.innerHTML="";
+  const presets=el("div","fey-presets");
+  [["Levantamento",{resp:true,dur:true,anim:true,denso:false,gargalos:true,gente:true,pistas:false},
+    "Tudo visível: responsáveis, durações, equipas, gargalos"],
+   ["Apresentação",{resp:false,dur:false,anim:true,denso:false,gargalos:false,gente:false,pistas:false},
+    "Limpo, para projetar: só a estrutura e os nomes"]]
+  .forEach(([rot,cfg,tit])=>{
+    const b=el("button","btn tiny",rot);
+    b.title=tit;
+    b.onclick=()=>{
+      Object.assign(FEY_PREFS,cfg);
+      guardaFeyPrefs();
+      renderFeyPrefsUI();
+      document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+      if(modalView&&modalView.type==="feynman")renderFeynman(modalView.layer);
+      flash("Perfil “"+rot+"” aplicado ao diagrama.");
+    };
+    presets.append(b);
+  });
+  host.append(presets);
   [["resp","Responsáveis nas tarefas"],["dur","Durações junto ao responsável"],
    ["anim","Fluxo animado ao pairar"],["denso","Espaçamento compacto"],
    ["gargalos","Modo gargalos — espessura pela duração"],["gente","Equipas nos nódulos"]]
@@ -8854,7 +8930,8 @@ function vbValido(v,L){
     host.append(row);
   });
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
-})();
+}
+renderFeyPrefsUI();
 /* ---- Rascunho: o modo-padrão de alterar um procedimento ----
    Com o diagrama aberto, as mudanças não entram no histórico: acumulam num
    rascunho com comparação de durações à vista. Aplicar (ou simplesmente sair
@@ -8942,6 +9019,86 @@ function campoFey(sx,sy,svg,wrap,valor,ph,aplicar){
   });
   inp.addEventListener("blur",()=>fecha(true));
   ["pointerdown","click","dblclick"].forEach(ev=>inp.addEventListener(ev,e=>e.stopPropagation()));
+}
+/* ---- Validação em sessão ----
+   A reunião com o serviço valida tarefa a tarefa: este modo percorre-as em
+   cartão grande — 1/2/3 marcam o estado e avançam, Espaço/setas navegam.
+   As mudanças caem no rascunho do diagrama, como tudo. */
+function abrirSessao(p){
+  const g=procGraph(p);
+  const ordem=p.tasks.slice().sort((a,b)=>(g.layer[a.a]||0)-(g.layer[b.a]||0));
+  if(!ordem.length){flash("Este procedimento ainda não tem tarefas.");return;}
+  let dlg=document.getElementById("sessaoDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="sessaoDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    dlg.tabIndex=-1;
+    const card=el("div","glass");card.id="sessaoCard";
+    card.innerHTML='<div class="ss-topo"><span id="ssProg"></span><span id="ssProc"></span></div>'+
+      '<div id="ssNome"></div><div id="ssRota"></div><div id="ssDesc"></div><div id="ssMeta"></div>'+
+      '<div class="ss-estados">'+
+      '<button class="btn" data-e="" id="ssE0"><b>1</b> Por confirmar</button>'+
+      '<button class="btn" data-e="validado" id="ssE1"><b>2</b> Validado</button>'+
+      '<button class="btn" data-e="aprovado" id="ssE2"><b>3</b> Aprovado</button></div>'+
+      '<div class="card-btns"><button class="btn tiny" id="ssAnt">‹ Anterior</button>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn tiny" id="ssSeg">Seguinte ›</button>'+
+      '<button class="btn primary" id="ssFim">Terminar sessão</button></div>'+
+      '<div class="ss-dica">1/2/3 marcam e avançam · Espaço ou → seguinte · ← anterior · Esc termina</div>';
+    dlg.append(card);
+    document.body.append(dlg);
+  }
+  let idx=0;
+  function pinta(){
+    const t2=ordem[idx];
+    const A=byId(t2.a),B=byId(t2.b);
+    const ag=t2.agent?agentById(t2.agent):null;
+    document.getElementById("ssProg").textContent=(idx+1)+" / "+ordem.length;
+    document.getElementById("ssProc").textContent=p.name;
+    document.getElementById("ssNome").textContent=t2.nome||String(t2.desc||"Tarefa").slice(0,60);
+    document.getElementById("ssRota").textContent=(A?A.name:"?")+" → "+(B?B.name:"?");
+    document.getElementById("ssDesc").textContent=t2.desc||"";
+    document.getElementById("ssMeta").textContent=(ag?("Responsável: "+ag.name):"Sem responsável")+
+      " · "+t2.duration+(t2.nota?(" · Nota: "+t2.nota):"");
+    ["ssE0","ssE1","ssE2"].forEach(id2=>{
+      const b=document.getElementById(id2);
+      b.classList.toggle("sel",(t2.estado||"")===b.dataset.e);
+    });
+  }
+  function marca(e2){
+    const t2=ordem[idx];
+    if((t2.estado||"")!==e2){
+      t2.estado=e2;
+      anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(e2)+"”");
+      markDirty();
+    }
+    if(idx<ordem.length-1){idx++;pinta();}
+    else fecha();
+  }
+  function fecha(){
+    dlg.classList.remove("open");
+    dlg.removeEventListener("keydown",teclas);
+    if(modalView&&modalView.type==="feynman")renderFeynman(p);
+  }
+  function teclas(e){
+    e.stopPropagation();
+    if(e.key==="1"){e.preventDefault();marca("");}
+    else if(e.key==="2"){e.preventDefault();marca("validado");}
+    else if(e.key==="3"){e.preventDefault();marca("aprovado");}
+    else if(e.key===" "||e.key==="ArrowRight"){e.preventDefault();if(idx<ordem.length-1){idx++;pinta();}else fecha();}
+    else if(e.key==="ArrowLeft"){e.preventDefault();if(idx>0){idx--;pinta();}}
+    else if(e.key==="Escape"){e.preventDefault();fecha();}
+  }
+  ["ssE0","ssE1","ssE2"].forEach(id2=>{
+    document.getElementById(id2).onclick=()=>marca(document.getElementById(id2).dataset.e);
+  });
+  document.getElementById("ssAnt").onclick=()=>{if(idx>0){idx--;pinta();}};
+  document.getElementById("ssSeg").onclick=()=>{if(idx<ordem.length-1){idx++;pinta();}else fecha();};
+  document.getElementById("ssFim").onclick=fecha;
+  dlg.addEventListener("keydown",teclas);
+  pinta();
+  dlg.classList.add("open");
+  setTimeout(()=>dlg.focus(),0);
 }
 /* Editor de fases: linhas nome + "até à etapa N"; guardar valida a ordem. */
 function abrirFasesDlg(p){
@@ -9419,6 +9576,9 @@ function renderFeynman(p){
   bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
   bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
   bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  const bSessao=el("button","btn tiny","Sessão");
+  bSessao.title="Validar em sessão — percorrer as tarefas uma a uma, 1/2/3 marcam o estado";
+  bSessao.onclick=()=>abrirSessao(p);
   const bExp=el("button","btn tiny","Exportar");
   bExp.title="Guardar este diagrama como imagem (PNG) ou como SVG — com legenda, régua e fases";
   bExp.onclick=async()=>{
@@ -9453,7 +9613,17 @@ function renderFeynman(p){
   const bPista=el("button","btn tiny","Pistas");
   bPista.title="Linhas = unidades; cada mudança de pista é uma transferência de responsabilidade";
   bPista.setAttribute("aria-pressed",String(!!FEY_PREFS.pistas));
-  bPista.onclick=()=>{FEY_PREFS.pistas=!FEY_PREFS.pistas;guardaFeyPrefs();renderFeynman(p);};
+  bPista.onclick=()=>{
+    FEY_PREFS.pistas=!FEY_PREFS.pistas;
+    guardaFeyPrefs();
+    renderFeynman(p);
+    /* o cruzamento entre leituras faz-se com um fade+deslize curto — trocar
+       de repente perdia a âncora do olhar */
+    if(!reduceMotion){
+      const w=document.getElementById("feyWrap");
+      if(w){w.classList.add("fey-entra");setTimeout(()=>w.classList.remove("fey-entra"),260);}
+    }
+  };
   /* Percurso: o cursor de dias arrasta a fronteira do "já devia estar feito";
      o ▶ anima do dia 0 ao fim. Só faz sentido nas colunas e com durações. */
   let percIn=null,percBtn=null,percTimer=0;
@@ -9473,7 +9643,7 @@ function renderFeynman(p){
     percWrap.append(percIn);
     stats.append(percWrap);
   }
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bFases,bGarg,bPista,bFant,bExp,stats);
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bSessao,bFases,bGarg,bPista,bFant,bExp,stats);
   modalBody.append(acts);
   document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
   /* A duração de entrada é a referência da comparação do rascunho. */
