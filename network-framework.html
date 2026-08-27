@@ -28,6 +28,12 @@
     --hairline:rgba(33,26,16,0.24);
     --vignette:rgba(58,49,34,0.5);
     --scrim:rgba(188,177,152,0.85);
+    /* O "+" quadricolor da casa: quatro cores que cada tema redefine com
+       tons da sua própria paleta, para o símbolo não destoar. */
+    --gp-a:#E0554F;
+    --gp-b:#4A90E2;
+    --gp-c:#5CC46A;
+    --gp-d:#E8C445;
     /* Alturas das peças fixas. measureChrome() reescreve-as com o valor
        medido logo que o ecrã assenta; estes são os valores de partida,
        para que o PRIMEIRO desenho já saia certo. Sem eles, a barra de
@@ -160,6 +166,7 @@
   .fey-mais:hover .rotulo,.fey-mais:focus-visible .rotulo{opacity:1}
   /* Botões HTML com o quadricolor dentro: ícone e texto na mesma linha */
   .com-gplus{display:inline-flex;align-items:center;gap:6px}
+  .icon-round svg{display:block}
   .com-gplus .gplus{display:inline-flex;flex:none}
   .fey-menos{cursor:pointer}
   .fey-menos circle{fill:var(--panel);stroke:#E0554F;stroke-width:1.2}
@@ -2060,9 +2067,9 @@
       <button class="btn tiny icon-round" id="linkBtn" title="Modo ligar — arraste de um nódulo para outro para criar uma tarefa (L)" aria-label="Modo ligar" aria-pressed="false">⇢</button>
       <button class="btn tiny" id="healthBtn" title="Estado da rede — problemas estruturais detetados">Estado</button>
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
-      <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo">👁</button>
-      <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação">⛶</button>
-      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem">📷</button>
+      <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/></svg></button>
+      <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.2L9 5.4h6L16.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
     </div>
   </div>
@@ -2121,9 +2128,9 @@
       <button id="addLayerBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo procedimento
@@ -2134,9 +2141,9 @@
       <button id="addGroupBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo grupo
@@ -2152,9 +2159,9 @@
       <button id="addNodeBtn" class="add-btn">
         <span class="gplus" aria-hidden="true">
           <svg width="14" height="14" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo nódulo
@@ -2170,9 +2177,9 @@
       <button id="addAgentBtn" class="add-btn compact">
         <span class="gplus small" aria-hidden="true">
           <svg width="12" height="12" viewBox="0 0 14 14">
-            <rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/>
-            <rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/>
-            <rect x="6" y="6" width="2" height="2" fill="#4285F4"/>
+            <rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/>
+            <rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/>
+            <rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/>
           </svg>
         </span>
         Novo agente
@@ -5469,8 +5476,8 @@ function triSVG(cor,s){
 /* O "+" da casa: o quadricolor que os botões "Novo …" do painel sempre
    usaram. Uma só definição para HTML e para dentro dos SVG, para que
    adicionar — seja o quê — tenha a mesma cara em todo o lado. */
-const GPLUS_RECTS=[["6","0","2","6","#EA4335"],["8","6","6","2","#4285F4"],
-  ["6","8","2","6","#34A853"],["0","6","6","2","#FBBC05"],["6","6","2","2","#4285F4"]];
+const GPLUS_RECTS=[["6","0","2","6","var(--gp-a)"],["8","6","6","2","var(--gp-b)"],
+  ["6","8","2","6","var(--gp-c)"],["0","6","6","2","var(--gp-d)"],["6","6","2","2","var(--gp-b)"]];
 function gplusHTML(s){
   return '<span class="gplus small" aria-hidden="true"><svg width="'+s+'" height="'+s+
     '" viewBox="0 0 14 14">'+GPLUS_RECTS.map(r=>'<rect x="'+r[0]+'" y="'+r[1]+
@@ -6937,7 +6944,7 @@ function renderNodeDetail(head,closeBtn){
     detail.append(row);
   });
   const addA=el("button","add-btn compact");
-  addA.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/><rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/><rect x="6" y="6" width="2" height="2" fill="#4285F4"/></svg></span>Adicionar agente`;
+  addA.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/><rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/><rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/></svg></span>Adicionar agente`;
   addA.onclick=()=>{
     const isFirst=agentsOf(n.id).length===0;
     addAgent(n.id,isFirst,isFirst?PRIMARY_CAT_BY_TIER[Math.min(n.tier,PRIMARY_CAT_BY_TIER.length-1)]:"Técnico Superior");
@@ -7323,7 +7330,7 @@ function renderGroupDetail(head,closeBtn){
   }
   // Quick-create straight into the group
   const nb=el("button","add-btn compact");
-  nb.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="#EA4335"/><rect x="8" y="6" width="6" height="2" fill="#4285F4"/><rect x="6" y="8" width="2" height="6" fill="#34A853"/><rect x="0" y="6" width="6" height="2" fill="#FBBC05"/><rect x="6" y="6" width="2" height="2" fill="#4285F4"/></svg></span>Novo procedimento neste grupo`;
+  nb.innerHTML=`<span class="gplus small" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 14 14"><rect x="6" y="0" width="2" height="6" fill="var(--gp-a)"/><rect x="8" y="6" width="6" height="2" fill="var(--gp-b)"/><rect x="6" y="8" width="2" height="6" fill="var(--gp-c)"/><rect x="0" y="6" width="6" height="2" fill="var(--gp-d)"/><rect x="6" y="6" width="2" height="2" fill="var(--gp-b)"/></svg></span>Novo procedimento neste grupo`;
   nb.title="Cria um procedimento novo e adiciona-o já a este grupo";
   nb.onclick=()=>{
     const p=createLayer();
@@ -10595,7 +10602,8 @@ const THEMES={
     tessera:"201,214,232",tesseraGold:"232,180,76",tessAlpha:1,
     stars:[0x8FA2BC,0xC9D6E8],pill:"rgba(8,15,28,0.72)",
     primaries:[[0x4A90E2,0x8FD0FF],[0xE0554F,0xFF9A6B],[0xE8C445,0xFFF0A0],
-      [0x5CC46A,0xA8F0B8],[0xB06AE0,0xE8A8FF],[0xE08A3C,0xFFC98A]]},
+      [0x5CC46A,0xA8F0B8],[0xB06AE0,0xE8A8FF],[0xE08A3C,0xFFC98A]],
+    gp:["#E0554F","#4A90E2","#5CC46A","#E8C445"]},
   lisboa:{label:"Meia-noite em Lisboa",light:false,
     css:{"--bg-deep":"#070A1C","--bg-mid":"#10163A","--ink":"#EAF0FA","--ink-dim":"#8FA0C8",
       "--gold":"#F4C542","--steel":"#7FB3E0","--panel":"rgba(13,19,52,0.86)",
@@ -10607,7 +10615,8 @@ const THEMES={
     tessera:"127,179,224",tesseraGold:"244,197,66",tessAlpha:1,
     stars:[0x8FA0C8,0xBBD4F0],pill:"rgba(8,12,34,0.74)",
     primaries:[[0x3E7CB1,0x9AD1F5],[0xE06A8A,0xFFB3C0],[0xF4C542,0xFFEFAF],
-      [0x46B8A0,0xA8F0DC],[0x8A7FE8,0xC9C0FF],[0xE08A3C,0xFFCF9A]]},
+      [0x46B8A0,0xA8F0DC],[0x8A7FE8,0xC9C0FF],[0xE08A3C,0xFFCF9A]],
+    gp:["#E06A8A","#3E7CB1","#46B8A0","#F4C542"]},
   calcada:{label:"Calçada",light:true,
     css:{"--bg-deep":"#A89A78","--bg-mid":"#B8AB88","--ink":"#211A10","--ink-dim":"#5C5138",
       "--gold":"#775212","--steel":"#3A3122","--panel":"rgba(216,206,182,0.9)",
@@ -10620,7 +10629,8 @@ const THEMES={
     stars:[0x6E6248,0x554B36],pill:"rgba(33,27,17,0.82)",
     pillInk:"#F2E9D4",pillSub:"rgba(210,199,174,0.95)",
     primaries:[[0x2B5FA8,0x6C9BD6],[0xB0402F,0xD87A5C],[0x9C7A16,0xC9A83E],
-      [0x4F7A2F,0x86AC60],[0x7A3E9C,0xA878C8],[0xA85A1F,0xD08A50]]},
+      [0x4F7A2F,0x86AC60],[0x7A3E9C,0xA878C8],[0xA85A1F,0xD08A50]],
+    gp:["#B0402F","#2B5FA8","#4F7A2F","#9C7A16"]},
   verde:{label:"Verde Institucional",light:false,
     css:{"--bg-deep":"#04100A","--bg-mid":"#0B241A","--ink":"#EAF5EE","--ink-dim":"#8FB8A4",
       "--gold":"#D9C36A","--steel":"#A8D8C0","--panel":"rgba(9,29,20,0.87)",
@@ -10632,7 +10642,8 @@ const THEMES={
     tessera:"168,216,192",tesseraGold:"217,195,106",tessAlpha:1,
     stars:[0x8FB8A4,0xC8E8D4],pill:"rgba(6,20,13,0.74)",
     primaries:[[0x2E8B62,0x7FD8AC],[0xC2603A,0xE89A6B],[0xC9B03C,0xF0DC8A],
-      [0x3E86B1,0x8FC8E8],[0x8A62C2,0xC0A0E8],[0x62A83A,0xA8D875]]},
+      [0x3E86B1,0x8FC8E8],[0x8A62C2,0xC0A0E8],[0x62A83A,0xA8D875]],
+    gp:["#C2603A","#3E86B1","#2E8B62","#C9B03C"]},
   // Branch colours use the Okabe–Ito palette, which stays distinguishable under
   // deuteranopia, protanopia and tritanopia; backgrounds go pure black for contrast.
   contraste:{label:"Alto Contraste",light:false,
@@ -10646,7 +10657,8 @@ const THEMES={
     tessera:"255,255,255",tesseraGold:"240,228,66",tessAlpha:1.7,
     stars:[0xCFCFCF,0xFFFFFF],pill:"rgba(0,0,0,0.9)",
     primaries:[[0x0072B2,0x56B4E9],[0xD55E00,0xFF9E5C],[0xF0E442,0xFFF6A8],
-      [0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]]}
+      [0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]],
+    gp:["#D55E00","#0072B2","#009E73","#F0E442"]}   // Okabe–Ito: distinguível em daltonismo
 };
 let themeId="nocturno";
 /* Mesma cor, outro alfa. Os tons do tema vêm como "rgba(r,g,b,a)"; a curva de
@@ -10700,6 +10712,8 @@ function applyTheme(id,opts){
   const T0=THEMES[id]||THEMES.nocturno;
   themeId=THEMES[id]?id:"nocturno";
   Object.entries(T0.css).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+  (T0.gp||["#E0554F","#4A90E2","#5CC46A","#E8C445"]).forEach((v,i)=>
+    document.documentElement.style.setProperty(["--gp-a","--gp-b","--gp-c","--gp-d"][i],v));
   document.body.classList.toggle("theme-light",!!T0.light);
   GOLD=T0.gold;GOLD3D=T0.gold;
   THEME_LIGHT=!!T0.light;
