@@ -385,6 +385,23 @@
     border:1px solid var(--hairline)}
   #loteBar[hidden]{display:none}
   #loteBar .lote-n{font-size:.74rem;font-weight:600;color:var(--gold)}
+  /* Versões com nome */
+  .ver-nova{display:flex;gap:6px;margin-bottom:8px}
+  .ver-nova input{flex:1;min-width:0;font:inherit;font-size:.8rem;color:var(--ink);
+    background:transparent;border:1px solid var(--hairline);border-radius:7px;padding:6px 8px}
+  .ver-nova input:focus{outline:none;border-color:var(--gold)}
+  .ver-row{display:flex;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--hairline)}
+  .ver-row .nm{flex:1;min-width:0;font-size:.78rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ver-row .dt{font-size:.64rem;color:var(--ink-dim);flex:none}
+  /* Relatório de comparação */
+  #verDiffDlg{position:fixed;inset:0;z-index:54;display:none;background:var(--scrim);
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
+  #verDiffDlg.open{display:grid;place-items:center}
+  #vdCard{width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 64px);overflow:auto;
+    padding:20px;border-radius:14px}
+  #vdCard h3{font-size:.95rem;margin:0 0 10px;font-weight:600}
+  #vdLinhas{font-size:.78rem;line-height:1.7;color:var(--ink)}
+  #vdLinhas div{padding:2px 0;border-bottom:1px dashed var(--hairline)}
   .te-grid input:focus,.te-grid textarea:focus{outline:none;border-color:var(--gold)}
   .te-grid .btn{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .danger-btn{border-color:#E0554F;color:#E0554F}
@@ -2240,6 +2257,20 @@
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
       <div id="setupMsg" role="status"></div>
+      <div class="mini-title" style="margin-top:12px">Versões com nome</div>
+      <div class="ver-nova">
+        <input id="verNome" type="text" maxlength="48" placeholder="ex.: antes da reorganização de setembro">
+        <button class="btn" id="verGuardar">Guardar versão</button>
+      </div>
+      <div id="verLista"></div>
+      <div class="foot-note">As versões ficam neste aparelho (no máximo 8 — a mais antiga sai). "Comparar" mostra o que mudou entre a versão e o estado atual; "Repor" volta lá, com direito a Anular.</div>
+      <div class="mini-title" style="margin-top:12px">Procedimentos avulsos e modelos</div>
+      <div class="setup-btns">
+        <button class="btn" id="procExpBtn" title="Guardar UM procedimento num ficheiro, com os nódulos identificados por nome — para partilhar entre câmaras">Exportar um procedimento</button>
+        <button class="btn" id="procImpBtn" title="Trazer um procedimento de um ficheiro — os nódulos em falta são criados">Importar procedimento</button>
+        <button class="btn" id="modelosBtn" title="Começar a partir de um procedimento-tipo: licenciamento, atendimento, contratação">Modelos de procedimentos-tipo</button>
+        <input type="file" id="procImpFile" accept=".json,application/json" hidden>
+      </div>
       <div class="foot-note">"Nova rede" começa do zero, só com o Executivo — apaga tudo o resto, por isso guarde antes se precisar. "Guardar dataset" e "Abrir dataset" levam e trazem tudo num ficheiro JSON. "Exportar PDF" gera um documento com o organograma e todos os fluxogramas; "Exportar apresentação" gera um .pptx 16:9 pronto a mostrar. Estes dois precisam de internet na primeira utilização.</div>
     </div>
   </details>
@@ -10080,6 +10111,223 @@ function flash(msg,opts){
   msgTimer=setTimeout(()=>setupMsg.textContent="",4000);
   return toast(msg,opts);
 }
+/* ============================================================
+   VERSÕES COM NOME + PROCEDIMENTOS AVULSOS E MODELOS
+============================================================ */
+const VER_KEY="of.versions.v1";
+function loadVersoes(){
+  try{const l=JSON.parse(storageGet(VER_KEY)||"[]");return Array.isArray(l)?l:[];}catch(e){return [];}
+}
+function saveVersoes(l){return storageSet(VER_KEY,JSON.stringify(l));}
+function renderVersoes(){
+  const host=document.getElementById("verLista");
+  if(!host)return;
+  host.innerHTML="";
+  const l=loadVersoes();
+  if(!l.length){host.append(el("div","foot-note","Ainda não guardou nenhuma versão."));return;}
+  l.slice().reverse().forEach(v=>{
+    const row=el("div","ver-row");
+    row.append(el("span","nm",v.nome));
+    row.append(el("span","dt",new Date(v.at).toLocaleDateString("pt-PT",
+      {day:"numeric",month:"short",year:"numeric"})));
+    const bCmp=el("button","btn tiny","Comparar");
+    bCmp.title="O que mudou entre esta versão e o estado atual";
+    bCmp.onclick=()=>{
+      let va=null;try{va=JSON.parse(v.state);}catch(e){}
+      if(!va){flash("A versão está ilegível.",{type:"err"});return;}
+      mostraDiff("“"+v.nome+"” → agora",diffStates(va,JSON.parse(snapshotState())));
+    };
+    const bRep=el("button","btn tiny","Repor");
+    bRep.title="Voltar a este estado — com direito a Anular";
+    bRep.onclick=async()=>{
+      if(!(await askConfirm("Repor a versão “"+v.nome+"”? O estado atual fica no Anular.",{yes:"Repor"})))return;
+      if(!restoreState(v.state)){flash("Não foi possível repor esta versão.",{type:"err"});return;}
+      anotaHistorico("repor a versão “"+v.nome+"”");
+      markDirty();
+      flash("Versão “"+v.nome+"” reposta.",{actions:[{label:"Anular",fn:undoAction}]});
+    };
+    const bDel=el("button","btn tiny danger-btn","×");
+    bDel.title="Apagar esta versão (não mexe nos dados atuais)";
+    bDel.setAttribute("aria-label","Apagar a versão "+v.nome);
+    bDel.onclick=async()=>{
+      if(!(await askConfirm("Apagar a versão “"+v.nome+"”?",{yes:"Apagar",danger:true})))return;
+      saveVersoes(loadVersoes().filter(x=>x.at!==v.at));
+      renderVersoes();
+    };
+    row.append(bCmp,bRep,bDel);
+    host.append(row);
+  });
+}
+document.getElementById("verGuardar").onclick=()=>{
+  const inp=document.getElementById("verNome");
+  const nome=inp.value.trim().slice(0,48)||("Versão de "+new Date().toLocaleDateString("pt-PT"));
+  const l=loadVersoes();
+  l.push({nome,at:new Date().toISOString(),state:snapshotState()});
+  while(l.length>8)l.shift();
+  if(!saveVersoes(l)){flash("Sem espaço no browser para guardar a versão — exporte o dataset.",{type:"err"});return;}
+  inp.value="";
+  renderVersoes();
+  flash("Versão “"+nome+"” guardada.");
+};
+renderVersoes();
+/* Diff legível entre dois estados: mais, menos, renomeados, e contagens de
+   tarefas por procedimento. */
+function diffStates(va,vb){
+  const linhas=[];
+  const porId=l=>{const m={};(l||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});return m;};
+  const seccao=(nome,la,lb)=>{
+    const A=porId(la),B=porId(lb);
+    const mais=Object.keys(B).filter(id=>!A[id]);
+    const menos=Object.keys(A).filter(id=>!B[id]);
+    if(mais.length)linhas.push("+ "+nome+": "+mais.map(id=>B[id].name).join(", "));
+    if(menos.length)linhas.push("− "+nome+": "+menos.map(id=>A[id].name).join(", "));
+    Object.keys(B).forEach(id=>{
+      if(A[id]&&A[id].name!==B[id].name)
+        linhas.push("≈ "+nome+": “"+A[id].name+"” → “"+B[id].name+"”");
+    });
+  };
+  seccao("Unidades",va.nodes,vb.nodes);
+  seccao("Pessoas",va.agents,vb.agents);
+  seccao("Procedimentos",va.layers,vb.layers);
+  seccao("Grupos",va.groups,vb.groups);
+  const A=porId(va.layers),B=porId(vb.layers);
+  Object.keys(B).forEach(id=>{
+    if(A[id]&&(A[id].tasks||[]).length!==(B[id].tasks||[]).length)
+      linhas.push("≈ “"+B[id].name+"”: "+(A[id].tasks||[]).length+" → "+(B[id].tasks||[]).length+" tarefa(s)");
+  });
+  return linhas.length?linhas:["Sem diferenças de estrutura — nomes, membros e contagens iguais."];
+}
+function mostraDiff(titulo,linhas){
+  let dlg=document.getElementById("verDiffDlg");
+  if(!dlg){
+    dlg=el("div");dlg.id="verDiffDlg";
+    dlg.setAttribute("role","dialog");dlg.setAttribute("aria-modal","true");
+    const card=el("div","glass");card.id="vdCard";
+    card.append(el("h3",null,""));
+    card.append(el("div",null,""));card.lastChild.id="vdLinhas";
+    const btns=el("div","card-btns");
+    const bF=el("button","btn primary","Fechar");
+    bF.onclick=()=>dlg.classList.remove("open");
+    btns.append(bF);
+    card.append(btns);
+    dlg.append(card);
+    dlg.addEventListener("pointerdown",e=>{if(e.target===dlg)dlg.classList.remove("open");});
+    document.body.append(dlg);
+  }
+  dlg.querySelector("h3").textContent="Comparação — "+titulo;
+  const host=document.getElementById("vdLinhas");
+  host.innerHTML="";
+  linhas.forEach(l=>host.append(el("div",null,l)));
+  dlg.classList.add("open");
+}
+/* ---- procedimentos avulsos: um procedimento num ficheiro, nódulos por NOME ---- */
+function chaveNome(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+}
+document.getElementById("procExpBtn").onclick=async()=>{
+  const ops=processes.slice(0,24).map(p2=>({k:p2.id,label:p2.name+" — "+p2.tasks.length+" tarefa(s)"}));
+  if(!ops.length){flash("Não há procedimentos para exportar.");return;}
+  const r=await askOpcoes("Exportar qual procedimento?",
+    "O ficheiro identifica os nódulos por nome, para viajar entre organizações.",ops);
+  const p2=r&&layerById(r);
+  if(!p2)return;
+  const cfg={format:"procedimento-autarquias",version:1,exported:new Date().toISOString(),
+    name:p2.name,prazo:Number.isFinite(p2.prazo)?p2.prazo:null,
+    tasks:p2.tasks.map(t2=>({nome:t2.nome||"",desc:t2.desc,duration:t2.duration,
+      estado:t2.estado||"",link:t2.link||"",
+      aNome:(byId(t2.a)||{}).name||"?",bNome:(byId(t2.b)||{}).name||"?"}))};
+  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="procedimento-"+chaveNome(p2.name).replace(/\s+/g,"-").slice(0,40)+".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  flash("Procedimento “"+p2.name+"” exportado.");
+};
+function importarProcedimento(cfg,origem){
+  if(!cfg||cfg.format!=="procedimento-autarquias"||!Array.isArray(cfg.tasks)||!cfg.tasks.length){
+    flash("O ficheiro não é um procedimento válido.",{type:"err"});return;
+  }
+  const criados=[];
+  const resolve=nome=>{
+    const alvo=chaveNome(nome);
+    let n=nodes.find(x=>chaveNome(x.name)===alvo);
+    if(!n){
+      n=createNode({name:String(nome).slice(0,40),tier:Math.min(2,TIER.length-1)});
+      criados.push(n.name);
+    }
+    return n;
+  };
+  let p2=null;
+  loteHistorico(()=>{
+    p2=makeLayerData(String(cfg.name||"Procedimento importado").slice(0,28),
+      LAYER_COLORS[processes.length%LAYER_COLORS.length]);
+    p2._visible=true;
+    p2.done=false;
+    p2.prazo=Number.isFinite(cfg.prazo)?Math.max(0,cfg.prazo):null;
+    addLayerRow(p2);
+    /* O visual da camada tem de existir ANTES das tarefas: buildTaskVisual
+       pendura cada arco no grupo 3D do procedimento (a ordem do restore). */
+    buildLayerVisual(p2);
+    cfg.tasks.slice(0,60).forEach(ct=>{
+      if(!ct||!ct.aNome||!ct.bNome||chaveNome(ct.aNome)===chaveNome(ct.bNome))return;
+      const A=resolve(ct.aNome),B=resolve(ct.bNome);
+      const t2=makeTaskData(p2,A.id,B.id,
+        typeof ct.desc==="string"?ct.desc.slice(0,400):undefined,null,
+        typeof ct.duration==="string"?ct.duration.slice(0,20):undefined);
+      t2.nome=typeof ct.nome==="string"?ct.nome.slice(0,40):"";
+      t2.estado=(ct.estado==="validado"||ct.estado==="aprovado")?ct.estado:"";
+      t2.link=typeof ct.link==="string"&&/^https?:\/\//i.test(ct.link)?ct.link.slice(0,300):"";
+      t2.custom=true;
+      buildTaskVisual(t2);
+    });
+    relayoutLayers();
+    updateLayerCounts();
+    renderGroups();
+    anotaHistorico("importar o procedimento “"+p2.name+"”"+(origem?(" ("+origem+")"):""));
+  });
+  flash("“"+p2.name+"” importado — "+p2.tasks.length+" tarefa(s)"+
+    (criados.length?("; unidades criadas: "+criados.join(", ")):"")+".",
+    {actions:[{label:"Anular",fn:undoAction},{label:"Abrir",fn:()=>showFeynman(p2)}]});
+}
+document.getElementById("procImpBtn").onclick=()=>document.getElementById("procImpFile").click();
+document.getElementById("procImpFile").addEventListener("change",function(){
+  const f=this.files&&this.files[0];
+  this.value="";
+  if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let cfg=null;
+    try{cfg=JSON.parse(rd.result);}catch(e){}
+    importarProcedimento(cfg,f.name);
+  };
+  rd.readAsText(f);
+});
+/* ---- modelos-tipo: meia dúzia de cadeias reais para arrancar depressa ---- */
+const MODELOS_PROC=[
+  {format:"procedimento-autarquias",version:1,name:"Licenciamento urbanístico",prazo:60,tasks:[
+    {nome:"Receção",desc:"Receção e triagem do pedido de licenciamento; verificação dos elementos instrutórios.",duration:"2 dias",aNome:"Atendimento",bNome:"Divisão de Urbanismo"},
+    {nome:"Saneamento",desc:"Saneamento e apreciação liminar; pedido de consultas obrigatórias.",duration:"8 dias",aNome:"Divisão de Urbanismo",bNome:"Consultas Externas"},
+    {nome:"Pareceres",desc:"Emissão de pareceres pelas entidades externas consultadas.",duration:"20 dias",aNome:"Consultas Externas",bNome:"Divisão de Urbanismo"},
+    {nome:"Proposta",desc:"Apreciação técnica final e proposta de decisão.",duration:"5 dias",aNome:"Divisão de Urbanismo",bNome:"Executivo"},
+    {nome:"Decisão",desc:"Deferimento e liquidação de taxas devidas.",duration:"3 dias",aNome:"Executivo",bNome:"Tesouraria"}]},
+  {format:"procedimento-autarquias",version:1,name:"Atendimento e reclamações",prazo:15,tasks:[
+    {nome:"Registo",desc:"Registo da reclamação e encaminhamento para o serviço competente.",duration:"1 dia",aNome:"Atendimento",bNome:"Serviço Competente"},
+    {nome:"Instrução",desc:"Análise, instrução e proposta de resposta.",duration:"8 dias",aNome:"Serviço Competente",bNome:"Atendimento"},
+    {nome:"Resposta",desc:"Resposta ao munícipe e arquivo do processo.",duration:"2 dias",aNome:"Atendimento",bNome:"Expediente"}]},
+  {format:"procedimento-autarquias",version:1,name:"Contratação (consulta prévia)",prazo:30,tasks:[
+    {nome:"Requisição",desc:"Requisição interna e cabimento orçamental.",duration:"3 dias",aNome:"Serviço Requisitante",bNome:"Contratação Pública"},
+    {nome:"Peças",desc:"Elaboração das peças do procedimento e envio de convites.",duration:"5 dias",aNome:"Contratação Pública",bNome:"Executivo"},
+    {nome:"Adjudicação",desc:"Análise de propostas e adjudicação.",duration:"5 dias",aNome:"Executivo",bNome:"Contratação Pública"},
+    {nome:"Compromisso",desc:"Registo do compromisso e emissão da nota de encomenda.",duration:"2 dias",aNome:"Contratação Pública",bNome:"Tesouraria"}]}
+];
+document.getElementById("modelosBtn").onclick=async()=>{
+  const r=await askOpcoes("Modelos de procedimentos-tipo",
+    "Importa uma cadeia pronta a adaptar — os nódulos em falta são criados por nome.",
+    MODELOS_PROC.map((m,i)=>({k:String(i),label:m.name+" — "+m.tasks.length+" passos, prazo "+m.prazo+" dias"})));
+  if(r===null||r===undefined)return;
+  importarProcedimento(MODELOS_PROC[+r],"modelo");
+};
 document.getElementById("exportBtn").onclick=()=>{
   const cfg={
     format:"mapeamento-autarquias-setup",
