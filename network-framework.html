@@ -1232,6 +1232,12 @@
 
   /* ---------- Header action row ---------- */
   .brand .head-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  /* A barra de ações fala da cena 3D — organograma 2D, vistas, continuidade,
+     câmara. Fora da Home não há cena para comandar: num separador de página
+     (body[data-tab]) ou no organograma-página (page-org), a barra sai e o
+     cabeçalho é remedido por quem fez a troca. */
+  body[data-tab] .brand .head-actions,
+  body.page-org .brand .head-actions{display:none}
   /* Abaixo do ecrã largo, treze botões partem em três ou quatro linhas e o
      cabeçalho passa de 74 para 170px — um quinto de um tablet ao baixo, gasto
      em cromo. Numa linha que desliza ficam todos alcançáveis e o mapa recupera
@@ -2875,11 +2881,12 @@ const aurora=(function(){
   (function(){
     let seed=7;
     const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
-    /* Uma fiada de prédios de bordo a bordo. As formas variam (casa com
-       telhado de duas águas, torre com pináculo, cúpula), as larguras são
-       curtas e as alturas irregulares — é o recorte, não o volume, que faz
-       uma silhueta parecer cidade. Fecha exatamente aos 256: a tela dá a
-       volta, e um prédio serrado a meio deixava um degrau na junção. */
+    /* Uma fiada de prédios de bordo a bordo — cidade alta, não casario: um
+       terço são torres (que esticam acima da fiada e acabam em coroa recuada
+       e mastro), o resto lajes de terraço plano com platibanda e casa das
+       máquinas. É o degrau entre alturas, não o telhado, que faz o recorte
+       urbano. Fecha exatamente aos 256: a tela dá a volta, e um prédio
+       serrado a meio deixava um degrau na junção. */
     function fiada(lista,wMin,wMax,hMin,hMax,comJanelas){
       let xx=0;
       while(xx<256){
@@ -2889,21 +2896,22 @@ const aurora=(function(){
           w=256-xx;
           if(w<3&&lista.length){lista[lista.length-1].w+=w;break;}
         }
-        const kr=rnd();
         const b={x:xx,w,h,
-          kind:kr<0.07?"tower":(kr<0.13?"dome":"house"),
-          cume:0.25+rnd()*0.5,          // cumeeira fora do centro: telhados tortos
-          cham:rnd()<0.45,              // chaminé nalgumas casas
+          kind:rnd()<0.34?"torre":"predio",
+          recuo:0.55+rnd()*0.25,        // largura da coroa, em fração do fuste
+          ant:rnd()<0.38,               // mastro nalgumas torres
+          maq:1+Math.floor(rnd()*Math.max(1,w-3)),  // casa das máquinas
           jan:[]};
+        if(b.kind==="torre")b.h=Math.round(b.h*1.35+4);  // as torres furam a fiada
         if(comJanelas){
-          /* Janelas acesas: é o que faz uma silhueta parecer uma cidade e não
-             um recorte de cartão. Poucas, e sempre as mesmas — sorteadas de
-             novo a cada fotograma, dariam um cintilar de árvore de Natal. */
-          const nj=(b.kind==="tower")?3:(b.w>=8?2:1);
-          for(let k=0;k<nj;k++){
-            if(rnd()<0.42)continue;
-            b.jan.push({dx:1+Math.floor(rnd()*Math.max(1,b.w-2)),
-                        dy:2+Math.floor(rnd()*Math.max(1,b.h-2))});
+          /* Janelas em grelha — colunas certas, pisos certos, acesas à sorte
+             mas sorteadas UMA vez (por fotograma dariam um cintilar de árvore
+             de Natal). É a grelha, não o ponto solto, que diz "escritórios". */
+          const cols=Math.max(1,Math.floor((b.w-2)/2));
+          const pisos=Math.max(2,Math.floor((b.h-3)/3));
+          for(let ci=0;ci<cols;ci++)for(let pi=0;pi<pisos;pi++){
+            if(rnd()<0.72)continue;
+            b.jan.push({dx:1.2+ci*2,dy:2.5+pi*3});
           }
         }
         lista.push(b);
@@ -2915,12 +2923,12 @@ const aurora=(function(){
          degrau a prumo. */
       if(lista.length>1){
         const pri=lista[0], ult=lista[lista.length-1];
-        ult.h=pri.h; ult.kind=pri.kind; ult.cume=pri.cume;
-        ult.cham=false; ult.jan=[];
+        ult.h=pri.h; ult.kind=pri.kind; ult.recuo=pri.recuo;
+        ult.ant=false; ult.jan=[];
       }
     }
-    fiada(roofFar,6,14,3,8,false);   // fundo: mais largo, mais baixo, sem janelas
-    fiada(roof,4,9,4,14,true);       // frente: estreito e recortado
+    fiada(roofFar,7,15,6,18,false);  // fundo: quarteirões largos, esbatidos
+    fiada(roof,4,10,7,22,true);      // frente: torres e lajes recortadas
   })();
   const HORIZON=178;
   /* Mancha redonda que dá a volta à tela. Desenhada três vezes — uma volta
@@ -2986,34 +2994,22 @@ const aurora=(function(){
     x.fillStyle=grao;x.fillRect(0,0,SKY,SKY);
     x.setTransform(K,0,0,K,0,0);
     x.globalCompositeOperation="source-over";
-    /* As formas desenham-se por caminho, não por retângulo: é a diferença
-       entre "blocos" e telhados. A cumeeira das casas sai do centro, as
-       cúpulas são arcos com haste, as torres acabam em pináculo e antena. */
+    /* Cidade alta: as torres têm fuste a toda a altura, coroa recuada e, em
+       parte delas, um mastro — é o recuo no topo que diz "torre de
+       escritórios" em vez de "empena comprida". As lajes têm terraço plano
+       com platibanda um nada mais larga e a casa das máquinas em cima; o
+       recorte urbano faz-se destes degraus, não de telhados. */
     function casario(lista,base){
       lista.forEach(r=>{
-        if(r.kind==="tower"){
-          const tw=Math.max(2.6,r.w*0.55), tx=r.x+(r.w-tw)/2;
-          x.fillRect(r.x,base-r.h*0.55,r.w,r.h*0.55);          // corpo baixo
-          x.fillRect(tx,base-r.h-6,tw,r.h+6);                  // a torre
-          x.beginPath();                                       // pináculo
-          x.moveTo(tx-0.5,base-r.h-6);
-          x.lineTo(tx+tw/2,base-r.h-11);
-          x.lineTo(tx+tw+0.5,base-r.h-6);
-          x.closePath();x.fill();
-          x.fillRect(tx+tw/2-0.35,base-r.h-14,0.7,3.4);        // antena
-        }else if(r.kind==="dome"){
-          x.fillRect(r.x,base-r.h,r.w,r.h);
-          const rd=Math.min(r.w/2-0.4,4.2);
-          x.beginPath();x.arc(r.x+r.w/2,base-r.h,rd,Math.PI,0);x.fill();
-          x.fillRect(r.x+r.w/2-0.3,base-r.h-rd-2.2,0.6,2.4);   // haste
+        if(r.kind==="torre"){
+          x.fillRect(r.x,base-r.h,r.w,r.h);                    // fuste
+          const cw=Math.max(2,r.w*r.recuo), cx2=r.x+(r.w-cw)/2;
+          x.fillRect(cx2,base-r.h-3.2,cw,3.2);                 // coroa recuada
+          if(r.ant)x.fillRect(r.x+r.w/2-0.35,base-r.h-7.8,0.7,4.6); // mastro
         }else{
-          x.fillRect(r.x,base-r.h,r.w,r.h);
-          x.beginPath();                                       // duas águas
-          x.moveTo(r.x-0.4,base-r.h);
-          x.lineTo(r.x+r.w*r.cume,base-r.h-2.8);
-          x.lineTo(r.x+r.w+0.4,base-r.h);
-          x.closePath();x.fill();
-          if(r.cham)x.fillRect(r.x+r.w*0.74,base-r.h-4.4,1.1,4.4);
+          x.fillRect(r.x,base-r.h,r.w,r.h);                    // laje
+          x.fillRect(r.x-0.35,base-r.h-0.7,r.w+0.7,0.7);       // platibanda
+          x.fillRect(r.x+r.maq,base-r.h-2.4,2.2,2.4);          // casa das máquinas
         }
       });
     }
@@ -4739,7 +4735,11 @@ function tabAtual(){
 function syncTabs(){
   if(!tabbar)return;
   const cur=tabAtual();
+  const tinhaOrg=document.body.classList.contains("page-org");
   document.body.classList.toggle("page-org",cur==="organograma");
+  /* O organograma entra e sai por applyView, não por setTab — e com ele entra
+     e sai a barra de ações do cabeçalho. Mudou a classe, mudou a altura. */
+  if(tinhaOrg!==(cur==="organograma"))measureChrome();
   tabbar.querySelectorAll(".tab").forEach(b=>{
     const on=b.dataset.tab===cur;
     b.classList.toggle("on",on);
@@ -7905,7 +7905,7 @@ function renderFlowchart(p){
       if(!midId){flash("Escolha o nódulo intermédio.",{type:"err"});return;}
       const tail=createTask(idx,midId,oldB,d.value.trim()||undefined,
         (primaryOf(midId)||{}).id||null,du.value.trim()||undefined);
-      // Only rewire the original once the second half actually exists
+      // Só religar a original quando a segunda metade existir de facto
       if(!tail){flash("Não foi possível inserir o passo.",{type:"err"});return;}
       t.b=midId;
       rebuildTaskVisual(t);
@@ -10770,7 +10770,7 @@ function animate(){
     });
   }
 
-  // Hover kinship recomputed only when the hovered node actually changes
+  // O parentesco do pairar só se recalcula quando o nódulo pairado muda
   if(hoverNode!==lastHoverNode){lastHoverNode=hoverNode;computeHoverKin();}
   const kinOn=!!hoverKin&&!focusActive;
 
@@ -11309,8 +11309,8 @@ function spaceTaken(){
   const r=a.getAttribute("role");
   return r==="button"||r==="switch"||r==="checkbox"||r==="tab"||r==="menuitem";
 }
-/* Global keyboard shortcuts. The tour keys were documented in the README but
-   never actually bound — this is where they live now. */
+/* Atalhos de teclado globais. As teclas da visita estavam documentadas no
+   README mas nunca tinham sido ligadas — é aqui que vivem agora. */
 addEventListener("keydown",e=>{
   const el0=e.target;
   const tag=((el0&&el0.tagName)||"").toLowerCase();
