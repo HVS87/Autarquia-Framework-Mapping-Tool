@@ -147,6 +147,34 @@
     background:var(--panel);border:1px solid var(--hairline);border-radius:9px;
     padding:5px;opacity:.94;cursor:crosshair;z-index:3}
   #feyMini svg{display:block;width:100%;height:auto}
+  /* Barra de rascunho — o modo-padrão de alterar um procedimento */
+  .fey-rascunho{display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    margin:0 0 10px;padding:7px 12px;border:1px solid var(--gold);border-radius:10px;
+    background:rgba(232,180,76,0.07)}
+  .fey-rascunho .fr-tit{font-size:.74rem;font-weight:700;color:var(--gold)}
+  .fey-rascunho .fr-cmp{font-size:.74rem;color:var(--ink-dim)}
+  .fey-rascunho .fr-cmp.pior{color:#E0554F;font-weight:600}
+  .fey-rascunho .fr-cmp.melhor{color:#5CC46A;font-weight:600}
+  .fey-rascunho .fr-nota{font-size:.66rem;color:var(--ink-dim);margin-left:auto}
+  .fey-acts .btn[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+  /* Pairar no responsável: só as tarefas da mesma pessoa ficam acesas */
+  .fey-mesmo .fey-aresta,.fey-mesmo .fey-vert,.fey-mesmo .fey-resp{opacity:.25;transition:opacity .14s}
+  .fey-mesmo .mesmo-resp,.fey-mesmo .fey-terminal{opacity:1}
+  /* O Fim carimba quando a cadeia se dá por finalizada */
+  .fey-terminal.carimba circle{transform-box:fill-box;transform-origin:center;
+    animation:feyCarimbo .55s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes feyCarimbo{from{transform:scale(2.1);opacity:0}to{transform:scale(1);opacity:1}}
+  @media (prefers-reduced-motion:reduce){.fey-terminal.carimba circle{animation:none}}
+  body.fey-sem-anim .fey-cadeia .fey-aresta.na-cadeia .tr{animation:none;stroke-dasharray:none}
+  .fey-cheg{cursor:pointer}
+  .fey-cheg:hover circle,.fey-cheg:focus-visible circle{stroke-width:2}
+  /* Barra tricolor de progresso do levantamento no cartão */
+  .pp-prog{display:flex;height:4px;border-radius:999px;overflow:hidden;
+    background:var(--hairline);margin:2px 0 6px}
+  .pp-prog .pa{background:var(--gold)}
+  .pp-prog .pv{background:var(--steel)}
+  #feyPrefsRow .row{display:flex;align-items:center;gap:8px}
+  #feyPrefsRow .row-name{flex:1}
   .fey-acts .sep{flex:1}
   .fey-aresta{cursor:pointer}
   .fey-aresta .hit{stroke:transparent;stroke-width:16;fill:none}
@@ -2225,6 +2253,8 @@
         <button class="theme-btn" data-theme="verde" title="Verde institucional"><span class="tdot" style="background:linear-gradient(135deg,#0B241A,#2E8B62 60%,#D9C36A)"></span>Verde Institucional</button>
         <button class="theme-btn" data-theme="contraste" title="Alto contraste — cores seguras para daltonismo (Okabe–Ito)"><span class="tdot" style="background:linear-gradient(135deg,#000000,#0072B2 45%,#F0E442)"></span>Alto Contraste</button>
       </div>
+      <div class="mini-title">Diagrama de interações</div>
+      <div id="feyPrefsRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -4972,12 +5002,25 @@ function renomearNoSitio(alvo,valor,aplicar){
 function miniFluxo(p){
   if(!p.tasks.length)return null;
   const L=feyLayout(p);
+  let st2=null;try{st2=procStats(p);}catch(e){}
   const s=svgEl("svg",{class:"pp-mini",viewBox:"0 0 "+L.W+" "+L.H,
     preserveAspectRatio:"xMidYMid meet","aria-hidden":"true"});
+  /* A miniatura conta a verdade: os mesmos arcos do diagrama, e o caminho
+     crítico por baixo, a dourado. */
+  const vistos={};
   p.tasks.forEach(t2=>{
     const a=L.pos[t2.a],b=L.pos[t2.b];
-    if(a&&b)svgEl("line",{x1:a.x,y1:a.y,x2:b.x,y2:b.y,
-      stroke:"currentColor","stroke-width":10,opacity:0.45},s);
+    if(!a||!b)return;
+    const kpar=t2.a+"→"+t2.b, par=(vistos[kpar]=(vistos[kpar]||0)); vistos[kpar]++;
+    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+    let nx=-dy/len,ny=dx/len; if(ny>0){nx=-nx;ny=-ny;}
+    const amp=(Math.min(30,8+len*0.07))+Math.floor((par+1)/2)*26;
+    const lado=(par%2===0)?1:-1;
+    const cxq=(a.x+b.x)/2+nx*amp*lado, cyq=(a.y+b.y)/2+ny*amp*lado;
+    const d="M"+a.x+" "+a.y+" Q "+cxq+" "+cyq+" "+b.x+" "+b.y;
+    if(st2&&st2.critical.has(t2.id))
+      svgEl("path",{d:d,fill:"none",stroke:"var(--gold)","stroke-width":26,opacity:0.55},s);
+    svgEl("path",{d:d,fill:"none",stroke:"currentColor","stroke-width":10,opacity:0.5},s);
   });
   L.g.ids.forEach(id=>{
     const q=L.pos[id],n=byId(id);
@@ -5021,6 +5064,19 @@ function renderPageProcs(){
     if(mf)head.append(nm,wr,mf,cnt,bFey,bMais);
     else head.append(nm,wr,cnt,bFey,bMais);
     card.append(head);
+    /* Progresso do levantamento: aprovado (dourado), validado (aço), e o
+       que falta fica no fundo da barra. */
+    if(p.tasks.length){
+      const na=p.tasks.filter(t=>t.estado==="aprovado").length;
+      const nv=p.tasks.filter(t=>t.estado==="validado").length;
+      const prog=el("div","pp-prog");
+      prog.title="Levantamento: "+na+" aprovada(s) · "+nv+" validada(s) · "+
+        (p.tasks.length-na-nv)+" por confirmar";
+      const sA=el("span","pa");sA.style.width=(na/p.tasks.length*100)+"%";
+      const sV=el("span","pv");sV.style.width=(nv/p.tasks.length*100)+"%";
+      prog.append(sA,sV);
+      card.append(prog);
+    }
     if(p.tasks.length){
       const lista=el("div","pp-tarefas");
       p.tasks.forEach(tk=>{
@@ -6240,6 +6296,10 @@ function viewValid(v){
   return false;
 }
 function closeModalSilent(){
+  /* Sair do diagrama com um rascunho pendente APLICA-O (um passo de Anular,
+     com toast) — o rascunho é provisório mas não se perde por acidente.
+     Descartar é sempre um gesto explícito. */
+  if(rascunho&&!rascunhoAplicando&&modalView&&modalView.type==="feynman")aplicarRascunho(false);
   modal.classList.remove("open");
   modal.classList.remove("from-3d");
   modalView=null;
@@ -7766,7 +7826,7 @@ function procStats(p){
   const critical=new Set();
   let cur=endId,guard=0;
   while(cur&&via[cur]&&guard++<400){critical.add(via[cur].id);cur=via[cur].a;}
-  return {graph:g,total,critical,
+  return {graph:g,total,critical,best,
     unknown:g.tasks.some(t=>parseDuration(t.duration)===null),
     forks:g.ids.filter(id=>g.outOf[id].length>1).length,
     joins:g.ids.filter(id=>g.inOf[id].length>1).length};
@@ -8483,6 +8543,72 @@ function svgEl(tag,attrs,parent){
   return e;
 }
 let feyProcId=null,feyVB=null,feyReabrir=null;
+/* Preferências do diagrama, persistidas: quem apresenta quer menos camadas,
+   quem levanta quer tudo. A interface vive nas Definições. */
+const FEY_PREFS=(function(){
+  const d={resp:true,dur:true,anim:true,denso:false,gargalos:false,gente:false};
+  try{
+    const s=JSON.parse(storageGet("of.feyprefs.v1")||"{}");
+    Object.keys(d).forEach(k=>{if(typeof s[k]==="boolean")d[k]=s[k];});
+  }catch(e){}
+  return d;
+})();
+function guardaFeyPrefs(){storageSet("of.feyprefs.v1",JSON.stringify(FEY_PREFS));}
+/* A interface das preferências vive nas Definições: comutadores simples,
+   aplicados na hora se o diagrama estiver aberto. */
+(function(){
+  const host=document.getElementById("feyPrefsRow");
+  if(!host)return;
+  [["resp","Responsáveis nas tarefas"],["dur","Durações junto ao responsável"],
+   ["anim","Fluxo animado ao pairar"],["denso","Espaçamento compacto"],
+   ["gargalos","Modo gargalos — espessura pela duração"],["gente","Equipas nos nódulos"]]
+  .forEach(([k,rot])=>{
+    const row=el("div","row");
+    row.append(el("span","row-name",rot));
+    const sw=el("button","switch"+(FEY_PREFS[k]?" on":""));
+    sw.setAttribute("role","switch");
+    sw.setAttribute("aria-checked",String(FEY_PREFS[k]));
+    sw.setAttribute("aria-label",rot);
+    sw.onclick=()=>{
+      FEY_PREFS[k]=!FEY_PREFS[k];
+      guardaFeyPrefs();
+      sw.classList.toggle("on",FEY_PREFS[k]);
+      sw.setAttribute("aria-checked",String(FEY_PREFS[k]));
+      document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+      if(modalView&&modalView.type==="feynman")renderFeynman(modalView.layer);
+    };
+    row.append(sw);
+    host.append(row);
+  });
+  document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+})();
+/* ---- Rascunho: o modo-padrão de alterar um procedimento ----
+   Com o diagrama aberto, as mudanças não entram no histórico: acumulam num
+   rascunho com comparação de durações à vista. Aplicar (ou simplesmente sair
+   do diagrama) grava tudo como UM passo de Anular; Descartar repõe o estado
+   de entrada. Anular/Refazer ficam suspensos enquanto o rascunho durar. */
+let rascunho=null;              // {pid,base,ultimo,alteracoes,totalBase}
+let rascunhoAplicando=false;    // o markDirty do próprio Aplicar não reabre rascunho
+let feyTotalAoAbrir=0;          // duração de entrada, para a comparação
+let feyCarimbar=null;           // procedimento a "carimbar" no próximo render (Fim)
+function aplicarRascunho(silencioso){
+  if(!rascunho)return;
+  const r=rascunho;rascunho=null;
+  rascunhoAplicando=true;
+  try{
+    anotaHistorico(r.alteracoes+" alteração(ões) a “"+((layerById(r.pid)||{}).name||"?")+"”");
+    markDirty();
+  }finally{rascunhoAplicando=false;}
+  updateHistoryUI();
+  if(!silencioso)flash("Alterações aplicadas.",{actions:[{label:"Anular",fn:undoAction}]});
+}
+function descartarRascunho(){
+  if(!rascunho)return;
+  const b=rascunho.base;rascunho=null;
+  restoreState(b);
+  updateHistoryUI();
+  flash("Rascunho descartado — o procedimento voltou ao que era.");
+}
 /* Trilho de regresso: quando se salta para um ramo convergente, guarda-se o
    procedimento de onde se veio, e o título ganha um "‹ voltar". Abrir um
    procedimento por qualquer OUTRO caminho limpa o trilho. */
@@ -8508,7 +8634,8 @@ function feyLayout(p){
   g.ids.forEach(id=>{(porCol[col[id]]=porCol[col[id]]||[]).push(id);});
   const cols=Object.keys(porCol).map(Number).sort((a,b)=>a-b);
   const pos={};
-  const X0=170,DX=236,DY=128,Y0=104;
+  const den=FEY_PREFS.denso;
+  const X0=170,DX=den?184:236,DY=den?98:128,Y0=104;
   let maxLinhas=1;
   cols.forEach(c=>{
     const linhas=porCol[c];
@@ -8516,7 +8643,7 @@ function feyLayout(p){
     linhas.forEach((id,r)=>{pos[id]={x:X0+c*DX,y:Y0+r*DY};});
   });
   const maxCol=cols.length?cols[cols.length-1]:0;
-  const H=Y0+Math.max(1,maxLinhas)*DY+30;
+  const H=Y0+Math.max(1,maxLinhas)*DY+64;   // +34 para a régua de dias ao fundo
   const meioY=Y0+((maxLinhas-1)*DY)/2;
   const inicio={x:44,y:meioY};
   const fim={x:X0+maxCol*DX+DX,y:meioY};
@@ -8556,6 +8683,7 @@ function renderFeynman(p){
     :"Declarar que a cadeia de tarefas está completa, do Início ao Fim";
   bDone.onclick=()=>{p.done=!p.done;
     anotaHistorico((p.done?"finalizar":"reabrir")+" a cadeia de “"+p.name+"”");
+    if(p.done)feyCarimbar=p.id;      // o Fim carimba no próximo desenho
     markDirty();renderFeynman(p);};
   const bFluxo=el("button","btn tiny","Fluxograma");
   bFluxo.title="Voltar à vista de fluxograma";
@@ -8588,8 +8716,40 @@ function renderFeynman(p){
     ex.title="O caminho crítico ("+fmtDays(st.total)+") ultrapassa o prazo legal de "+p.prazo+" dias";
     stats.append(ex);
   }
-  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,stats);
+  const bGarg=el("button","btn tiny","Gargalos");
+  bGarg.title="Espessura pela duração e junções assinaladas — onde o tempo se perde";
+  bGarg.setAttribute("aria-pressed",String(FEY_PREFS.gargalos));
+  bGarg.onclick=()=>{FEY_PREFS.gargalos=!FEY_PREFS.gargalos;guardaFeyPrefs();renderFeynman(p);};
+  acts.append(bMenos,bMais,bFit,bUndo,bRedo,bNova,bDone,sep,bFluxo,bGarg,stats);
   modalBody.append(acts);
+  document.body.classList.toggle("fey-sem-anim",!FEY_PREFS.anim);
+  /* A duração de entrada é a referência da comparação do rascunho. */
+  if(!rascunho||rascunho.pid!==p.id)feyTotalAoAbrir=st.total;
+  /* ---- barra de rascunho: o modo-padrão de alterar ----
+     A primeira mudança abre o rascunho; aqui vive a contagem, a comparação
+     de durações e os dois gestos. Fechar o diagrama também aplica. */
+  if(rascunho&&rascunho.pid===p.id){
+    const bar=el("div","fey-rascunho");
+    bar.append(el("span","fr-tit","Rascunho — "+rascunho.alteracoes+" alteração(ões)"));
+    const cmp=el("span","fr-cmp",fmtDays(rascunho.totalBase)+" → "+fmtDays(st.total));
+    cmp.title="Duração à entrada → duração com o rascunho";
+    if(st.total>rascunho.totalBase)cmp.classList.add("pior");
+    else if(st.total<rascunho.totalBase)cmp.classList.add("melhor");
+    bar.append(cmp);
+    const bAp=el("button","btn tiny primary","Aplicar");
+    bAp.title="Gravar as alterações — ficam num só passo de Anular";
+    bAp.onclick=()=>{aplicarRascunho(false);renderFeynman(p);};
+    const bDesc=el("button","btn tiny danger-btn","Descartar");
+    bDesc.title="Esquecer todas as alterações deste rascunho";
+    bDesc.onclick=async()=>{
+      const n2=rascunho?rascunho.alteracoes:0;
+      if(!(await askConfirm("Descartar "+n2+" alteração(ões) do rascunho?",{yes:"Descartar",danger:true})))return;
+      descartarRascunho();
+    };
+    bar.append(bAp,bDesc);
+    bar.append(el("span","fr-nota","Fechar o diagrama também aplica."));
+    modalBody.append(bar);
+  }
 
   const wrap=el("div");wrap.id="feyWrap";
   modalBody.append(wrap);
@@ -8612,6 +8772,15 @@ function renderFeynman(p){
   }
   /* Registos por tarefa e por nódulo, para o realce de cadeia ao pairar. */
   const grpPorTarefa={},gvPorNo={};
+  let gradN=0;
+  const maxDur=Math.max(1,...p.tasks.map(t=>parseDuration(t.duration)||0));
+  /* Chegadas de OUTROS procedimentos a cada nódulo (ramos convergentes) —
+     alimenta o distintivo ⇉ dos vértices. */
+  const rrP=ramosDe(p);
+  const chegadasNo={};
+  rrP.convergentes.forEach(r2=>r2.tasks.forEach(tt=>{
+    (chegadasNo[tt.b]=chegadasNo[tt.b]||[]).push({proc:r2.proc,t:tt});
+  }));
 
   const cs=getComputedStyle(document.documentElement);
   const ink=(cs.getPropertyValue("--ink")||"#eee").trim();
@@ -8637,18 +8806,22 @@ function renderFeynman(p){
     return tx2;
   }
 
-  // ---- terminais Início / Fim ----
-  const gIni=svgEl("g",{class:"fey-vert"},svg);
-  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:10,fill:"none",stroke:dim,"stroke-width":1.4},gIni);
+  // ---- terminais Início / Fim — medalhões; o Fim carimba ao finalizar ----
+  const gIni=svgEl("g",{class:"fey-vert fey-terminal"},svg);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:14,fill:"none",stroke:dim,"stroke-width":1,opacity:0.55},gIni);
+  svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:10,fill:"none",stroke:dim,"stroke-width":1.6},gIni);
   svgEl("circle",{cx:L.inicio.x,cy:L.inicio.y,r:4.5,fill:dim},gIni);
-  svgEl("text",{x:L.inicio.x,y:L.inicio.y+26,"text-anchor":"middle","font-size":11,fill:dim},gIni)
+  svgEl("text",{x:L.inicio.x,y:L.inicio.y+30,"text-anchor":"middle","font-size":11,fill:dim},gIni)
     .textContent="Início";
-  const gFim=svgEl("g",{class:"fey-vert"},svg);
+  const gFim=svgEl("g",{class:"fey-vert fey-terminal"+((feyCarimbar===p.id)?" carimba":"")},svg);
+  if(feyCarimbar===p.id)feyCarimbar=null;
   const fimCor=p.done?gold:"#E0554F";
+  svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:14,fill:"none",stroke:fimCor,"stroke-width":1,
+    opacity:0.55,"stroke-dasharray":p.done?"none":"2 3"},gFim);
   svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:10,fill:"none",stroke:fimCor,
-    "stroke-width":p.done?2:1.4,"stroke-dasharray":p.done?"none":"3 3"},gFim);
+    "stroke-width":p.done?2.2:1.4,"stroke-dasharray":p.done?"none":"3 3"},gFim);
   if(p.done)svgEl("circle",{cx:L.fim.x,cy:L.fim.y,r:4.5,fill:gold},gFim);
-  svgEl("text",{x:L.fim.x,y:L.fim.y+26,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
+  svgEl("text",{x:L.fim.x,y:L.fim.y+30,"text-anchor":"middle","font-size":11,fill:fimCor},gFim)
     .textContent="Fim";
   if(!p.done){
     const fw=svgEl("g",{transform:"translate("+(L.fim.x+8)+","+(L.fim.y-24)+")"},gFim);
@@ -8689,12 +8862,27 @@ function renderFeynman(p){
     const lx=0.25*a.x+0.5*cxq+0.25*b.x, ly=0.25*a.y+0.5*cyq+0.25*b.y;
 
     const corA=hex((byId(t.a)||{color:p.color}).color);
+    const corB=hex((byId(t.b)||{color:p.color}).color);
+    /* O arco conta a transferência: gradiente da cor de origem para a de
+       destino — o sentido lê-se mesmo sem a seta (que fica na cor de chegada). */
+    let tinta=corA;
+    if(corA!==corB){
+      const gid="feyGrad"+(gradN++);
+      const lg=svgEl("linearGradient",{id:gid,gradientUnits:"userSpaceOnUse",
+        x1:a.x,y1:a.y,x2:b.x,y2:b.y},defs);
+      svgEl("stop",{offset:"0%","stop-color":corA},lg);
+      svgEl("stop",{offset:"100%","stop-color":corB},lg);
+      tinta="url(#"+gid+")";
+    }
+    /* Modo gargalos: a espessura carrega a duração — os arcos gordos são
+       onde o tempo se perde. */
+    const larg=FEY_PREFS.gargalos?(1.5+((parseDuration(t.duration)||0)/maxDur)*4.6):2.2;
     const ga=svgEl("g",{class:"fey-aresta"+(st.critical.has(t.id)?" critica":""),tabindex:0,role:"button"},svg);
     svgEl("title",{},ga).textContent=(t.nome||t.desc||"Tarefa")+" — editar nome, descrição e responsável";
     if(st.critical.has(t.id))svgEl("path",{class:"cr-halo",d:d,fill:"none",stroke:gold,
-      "stroke-width":6,opacity:0.30,"pointer-events":"none"},ga);
-    svgEl("path",{class:"tr",d:d,fill:"none",stroke:corA,
-      "stroke-width":2.2,"marker-end":"url(#"+seta(corA)+")"},ga);
+      "stroke-width":larg+3.8,opacity:0.30,"pointer-events":"none"},ga);
+    svgEl("path",{class:"tr",d:d,fill:"none",stroke:tinta,
+      "stroke-width":larg,"marker-end":"url(#"+seta(corB)+")"},ga);
     svgEl("path",{class:"hit",d:d},ga);
     const ag=t.agent?agentById(t.agent):null;
     const base=String(t.nome||t.desc||"");
@@ -8726,15 +8914,31 @@ function renderFeynman(p){
     ga.addEventListener("pointerdown",e=>e.stopPropagation());
     ga.addEventListener("click",abrir);
     ga.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();abrir();}});
-    /* O responsável é um alvo próprio: clicar nele vai direto à troca. */
-    const gAg=svgEl("g",{class:"fey-resp",tabindex:0,role:"button"},svg);
-    svgEl("title",{},gAg).textContent="Alterar ou anular o responsável";
-    const respTx=pastilha(gAg,lx,ly+13,(ag?ag.name:"— sem responsável —")+" · "+t.duration,9.5,dim);
-    respTx.setAttribute("text-decoration","underline");
-    const trocaResp=()=>openAgentPickFor(p,t);
-    gAg.addEventListener("pointerdown",e=>e.stopPropagation());
-    gAg.addEventListener("click",e=>{e.stopPropagation();trocaResp();});
-    gAg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trocaResp();}});
+    /* O responsável é um alvo próprio: clicar troca; pairar ilumina TODAS as
+       tarefas da mesma pessoa neste procedimento. Ocultável nas Definições. */
+    let gAg=null;
+    if(FEY_PREFS.resp){
+      gAg=svgEl("g",{class:"fey-resp",tabindex:0,role:"button"},svg);
+      svgEl("title",{},gAg).textContent="Alterar ou anular o responsável";
+      const respTx=pastilha(gAg,lx,ly+13,
+        (ag?ag.name:"— sem responsável —")+(FEY_PREFS.dur?(" · "+t.duration):""),9.5,dim);
+      respTx.setAttribute("text-decoration","underline");
+      const trocaResp=()=>openAgentPickFor(p,t);
+      gAg.addEventListener("pointerdown",e=>e.stopPropagation());
+      gAg.addEventListener("click",e=>{e.stopPropagation();trocaResp();});
+      gAg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();trocaResp();}});
+      if(t.agent){
+        gAg.addEventListener("pointerenter",()=>{
+          svg.classList.add("fey-mesmo");
+          p.tasks.forEach(tt=>{if(tt.agent===t.agent)
+            (grpPorTarefa[tt.id]||[]).forEach(g2=>g2.classList.add("mesmo-resp"));});
+        });
+        gAg.addEventListener("pointerleave",()=>{
+          svg.classList.remove("fey-mesmo");
+          svg.querySelectorAll(".mesmo-resp").forEach(e2=>e2.classList.remove("mesmo-resp"));
+        });
+      }
+    }
     /* E o "−": apagar esta tarefa, com a pergunta sobre as encadeadas. */
     const menos=svgEl("g",{class:"fey-menos",transform:"translate("+(lx-38)+","+(ly-32)+")",
       tabindex:0,role:"button"},svg);
@@ -8745,7 +8949,7 @@ function renderFeynman(p){
     menos.addEventListener("pointerdown",e=>e.stopPropagation());
     menos.addEventListener("click",e=>{e.stopPropagation();apaga();});
     menos.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();apaga();}});
-    grpPorTarefa[t.id]=[ga,gAg,menos];
+    grpPorTarefa[t.id]=gAg?[ga,gAg,menos]:[ga,menos];
   });
 
   // ---- vértices (nódulos) ----
@@ -8776,6 +8980,52 @@ function renderFeynman(p){
     mais.addEventListener("click",e=>{e.stopPropagation();go();});
     mais.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
     gvPorNo[id]=gv;
+    /* Junções em modo gargalos: onde vários ramos têm de convergir há
+       espera — assinala-se. */
+    if(FEY_PREFS.gargalos&&(L.g.inOf[id]||[]).length>1){
+      const jh=svgEl("circle",{cx:q.x,cy:q.y,r:15,fill:"none",stroke:"#E08A3C",
+        "stroke-width":1.6,"stroke-dasharray":"3 3"},gv);
+      svgEl("title",{},gv).textContent=n.name+" — junção: espera que "+
+        (L.g.inOf[id]||[]).length+" ramos cheguem";
+    }
+    /* Distintivo ⇉: aqui desaguam tarefas de OUTROS procedimentos — clicar
+       salta para lá, com trilho de regresso. */
+    if(chegadasNo[id]&&chegadasNo[id].length){
+      const cheg=chegadasNo[id];
+      const bg=svgEl("g",{class:"fey-cheg",transform:"translate("+(q.x-16)+","+(q.y-14)+")",
+        tabindex:0,role:"button"},svg);
+      svgEl("title",{},bg).textContent="Aqui chegam "+cheg.length+" tarefa(s) de: "+
+        [...new Set(cheg.map(x=>x.proc.name))].join(", ")+" — clique para ver";
+      svgEl("circle",{cx:0,cy:0,r:8.5,fill:"var(--panel)",stroke:gold,"stroke-width":1.1},bg);
+      svgEl("text",{x:0,y:3,"text-anchor":"middle","font-size":8,fill:gold},bg)
+        .textContent="⇉"+(cheg.length>1?cheg.length:"");
+      const saltar=async()=>{
+        const fontes=[...new Map(cheg.map(x=>[x.proc.id,x.proc])).values()];
+        let alvo2=fontes[0];
+        if(fontes.length>1){
+          const r2=await askOpcoes("Ver o procedimento que converge aqui","",
+            fontes.map(pp=>({k:pp.id,label:pp.name})));
+          alvo2=r2?layerById(r2):null;
+        }
+        if(alvo2){feyTrilho.push(p.id);trilhoManter=true;showFeynman(alvo2);}
+      };
+      bg.addEventListener("pointerdown",e=>e.stopPropagation());
+      bg.addEventListener("click",e=>{e.stopPropagation();saltar();});
+      bg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();saltar();}});
+    }
+    /* Equipas nos nódulos (preferência): as iniciais de quem lá trabalha. */
+    if(FEY_PREFS.gente){
+      const eq=agentsOf(id).slice(0,3);
+      eq.forEach((a2,k)=>{
+        const cxg=q.x-((eq.length-1)*9)+k*18, cyg=q.y+58;
+        const gg=svgEl("g",{class:"fey-gente"},gv);
+        svgEl("title",{},gg).textContent=a2.name+(a2.primary?" ★":"");
+        svgEl("circle",{cx:cxg,cy:cyg,r:7.5,fill:hex(n.color),opacity:0.85,
+          stroke:a2.primary?gold:"rgba(0,0,0,0.3)","stroke-width":a2.primary?1.4:0.8},gg);
+        svgEl("text",{x:cxg,y:cyg+2.6,"text-anchor":"middle","font-size":6.5,fill:"#FFFFFF"},gg)
+          .textContent=(a2.name.match(/\b\p{L}/gu)||["?"]).slice(0,2).join("").toUpperCase();
+      });
+    }
     /* Pairar num nódulo ilumina tudo o que está a montante e a jusante e
        esbate o resto — "o que depende disto?" sem um clique. */
     gv.addEventListener("pointerenter",()=>{
@@ -8796,6 +9046,37 @@ function renderFeynman(p){
     });
   });
 
+  /* ---- régua de dias + linha do prazo ----
+     As colunas topológicas viram quase-cronograma: por baixo, os dias
+     acumulados pelo caminho mais longo até cada coluna; havendo prazo, uma
+     linha vertical vermelha diz EM QUE ETAPA se rebenta. */
+  if(!L.g.cyclic&&st.total>0){
+    const RY=L.H-22;
+    svgEl("line",{x1:L.inicio.x-6,y1:RY,x2:L.fim.x+12,y2:RY,
+      stroke:dim,"stroke-width":1,opacity:0.55,"pointer-events":"none"},svg);
+    svgEl("text",{x:L.inicio.x,y:RY+15,"text-anchor":"middle","font-size":8.5,fill:dim},svg)
+      .textContent="dia 0";
+    const colDias=[];
+    for(let c=0;c<=L.maxCol;c++){
+      let d2=0;
+      L.g.ids.forEach(id=>{if(L.col[id]===c)d2=Math.max(d2,st.best[id]||0);});
+      colDias[c]=d2;
+      const x2=L.X0+c*L.DX;
+      svgEl("line",{x1:x2,y1:RY-4,x2:x2,y2:RY+4,stroke:dim,"stroke-width":1,opacity:0.7},svg);
+      svgEl("text",{x:x2,y:RY+15,"text-anchor":"middle","font-size":8.5,fill:dim},svg)
+        .textContent="dia "+(Math.round(d2*10)/10);
+    }
+    if(Number.isFinite(p.prazo)&&p.prazo>0&&p.prazo<st.total){
+      let c=0;while(c<=L.maxCol&&colDias[c]<p.prazo)c++;
+      const d0=c>0?colDias[c-1]:0, x0p=c>0?L.X0+(c-1)*L.DX:L.inicio.x;
+      const d1=colDias[Math.min(c,L.maxCol)]||d0, x1p=L.X0+Math.min(c,L.maxCol)*L.DX;
+      const f=(d1>d0)?(p.prazo-d0)/(d1-d0):1;
+      const px2=x0p+(x1p-x0p)*f;
+      svgEl("line",{x1:px2,y1:10,x2:px2,y2:RY+6,stroke:"#E0554F","stroke-width":1.4,
+        "stroke-dasharray":"5 4",opacity:0.85,"pointer-events":"none"},svg);
+      pastilha(svg,px2,18,"prazo · "+p.prazo+" dias",9,"#E0554F",600);
+    }
+  }
   if(!p.tasks.length){
     svgEl("text",{x:(L.inicio.x+L.fim.x)/2,y:L.inicio.y-34,"text-anchor":"middle",
       "font-size":12,fill:dim},svg).textContent="Cadeia vazia — comece com “+ Nova tarefa”.";
@@ -13983,8 +14264,13 @@ function updateHistoryUI(){
   const u=document.getElementById("undoBtn"),r=document.getElementById("redoBtn");
   const ur=undoRotulos.length?undoRotulos[undoRotulos.length-1]:null;
   const rr=redoRotulos.length?redoRotulos[redoRotulos.length-1]:null;
-  if(u){u.disabled=!undoStack.length;u.title="Anular (Ctrl+Z)"+(ur?" — "+ur:"");}
-  if(r){r.disabled=!redoStack.length;r.title="Refazer (Ctrl+Shift+Z)"+(rr?" — "+rr:"");}
+  const emRasc=!!rascunho;
+  if(u){u.disabled=!undoStack.length||emRasc;
+    u.title=emRasc?"Indisponível durante o rascunho — Aplicar ou Descartar primeiro"
+      :"Anular (Ctrl+Z)"+(ur?" — "+ur:"");}
+  if(r){r.disabled=!redoStack.length||emRasc;
+    r.title=emRasc?"Indisponível durante o rascunho — Aplicar ou Descartar primeiro"
+      :"Refazer (Ctrl+Shift+Z)"+(rr?" — "+rr:"");}
 }
 let autosaveWarned=false;
 function scheduleAutosave(){
@@ -14013,6 +14299,22 @@ function recordHistory(){
   if(historyBusy)return;
   const cur=snapshotState();
   if(cur===lastSnap)return;
+  /* Com o diagrama aberto, a mudança vai para o rascunho e não para as
+     pilhas: o lastSnap fica no estado de entrada, e é ele que o Aplicar
+     empurra para o histórico como um único passo. */
+  if(!rascunhoAplicando&&modalView&&modalView.type==="feynman"&&modalView.layer){
+    if(rascunho&&rascunho.pid===modalView.layer.id){
+      if(cur!==rascunho.ultimo){rascunho.alteracoes++;rascunho.ultimo=cur;}
+      scheduleAutosave();updateHistoryUI();
+      return;
+    }
+    if(!rascunho){
+      rascunho={pid:modalView.layer.id,base:lastSnap,ultimo:cur,
+        alteracoes:1,totalBase:feyTotalAoAbrir};
+      scheduleAutosave();updateHistoryUI();
+      return;
+    }
+  }
   if(lastSnap!==null){
     undoStack.push(lastSnap);
     undoRotulos.push(rotuloPendente);
@@ -14025,6 +14327,7 @@ function recordHistory(){
   scheduleAutosave();
 }
 function undoAction(){
+  if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
   if(exportBusy()){flash("Aguarde o fim da exportação para anular.",{type:"err"});return;}
   if(!undoStack.length){flash("Nada para anular.");return;}
   const cur=snapshotState();
@@ -14038,6 +14341,7 @@ function undoAction(){
   flash(rot?("Anulado: "+rot+"."):"Anulado.");
 }
 function redoAction(){
+  if(rascunho){flash("Está num rascunho — aplique ou descarte primeiro.",{type:"err"});return;}
   if(exportBusy()){flash("Aguarde o fim da exportação para refazer.",{type:"err"});return;}
   if(!redoStack.length){flash("Nada para refazer.");return;}
   const cur=snapshotState();
