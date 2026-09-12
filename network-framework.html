@@ -314,7 +314,8 @@
   body.palco header,body.palco #tabbar,body.palco #panel,body.palco #page,
   body.palco #detail,body.palco #stepper,body.palco #quest,body.palco #whereBar,
   body.palco #radarWrap,body.palco #trailMenu,body.palco #emptyHint,
-  body.palco #toastHost,body.palco #retoma{display:none!important}
+  body.palco #toasts,body.palco #retoma,body.palco #chevrons,
+  body.palco #coach,body.palco #tourEnd,body.palco #installHow{display:none!important}
   #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
     border:1px solid var(--hairline);opacity:.4;transition:opacity .2s}
@@ -16100,17 +16101,7 @@ function palcoEnviaEstado(){
     palcoEnvia({t:"estado",s:s});
   },180);
 }
-function palcoEnviaSelecao(sel){
-  if(ehPalco)return;
-  let m={t:"sel",tipo:null};
-  if(sel){
-    if(sel.type==="node"&&sel.node)m={t:"sel",tipo:"node",id:sel.node.id};
-    else if(sel.type==="task"&&sel.task)m={t:"sel",tipo:"task",id:sel.task.id,pid:(processes[sel.task.proc]||{}).id};
-    else if(sel.type==="agent"&&sel.agent)m={t:"sel",tipo:"agent",id:sel.agent.id};
-    else if(sel.type==="group"&&sel.group)m={t:"sel",tipo:"group",id:sel.group.id};
-  }
-  palcoEnvia(m);
-}
+function palcoEnviaSelecao(sel){palcoEnvia(palcoSelMsg(sel));}
 function palcoEnviaIsola(){palcoEnvia({t:"isola",i:isolateProc});}
 /* A seleção corrente, no formato de mensagem — serve o envio e o reaplicar. */
 function palcoSelMsg(sel){
@@ -16150,27 +16141,20 @@ function palcoRecebe(m){
   else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
   else if(m.t==="tema")applyTheme(m.id,{silent:true});
 }
-if(palcoCanal)palcoCanal.onmessage=e=>{
-  const m=e.data;
+/* Um palco novo pede tudo: estado fresco, seleção, isolamento e tema. */
+function palcoRespondeOla(){
+  palcoUltimoEstado=null;
+  palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
+  palcoEnvia({t:"tema",id:themeId});
+}
+function palcoMensagem(m){
   if(ehPalco)palcoRecebe(m);
-  else if(m&&m.t==="ola"){
-    /* um palco novo pede tudo: estado fresco, seleção, isolamento e tema */
-    palcoUltimoEstado=null;
-    palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
-    palcoEnvia({t:"tema",id:themeId});
-  }
-};
+  else if(m&&m.t==="ola")palcoRespondeOla();
+}
+if(palcoCanal)palcoCanal.onmessage=e=>palcoMensagem(e.data);
 addEventListener("storage",e=>{
   if(e.key!=="of.palco.msg"||!e.newValue)return;
-  try{
-    const m=JSON.parse(e.newValue);
-    if(ehPalco)palcoRecebe(m);
-    else if(m&&m.t==="ola"){
-      palcoUltimoEstado=null;
-      palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
-      palcoEnvia({t:"tema",id:themeId});
-    }
-  }catch(err){}
+  try{palcoMensagem(JSON.parse(e.newValue));}catch(err){}
 });
 function alternaEcraInteiro(){
   if(document.fullscreenElement){if(document.exitFullscreen)document.exitFullscreen();}
@@ -16255,8 +16239,12 @@ lastSnap=snapshotState();      // history baseline
 updateHistoryUI();
 animate();
 // First visit: teach the three gestures that unlock the whole tool
-if(!storageGet(COACH_KEY))setTimeout(openCoach,850);
-setTimeout(offerSessionRestore,1500);
+/* O palco é só a cena, no segundo ecrã: nada de visita guiada nem de oferta
+   de sessão — quem ensina e pergunta é o ecrã principal. */
+if(!ehPalco){
+  if(!storageGet(COACH_KEY))setTimeout(openCoach,850);
+  setTimeout(offerSessionRestore,1500);
+}
 // Ligação profunda: …#CS4 abre já focado nessa unidade
 (function(){
   let h="";
