@@ -310,6 +310,17 @@
     padding:8px 12px;border-radius:10px;margin-bottom:8px}
   .ret-tit{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
   .ret-ver{font-size:.68rem;color:var(--ink-dim)}
+  /* ---- palco (segundo ecrã): só a cena, mais nada ---- */
+  body.palco header,body.palco #tabbar,body.palco #panel,body.palco #page,
+  body.palco #detail,body.palco #stepper,body.palco #quest,body.palco #whereBar,
+  body.palco #radarWrap,body.palco #trailMenu,body.palco #emptyHint,
+  body.palco #toastHost,body.palco #retoma{display:none!important}
+  #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
+    gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
+    border:1px solid var(--hairline);opacity:.4;transition:opacity .2s}
+  #palcoPill:hover{opacity:1}
+  #palcoPill .pp-rot{font-size:.68rem;color:var(--ink-dim)}
+  body.palco #stage{cursor:grab}
   .fey-entra{animation:feyEntra .24s ease-out}
   @keyframes feyEntra{from{opacity:0;transform:translateY(6px) scale(0.988)}}
   @media (prefers-reduced-motion:reduce){.fey-entra{animation:none}}
@@ -2272,6 +2283,8 @@
       <button class="btn tiny" id="resetViewBtn" title="Recentrar a câmara na vista inicial">Recentrar</button>
       <button class="btn tiny icon-round" id="peekBtn" title="Espreitar o todo — mantenha premido (ou segure Espaço)" aria-label="Espreitar o todo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       <button class="btn tiny icon-round" id="presentBtn" title="Modo apresentação (P) — esconde os painéis" aria-label="Modo apresentação"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/></svg></button>
+      <button class="btn tiny icon-round" id="fsBtn" title="Ecrã inteiro — a aplicação ocupa o monitor todo" aria-label="Ecrã inteiro"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 10 21 3"/><path d="M21 3h-6M21 3v6"/><path d="M10 14 3 21"/><path d="M3 21h6M3 21v-6"/></svg></button>
+      <button class="btn tiny" id="palcoBtn" title="Abrir o palco: uma janela só com o 3D, para o segundo ecrã — segue a seleção, o tema e os dados deste ecrã"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Palco</button>
       <button class="btn tiny icon-round" id="snapBtn" title="Guardar a vista 3D atual como imagem PNG" aria-label="Guardar vista como imagem"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.2L9 5.4h6L16.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg></button>
       <button class="btn tiny icon-round" id="helpBtn" title="Ajuda e atalhos de teclado" aria-label="Ajuda e atalhos">?</button>
     </div>
@@ -5733,6 +5746,7 @@ function updateDirtyUI(){
 }
 function markDirty(){
   recordHistory();          // snapshots the state as it was before this change
+  if(booted)palcoEnviaEstado();   // o palco segue cada mudança, rascunhos incluídos
   refreshTaskTab();         // o separador Tarefas, se estiver à vista, acompanha
   if(booted)refreshAvisos();// os selos amarelo/vermelho idem (na semente ainda nao ha "processes": TDZ)
   // `booted` primeiro: markDirty corre durante a semente, antes de `noGL` existir (TDZ)
@@ -5935,6 +5949,7 @@ function addLayerRow(p){
     // que sem markDirty se perdia ao recarregar ou ao anular.
     if(mudouVisibilidade)markDirty();
     syncLayerRows();
+    if(booted)palcoEnviaIsola();
   };
 
   const name=el("button","row-name",p.name);
@@ -6811,6 +6826,8 @@ function applySelection(sel){
            (sel.type==="agent"&&!sel.agent)||
            (sel.type==="group"&&!sel.group)))sel=null;
   selected=sel;
+  selKin=computeSelKin(sel);
+  if(booted)palcoEnviaSelecao(sel);
   if(sel&&sel.type==="node"){
     pendingTarget=null;searchQuery="";newLayerMode=false;
     focusOn(sel.node.pos,5);
@@ -6886,6 +6903,8 @@ function selectAgent(a){navigateTo({type:"agent",agent:a});}
 function selectGroup(g){groupPanelSearch="";groupAddSearch="";navigateTo({type:"group",group:g});}
 function clearSelection(){
   selected=null;
+  selKin=null;
+  if(booted)palcoEnviaSelecao(null);
   navStack.length=0;fwdStack.length=0;
   closeModalSilent();
   releaseFocus();
@@ -8074,6 +8093,7 @@ function isolateProcedureOf(t){
   if(!p._visible)p._visible=true;
   isolateProc=(isolateProc===i)?null:i;
   syncLayerRows();
+  if(booted)palcoEnviaIsola();
   const A=byId(t.a),B=byId(t.b);
   if(isolateProc===i&&A&&B){
     const mid=A.pos.clone().lerp(B.pos,0.5);
@@ -8115,6 +8135,68 @@ function computeHoverKin(){
   if(hoverNode.parent)s.add(hoverNode.parent);
   nodes.forEach(m=>{if(m.parent===hoverNode.id)s.add(m.id);});
   hoverKin=s;
+}
+/* ---- realce estrutural da SELEÇÃO ----
+   O pairar mostra a vizinhança imediata; a seleção mostra a ESTRUTURA:
+   um nódulo acende a linhagem inteira (para cima e para baixo), uma tarefa
+   acende o procedimento todo (nódulos e arcos), um grupo acende a união dos
+   seus procedimentos — e o resto recua, para o olhar ficar onde se está.
+   nos = ids de nódulos acesos; procs = índices de procedimentos acesos
+   (null = acender arcos que toquem na linhagem). */
+let selKin=null;
+function computeSelKin(sel){
+  if(!sel)return null;
+  const nos=new Set();
+  const sobe=id=>{
+    let c=byId(id),g=0;
+    while(c){nos.add(c.id);if(!c.parent||g++>=15)break;c=byId(c.parent);}
+  };
+  if(sel.type==="node"&&sel.node){
+    sobe(sel.node.id);
+    subArvore(sel.node.id).forEach(id=>nos.add(id));
+    return {nos,procs:null};
+  }
+  if(sel.type==="task"&&sel.task){
+    const i=sel.task.proc;
+    const p=processes[i];
+    if(!p)return null;
+    p.tasks.forEach(tk=>{sobe(tk.a);sobe(tk.b);});
+    return {nos,procs:new Set([i])};
+  }
+  if(sel.type==="agent"&&sel.agent){
+    const n=byId(sel.agent.nodeId);
+    if(!n)return null;
+    sobe(n.id);
+    subArvore(n.id).forEach(id=>nos.add(id));
+    return {nos,procs:null};
+  }
+  if(sel.type==="group"&&sel.group){
+    const procs=new Set();
+    sel.group.layers.forEach(pid=>{
+      const i=processes.findIndex(p2=>p2.id===pid);
+      if(i<0)return;
+      procs.add(i);
+      processes[i].tasks.forEach(tk=>{sobe(tk.a);sobe(tk.b);});
+    });
+    return {nos,procs};
+  }
+  return null;
+}
+/* O isolar de um procedimento ganha o mesmo tratamento; a cache refaz-se só
+   quando o isolamento muda (também acompanha o ciclo automático das cenas). */
+let __isoKin=null,__isoLast=null;
+function isoKinDe(effIsolate){
+  if(effIsolate===__isoLast)return __isoKin;
+  __isoLast=effIsolate;
+  if(effIsolate===null||!processes[effIsolate]){__isoKin=null;return null;}
+  const nos=new Set();
+  const sobe=id=>{
+    let c=byId(id),g=0;
+    while(c){nos.add(c.id);if(!c.parent||g++>=15)break;c=byId(c.parent);}
+  };
+  processes[effIsolate].tasks.forEach(tk=>{sobe(tk.a);sobe(tk.b);});
+  __isoKin={nos,procs:new Set([effIsolate])};
+  return __isoKin;
 }
 stage.addEventListener("pointermove",e=>{
   if(dragging){tip.style.display="none";hoverNode=null;return;}
@@ -12854,6 +12936,7 @@ function applyTheme(id,opts){
     }
     if(typeof closeTaskEdit==="function")closeTaskEdit();
   if(!opts.silent)markDirty();
+  if(booted&&!opts.silent)palcoEnvia({t:"tema",id:themeId});
 }
 document.querySelectorAll("#themeRow .theme-btn").forEach(btn=>{
   btn.onclick=()=>{
@@ -13465,6 +13548,9 @@ function animate(){
   // O parentesco do pairar só se recalcula quando o nódulo pairado muda
   if(hoverNode!==lastHoverNode){lastHoverNode=hoverNode;computeHoverKin();}
   const kinOn=!!hoverKin&&!focusActive;
+  /* Modo de realce estrutural: a seleção manda; sem seleção, o isolamento
+     de um procedimento dá o mesmo tratamento. */
+  const selMode=(selected&&selKin)?selKin:isoKinDe(effIsolate);
 
   const hierTarget=s.show.hier?0.38:0.04;
   hierLinks.forEach(L=>{
@@ -13474,6 +13560,11 @@ function animate(){
     if(kinOn){
       // Links joining the hovered node to its neighbours brighten; the rest recede
       ht=(hoverKin.has(L.pa.id)&&hoverKin.has(L.pb.id))?Math.max(ht,0.8*f):ht*0.22;
+    }
+    if(selMode){
+      /* dentro da estrutura selecionada, o esqueleto acende; fora, apaga-se */
+      ht=(selMode.nos.has(L.pa.id)&&selMode.nos.has(L.pb.id))
+        ?Math.max(ht,0.72*f):Math.min(ht,hierTarget*f*0.12);
     }
     L.mat.opacity+=(ht-L.mat.opacity)*0.08;
   });
@@ -13535,6 +13626,15 @@ function animate(){
       let coneT=!on?0.02:(isSel?1.0:(dim?0.10:0.85));
       if(isPlay){matT=1.0;coneT=1.0;}
       else if(playDim&&on){matT=Math.min(matT,0.09);coneT=Math.min(coneT,0.10);}
+      else if(selMode&&on&&!isSel){
+        /* seleção estrutural: os arcos do procedimento (ou os que tocam na
+           linhagem) acendem; os restantes recuam a quase nada */
+        const acende=selMode.procs
+          ?selMode.procs.has(i)
+          :(selMode.nos.has(tk.a)||selMode.nos.has(tk.b));
+        if(acende){matT=Math.max(matT,selMode.procs?0.95:0.8);coneT=Math.max(coneT,0.95);}
+        else{matT=Math.min(matT,0.05);coneT=Math.min(coneT,0.06);}
+      }
       tk._mat.opacity+=(matT-tk._mat.opacity)*0.1;
       tk._coneMat.opacity+=(coneT-tk._coneMat.opacity)*0.1;
 
@@ -13587,6 +13687,8 @@ function animate(){
     let presT=keep?1:0.06;
     // Hovering dims unrelated nodes so the neighbourhood reads at a glance
     if(kinOn&&!hoverKin.has(n.id))presT=Math.min(presT,0.16);
+    // Seleção estrutural: fora da linhagem/procedimento, recua bem mais
+    if(selMode)presT=selMode.nos.has(n.id)?Math.max(presT,1):Math.min(presT,0.07);
     // Passar o rato num ramo da chave de codificação isola-o
     if(keyHighlight&&!keyHighlight.has(n.id))presT=Math.min(presT,0.14);
     // Density: tiers past the chosen depth fade out (and stop being pickable)
@@ -15838,6 +15940,7 @@ function restoreState(json){
     return false;
   }
   historyBusy=false;
+  if(booted)palcoEnviaEstado();   // undo, versões e descartes também chegam ao palco
   return true;
 }
 function updateHistoryUI(){
@@ -15968,6 +16071,150 @@ function redoAction(){
 document.getElementById("redoBtn").onclick=redoAction;
 
 /* ============================================================
+   PALCO — o segundo ecrã
+   Uma janela-irmã aberta com #palco mostra SÓ a cena 3D e segue este ecrã:
+   estado, seleção, isolamento e tema viajam por BroadcastChannel (com
+   fallback por eventos de storage). O principal fica para os painéis; o
+   palco para a sala — e lá dentro a tecla F põe em ecrã inteiro.
+============================================================ */
+const ehPalco=location.hash==="#palco";
+const palcoCanal=(function(){
+  try{return ("BroadcastChannel" in window)?new BroadcastChannel("of-palco"):null;}
+  catch(e){return null;}
+})();
+let palcoTimer=0,palcoUltimoEstado=null;
+function palcoEnvia(m){
+  if(ehPalco)return;
+  try{
+    if(palcoCanal)palcoCanal.postMessage(m);
+    else storageSet("of.palco.msg",JSON.stringify(Object.assign({_r:Math.random()},m)));
+  }catch(e){}
+}
+function palcoEnviaEstado(){
+  if(ehPalco)return;
+  clearTimeout(palcoTimer);
+  palcoTimer=setTimeout(()=>{
+    const s=snapshotState();
+    if(s===palcoUltimoEstado)return;
+    palcoUltimoEstado=s;
+    palcoEnvia({t:"estado",s:s});
+  },180);
+}
+function palcoEnviaSelecao(sel){
+  if(ehPalco)return;
+  let m={t:"sel",tipo:null};
+  if(sel){
+    if(sel.type==="node"&&sel.node)m={t:"sel",tipo:"node",id:sel.node.id};
+    else if(sel.type==="task"&&sel.task)m={t:"sel",tipo:"task",id:sel.task.id,pid:(processes[sel.task.proc]||{}).id};
+    else if(sel.type==="agent"&&sel.agent)m={t:"sel",tipo:"agent",id:sel.agent.id};
+    else if(sel.type==="group"&&sel.group)m={t:"sel",tipo:"group",id:sel.group.id};
+  }
+  palcoEnvia(m);
+}
+function palcoEnviaIsola(){palcoEnvia({t:"isola",i:isolateProc});}
+/* A seleção corrente, no formato de mensagem — serve o envio e o reaplicar. */
+function palcoSelMsg(sel){
+  if(!sel)return {t:"sel",tipo:null};
+  if(sel.type==="node"&&sel.node)return {t:"sel",tipo:"node",id:sel.node.id};
+  if(sel.type==="task"&&sel.task)return {t:"sel",tipo:"task",id:sel.task.id,pid:(processes[sel.task.proc]||{}).id};
+  if(sel.type==="agent"&&sel.agent)return {t:"sel",tipo:"agent",id:sel.agent.id};
+  if(sel.type==="group"&&sel.group)return {t:"sel",tipo:"group",id:sel.group.id};
+  return {t:"sel",tipo:null};
+}
+function palcoAplicaSel(m){
+  if(!m||!m.tipo){applySelection(null);return;}
+  if(m.tipo==="node"){const n=byId(m.id);if(n)applySelection({type:"node",node:n});}
+  else if(m.tipo==="task"){
+    const p2=layerById(m.pid);
+    const tk=p2&&p2.tasks.find(x=>x.id===m.id);
+    if(tk)applySelection({type:"task",task:tk});
+  }else if(m.tipo==="agent"){const a=agentById(m.id);if(a)applySelection({type:"agent",agent:a});}
+  else if(m.tipo==="group"){const g=groups.find(x=>x.id===m.id);if(g)applySelection({type:"group",group:g});}
+}
+function palcoRecebe(m){
+  if(!ehPalco||!m||!m.t)return;
+  if(m.t==="estado"&&typeof m.s==="string"){
+    /* O estado chega com atraso (debounce) e o restore limpa a seleção E o
+       isolamento — ambos sobrevivem, reapontados aos objetos novos por id. */
+    const guarda=palcoSelMsg(selected);
+    const isoId=(isolateProc!==null&&processes[isolateProc])?processes[isolateProc].id:null;
+    restoreState(m.s);
+    if(isoId!==null){
+      const i2=processes.findIndex(p2=>p2.id===isoId);
+      isolateProc=i2>=0?i2:null;
+      syncLayerRows();
+    }
+    if(guarda.tipo)palcoAplicaSel(guarda);
+  }
+  else if(m.t==="sel")palcoAplicaSel(m);
+  else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
+  else if(m.t==="tema")applyTheme(m.id,{silent:true});
+}
+if(palcoCanal)palcoCanal.onmessage=e=>{
+  const m=e.data;
+  if(ehPalco)palcoRecebe(m);
+  else if(m&&m.t==="ola"){
+    /* um palco novo pede tudo: estado fresco, seleção, isolamento e tema */
+    palcoUltimoEstado=null;
+    palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
+    palcoEnvia({t:"tema",id:themeId});
+  }
+};
+addEventListener("storage",e=>{
+  if(e.key!=="of.palco.msg"||!e.newValue)return;
+  try{
+    const m=JSON.parse(e.newValue);
+    if(ehPalco)palcoRecebe(m);
+    else if(m&&m.t==="ola"){
+      palcoUltimoEstado=null;
+      palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
+      palcoEnvia({t:"tema",id:themeId});
+    }
+  }catch(err){}
+});
+function alternaEcraInteiro(){
+  if(document.fullscreenElement){if(document.exitFullscreen)document.exitFullscreen();}
+  else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();
+}
+function abrirPalco(){
+  const url=(location.origin!=="null")
+    ?location.pathname+location.search+"#palco"
+    :location.href.split("#")[0]+"#palco";
+  const w=window.open(url,"palcoFramework");
+  if(!w){flash("O browser bloqueou a janela do palco — permita pop-ups nesta página.",{type:"err"});return;}
+  flash("Palco aberto — arraste a janela para o segundo ecrã; lá dentro, F põe em ecrã inteiro.");
+}
+function initPalco(){
+  const bFs=document.getElementById("fsBtn");
+  if(bFs)bFs.onclick=alternaEcraInteiro;
+  const bP=document.getElementById("palcoBtn");
+  if(bP)bP.onclick=abrirPalco;
+  if(!ehPalco)return;
+  document.body.classList.add("palco");
+  document.title="Palco — "+document.title;
+  const pill=el("div","glass");
+  pill.id="palcoPill";
+  pill.append(el("span","pp-rot","Palco — segue o ecrã principal"));
+  const bFS2=el("button","btn tiny","Ecrã inteiro (F)");
+  bFS2.onclick=alternaEcraInteiro;
+  pill.append(bFS2);
+  document.body.append(pill);
+  addEventListener("keydown",e=>{
+    if((e.key==="f"||e.key==="F")&&!e.ctrlKey&&!e.metaKey){
+      const tag=((e.target&&e.target.tagName)||"").toLowerCase();
+      if(tag==="input"||tag==="textarea")return;
+      e.preventDefault();alternaEcraInteiro();
+    }
+  });
+  /* anunciar ao ecrã principal, com uma segunda tentativa para o caso de o
+     principal ainda estar a arrancar */
+  const ola=()=>{try{
+    if(palcoCanal)palcoCanal.postMessage({t:"ola"});
+    else storageSet("of.palco.msg",JSON.stringify({t:"ola",_r:Math.random()}));
+  }catch(e){}};
+  ola();setTimeout(ola,800);
+}
+/* ============================================================
    BOOT
 ============================================================ */
 nodes.filter(n=>n.tier===1).forEach(n=>n._collapsed=true); // tidy default tree
@@ -16000,6 +16247,7 @@ renderBookmarks();
 renderCodeKey();
 renderQuest();
 renderRetoma();
+initPalco();
 settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
