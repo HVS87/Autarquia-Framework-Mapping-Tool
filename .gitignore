@@ -8,7 +8,6 @@ network-framework.test.html
 desktop/node_modules/
 desktop/app/
 desktop/dist/
-desktop/package-lock.json
 
 # Autosaves locais do .exe corrido a partir da raiz do projeto (electron .)
 autosaves/

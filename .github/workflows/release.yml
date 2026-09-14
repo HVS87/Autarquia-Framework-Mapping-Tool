@@ -1,0 +1,52 @@
+# Release da aplicação de secretária: a cada etiqueta v* compila o portátil e o
+# instalador num runner Windows e publica-os na Release do GitHub. Também se pode
+# lançar à mão (workflow_dispatch) — nesse caso os .exe ficam só como artefacto.
+name: Release (.exe)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Dependências
+        run: npm ci
+
+      - name: Preparar a pasta app (página, ícones, three.js local)
+        run: npm run preparar
+
+      - name: Compilar portátil e instalador
+        run: npx electron-builder --win portable nsis --publish never
+
+      - name: Guardar os executáveis como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: executaveis-windows
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+
+      - name: Publicar a Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mapeamento para Autarquias ${{ github.ref_name }}
+          body_path: desktop/notas-da-versao.md
+          files: desktop/dist/*.exe
+          fail_on_unmatched_files: true

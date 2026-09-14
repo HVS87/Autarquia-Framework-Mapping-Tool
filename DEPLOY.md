@@ -190,6 +190,17 @@ O script instala as dependências, prepara a pasta `app/` (copia a página e os 
 
 Para experimentar sem empacotar: `npm install` e `npm start` dentro de `desktop/` (abre a página da raiz do projeto; a pasta `autosaves/` nasce na raiz).
 
+### Publicar uma Release no GitHub
+
+Não é preciso compilar localmente: o workflow `.github/workflows/release.yml` compila os dois `.exe` num runner Windows e publica-os na Release a cada etiqueta `v*`. Depois de subir a versão em `desktop/package.json` e de commitar:
+
+```powershell
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+Em poucos minutos a Release aparece em *Releases* com o instalador e o portátil anexados; as notas vêm de `desktop/notas-da-versao.md`. O mesmo workflow pode ser lançado à mão em *Actions › Release (.exe) › Run workflow* — nesse caso os executáveis ficam como artefacto da execução, sem criar Release.
+
 Se o `electron-builder` falhar com "Cannot create symbolic link: A required privilege is not held by the client", é o pacote auxiliar `winCodeSign` a tentar criar ligações simbólicas (só a parte macOS, que aqui não serve). Ou se ativa o Modo de Programador do Windows (Definições › Sistema › Para programadores) e se repete o build, ou se descompacta o `.7z` à mão sem a pasta `darwin`:
 
 ```powershell
