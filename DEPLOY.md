@@ -173,6 +173,7 @@ A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), 
 - **Funciona sem internet**: o three.js vai dentro do pacote. As exportações PDF/PPTX continuam a precisar de rede na primeira utilização.
 - **Atalhos de teclado** remapeiam-se em Definições › Atalhos de teclado (tal como na versão web).
 - **Nascimentos no palco**: cada nódulo, tarefa, pessoa ou procedimento criado no ecrã principal entra em cena no palco com a sua animação (a câmara vai ver, uma legenda diz o que é, e volta ao que estava). Importações e colagens em massa não disparam animações. Funciona igualmente no palco da versão web.
+- **Génese ao abrir o segundo ecrã**: quando a função de segundo ecrã abre o palco (automaticamente ou pelo interruptor), a organização inteira nasce com as mesmas coreografias — nível a nível, de cima para baixo, e depois os procedimentos, anel a anel, com a câmara afastada a rodar devagar (até ~16 s; no fim volta ao enquadramento normal). Os nascimentos avulsos que cheguem entretanto esperam pela sua vez.
 
 ### Construir
 
