@@ -12852,8 +12852,10 @@ const THEMES={
       [0x46B8A0,0xA8F0DC],[0x8A7FE8,0xC9C0FF],[0xE08A3C,0xFFCF9A]],
     gp:["#E06A8A","#3E7CB1","#46B8A0","#F4C542"]},
   calcada:{label:"Calçada",light:true,
-    css:{"--bg-deep":"#A89A78","--bg-mid":"#B8AB88","--ink":"#211A10","--ink-dim":"#5C5138",
-      "--gold":"#775212","--steel":"#3A3122","--panel":"rgba(216,206,182,0.9)",
+    /* ink-dim e gold escurecidos para ≥4,5:1 sobre o bg-mid da barra de
+       separadores (os anteriores davam 3,4 e 3,0 — legíveis só à lupa) */
+    css:{"--bg-deep":"#A89A78","--bg-mid":"#B8AB88","--ink":"#211A10","--ink-dim":"#443A24",
+      "--gold":"#523509","--steel":"#3A3122","--panel":"rgba(216,206,182,0.9)",
       "--hairline":"rgba(33,26,16,0.24)","--vignette":"rgba(58,49,34,0.5)","--scrim":"rgba(188,177,152,0.85)"},
     gold:0x775212,fog:0xB2A582,amb:0x7E7458,keyc:0xE2D6B8,
     sky:["#C6B896","#B4A582","#968663"],silhouette:"rgba(70,60,42,0.4)",
