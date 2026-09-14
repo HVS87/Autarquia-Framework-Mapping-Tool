@@ -5,7 +5,7 @@
    janelas — no .exe cada janela file:// é uma origem opaca, por isso o
    BroadcastChannel da versão web não as liga; o IPC daqui faz esse papel. */
 "use strict";
-const {app,BrowserWindow,ipcMain,screen,shell}=require("electron");
+const {app,BrowserWindow,ipcMain,screen,shell,dialog}=require("electron");
 const fs=require("fs");
 const path=require("path");
 
@@ -21,16 +21,21 @@ function pastaBase(){
   catch(e){return app.getPath("userData");}
 }
 const BASE=pastaBase();
-const PASTA_AUTOSAVES=path.join(BASE,"autosaves");
+const PASTA_AUTOSAVES_OMISSAO=path.join(BASE,"autosaves");
 const FICHEIRO_DEFS=path.join(BASE,"definicoes.json");
 const HTML=app.isPackaged
   ?path.join(app.getAppPath(),"app","network-framework.html")
   :path.join(__dirname,"..","network-framework.html");
 
-function garantePasta(){try{fs.mkdirSync(PASTA_AUTOSAVES,{recursive:true});}catch(e){}}
+/* a pasta dos autosaves muda-se nas Definições; sem escolha, fica ao lado do exe */
+function pastaAutosaves(){
+  const d=lerDefs();
+  return (typeof d.pastaAutosaves==="string"&&d.pastaAutosaves)?d.pastaAutosaves:PASTA_AUTOSAVES_OMISSAO;
+}
+function garantePasta(){try{fs.mkdirSync(pastaAutosaves(),{recursive:true});}catch(e){}}
 
 /* ---------- definições ---------- */
-const DEFS_OMISSAO={ecraInteiro:true,ecraAuto:null};
+const DEFS_OMISSAO={ecraInteiro:true,ecraAuto:null,pastaAutosaves:null};
 function lerDefs(){
   try{
     const d=JSON.parse(fs.readFileSync(FICHEIRO_DEFS,"utf8"));
@@ -49,22 +54,22 @@ function guardaAutosave(json){
   if(typeof json!=="string"||!json)return false;
   garantePasta();
   try{
-    fs.writeFileSync(path.join(PASTA_AUTOSAVES,"autosave.json"),json,"utf8");
+    fs.writeFileSync(path.join(pastaAutosaves(),"autosave.json"),json,"utf8");
     const agora=Date.now();
     if(agora-ultimaCopiaDatada>30*60*1000){
       const d=new Date(agora);
       const carimbo=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+
         "_"+String(d.getHours()).padStart(2,"0")+"-"+String(d.getMinutes()).padStart(2,"0");
-      fs.writeFileSync(path.join(PASTA_AUTOSAVES,"autosave-"+carimbo+".json"),json,"utf8");
+      fs.writeFileSync(path.join(pastaAutosaves(),"autosave-"+carimbo+".json"),json,"utf8");
       ultimaCopiaDatada=agora;
-      const datados=fs.readdirSync(PASTA_AUTOSAVES).filter(f=>/^autosave-.*\.json$/.test(f)).sort();
-      while(datados.length>40){const velho=datados.shift();try{fs.unlinkSync(path.join(PASTA_AUTOSAVES,velho));}catch(e){}}
+      const datados=fs.readdirSync(pastaAutosaves()).filter(f=>/^autosave-.*\.json$/.test(f)).sort();
+      while(datados.length>40){const velho=datados.shift();try{fs.unlinkSync(path.join(pastaAutosaves(),velho));}catch(e){}}
     }
     return true;
   }catch(e){return false;}
 }
 function leAutosave(){
-  try{return fs.readFileSync(path.join(PASTA_AUTOSAVES,"autosave.json"),"utf8");}
+  try{return fs.readFileSync(path.join(pastaAutosaves(),"autosave.json"),"utf8");}
   catch(e){return null;}
 }
 
@@ -84,6 +89,12 @@ function criaPrincipal(){
   });
   janelaPrincipal.setMenuBarVisibility(false);
   janelaPrincipal.loadFile(HTML);
+  /* fechar pelo X passa pela mesma pergunta do menu: a página decide e chama "sair" */
+  janelaPrincipal.on("close",e=>{
+    if(aSair||janelaPrincipal.isDestroyed())return;
+    e.preventDefault();
+    janelaPrincipal.webContents.send("pedir-sair");
+  });
   janelaPrincipal.on("closed",()=>{janelaPrincipal=null;if(janelaPalco)janelaPalco.close();});
 }
 function ecraDoPalco(){
@@ -123,7 +134,45 @@ ipcMain.on("palco-aberto",e=>{e.returnValue=!!(janelaPalco&&!janelaPalco.isDestr
 ipcMain.on("autosave-ler",e=>{e.returnValue=leAutosave();});
 ipcMain.on("defs-ler",e=>{e.returnValue=lerDefs();});
 ipcMain.handle("autosave-guardar",(e,json)=>guardaAutosave(json));
-ipcMain.handle("autosave-pasta",()=>{garantePasta();return shell.openPath(PASTA_AUTOSAVES);});
+ipcMain.handle("autosave-pasta",()=>{garantePasta();return shell.openPath(pastaAutosaves());});
+ipcMain.on("pasta-autosaves-ler",e=>{e.returnValue={atual:pastaAutosaves(),omissao:PASTA_AUTOSAVES_OMISSAO};});
+/* escolher outra pasta: o autosave atual vai junto, para a recuperação não se perder */
+ipcMain.handle("pasta-autosaves-escolher",async e=>{
+  const w=BrowserWindow.fromWebContents(e.sender);
+  const r=await dialog.showOpenDialog(w,{title:"Pasta dos autosaves",defaultPath:pastaAutosaves(),
+    buttonLabel:"Usar esta pasta",properties:["openDirectory","createDirectory"]});
+  if(r.canceled||!r.filePaths||!r.filePaths[0])return null;
+  const nova=r.filePaths[0],antiga=pastaAutosaves();
+  try{fs.mkdirSync(nova,{recursive:true});}catch(err){return null;}
+  try{
+    const de=path.join(antiga,"autosave.json"),para=path.join(nova,"autosave.json");
+    if(nova!==antiga&&fs.existsSync(de)&&!fs.existsSync(para))fs.copyFileSync(de,para);
+  }catch(err){}
+  const d=lerDefs();d.pastaAutosaves=(nova===PASTA_AUTOSAVES_OMISSAO)?null:nova;escreveDefs(d);
+  return nova;
+});
+/* ---------- ficheiro de trabalho: Guardar / Guardar como ---------- */
+let ficheiroAtual=null,aSair=false;
+ipcMain.on("ficheiro-atual",e=>{e.returnValue=ficheiroAtual;});
+ipcMain.on("ficheiro-definir",(e,p)=>{if(typeof p==="string"&&p)ficheiroAtual=p;});
+ipcMain.handle("ficheiro-guardar",async(e,json,o)=>{
+  if(typeof json!=="string"||!json)return {ok:false,erro:"nada para guardar"};
+  o=o||{};
+  let alvo=(!o.como&&ficheiroAtual)?ficheiroAtual:null;
+  if(!alvo){
+    const w=BrowserWindow.fromWebContents(e.sender);
+    const sug=String(o.sugestao||"organizacao").replace(/[^w-]+/g,"_")||"organizacao";
+    const r=await dialog.showSaveDialog(w,{title:o.como?"Guardar como":"Guardar",
+      defaultPath:ficheiroAtual||path.join(app.getPath("documents"),sug+".json"),
+      filters:[{name:"Dataset (JSON)",extensions:["json"]}]});
+    if(r.canceled||!r.filePath)return {cancelado:true};
+    alvo=r.filePath;
+  }
+  try{fs.writeFileSync(alvo,json,"utf8");}catch(err){return {ok:false,erro:err.message};}
+  ficheiroAtual=alvo;
+  return {ok:true,path:alvo,nome:path.basename(alvo)};
+});
+ipcMain.on("sair",()=>{aSair=true;app.quit();});
 ipcMain.handle("defs-escrever",(e,k,v)=>{
   if(typeof k!=="string"||!(k in DEFS_OMISSAO))return false;
   const d=lerDefs();d[k]=v;escreveDefs(d);return true;

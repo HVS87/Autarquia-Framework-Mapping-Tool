@@ -330,6 +330,7 @@
     border-bottom-width:2px;border-radius:6px;color:var(--gold);white-space:nowrap}
   #atalhosRow>.btn{margin-top:8px}
   .kbd-nota{font-size:.68rem;color:var(--ink-dim)}
+  .pasta-atual{font-size:.7rem;color:var(--gold);word-break:break-all;margin-bottom:6px}
   #ecraRow .row-name{flex:1}
   #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
@@ -2446,6 +2447,8 @@
       <div id="ecraRow"></div>
       <div class="mini-title">Atalhos de teclado</div>
       <div id="atalhosRow"></div>
+      <div class="mini-title" id="pastaTitulo" hidden>Autosaves e ficheiros</div>
+      <div id="pastaRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -5768,7 +5771,7 @@ function updateDirtyUI(){
   const b=document.getElementById("exportBtn");
   if(!b)return;
   b.classList.toggle("dirty",dirty);
-  b.title=dirty?"Há alterações por guardar — Export Dataset":"";
+  b.title=dirty?"Há alterações por guardar — Guardar dataset":"";
 }
 function markDirty(){
   recordHistory();          // snapshots the state as it was before this change
@@ -5802,7 +5805,7 @@ function sparkBurst(el){
   }
 }
 addEventListener("beforeunload",e=>{
-  if(!dirty)return;
+  if(!dirty||ehDesktop)return;   // no .exe, sair passa pelo menu e pela pergunta própria
   e.preventDefault();
   e.returnValue="";
 });
@@ -8355,6 +8358,7 @@ addEventListener("keydown",e=>{
   if(document.body.classList.contains("presenting")){togglePresent(false);return;}
   if(play){stopPlayback();return;}
   if(modal.classList.contains("open")){closeModalSilent();return;}
+  if(ehDesktop&&!ehPalco){menuExe();return;}
   if(document.body.classList.contains("page-open")){setTab("home");return;}
   closeModalSilent();
 });
@@ -12275,7 +12279,7 @@ document.getElementById("modelosBtn").onclick=async()=>{
   if(r===null||r===undefined)return;
   importarProcedimento(MODELOS_PROC[+r],"modelo");
 };
-document.getElementById("exportBtn").onclick=()=>{
+function datasetJSON(){
   const cfg={
     format:"mapeamento-autarquias-setup",
     version:3,
@@ -12293,7 +12297,11 @@ document.getElementById("exportBtn").onclick=()=>{
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
     theme:themeId
   };
-  const blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
+  return JSON.stringify(cfg,null,2);
+}
+document.getElementById("exportBtn").onclick=()=>{
+  if(ehDesktop){guardarDesktop(false);return;}
+  const blob=new Blob([datasetJSON()],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   a.download="framework-setup.json";
@@ -12490,6 +12498,7 @@ importFile.onchange=()=>{
       updateHistoryUI();
       scheduleAutosave();
       flash("Dataset importado.");
+      if(ehDesktop){try{window.desktop.definirFicheiro(window.desktop.caminhoDe(f));clearDirty();}catch(e){}}
     }catch(err){
       flash("Não foi possível ler esse ficheiro — exporte primeiro um dataset daqui.",{type:"err"});
     }finally{
@@ -16497,9 +16506,95 @@ function renderEcraRow(){
     :"Não é detetado nenhum segundo monitor (ou este browser não o sabe dizer — Chrome e Edge sabem).");
   host.append(nota);
 }
+/* ---- .exe: guardar em ficheiro, o menu do Esc, sair com pergunta ---- */
+function nomeFicheiroSugerido(){
+  return String(orgName||"organizacao").replace(/[^\w\-]+/g,"_").slice(0,40)||"organizacao";
+}
+/* Guardar escreve no ficheiro atual (o último guardado ou aberto); sem
+   ficheiro, ou com "como", abre o diálogo do sistema. Devolve true se gravou. */
+async function guardarDesktop(como){
+  if(!ehDesktop)return false;
+  let r=null;
+  try{r=await window.desktop.guardar(datasetJSON(),{como:!!como,sugestao:nomeFicheiroSugerido()});}catch(e){}
+  if(!r||r.cancelado)return false;
+  if(!r.ok){flash("Não foi possível guardar"+(r.erro?" — "+r.erro:"")+".",{type:"err"});return false;}
+  clearDirty();
+  sparkBurst(document.getElementById("exportBtn"));
+  flash("Guardado em "+r.nome+".");
+  return true;
+}
+async function menuExe(){
+  if(!ehDesktop||ehPalco)return;
+  let nome=null;try{nome=window.desktop.ficheiroAtual();}catch(e){}
+  const curto=nome?String(nome).replace(/^.*[\\/]/,""):"";
+  const sub=(curto?"Ficheiro: "+curto+" · ":"")+(dirty?"Há alterações por guardar.":"Sem alterações por guardar.");
+  const r=await askOpcoes("Menu",sub,[
+    {k:"voltar",label:"Voltar"},
+    {k:"guardar",label:"Guardar"+(curto?"":"…"),primary:true},
+    {k:"como",label:"Guardar como…"},
+    {k:"defs",label:"Definições"},
+    {k:"sair",label:"Sair",danger:true}]);
+  if(r==="guardar")guardarDesktop(false);
+  else if(r==="como")guardarDesktop(true);
+  else if(r==="defs")setTab("definicoes");
+  else if(r==="sair")sairDesktop();
+}
+/* Sair com alterações por guardar pergunta primeiro. "Guardar" só sai se a
+   gravação chegar ao fim (cancelar o diálogo cancela a saída). */
+async function sairDesktop(){
+  if(!ehDesktop)return;
+  const sai=()=>{try{window.desktop.sair();}catch(e){}};
+  if(!dirty){sai();return;}
+  const r=await askOpcoes("Sair sem guardar?",
+    "Há alterações que ainda não foram guardadas num ficheiro (o autosave local mantém-se).",[
+    {k:"guardar",label:"Guardar",primary:true},
+    {k:"sair",label:"Sair mesmo assim",danger:true}]);
+  if(r==="guardar"){if(await guardarDesktop(false))sai();}
+  else if(r==="sair")sai();
+}
+function renderPastaRow(){
+  const host=document.getElementById("pastaRow"),tit=document.getElementById("pastaTitulo");
+  if(!host||!ehDesktop)return;
+  tit.hidden=false;
+  host.innerHTML="";
+  let p={atual:"",omissao:""};
+  try{p=window.desktop.pastaAutosaves()||p;}catch(e){}
+  host.append(el("div","pasta-atual",p.atual));
+  const btns=el("div","setup-btns");
+  const bAlt=el("button","btn tiny","Alterar pasta…");
+  bAlt.id="pastaAlterarBtn";
+  bAlt.onclick=async()=>{
+    let n=null;try{n=await window.desktop.escolherPasta();}catch(e){}
+    if(n){renderPastaRow();flash("Os autosaves passam a ficar em "+n+".");}
+  };
+  const bAbrir=el("button","btn tiny","Abrir");
+  bAbrir.onclick=()=>{try{window.desktop.abrirPasta();}catch(e){}};
+  btns.append(bAlt,bAbrir);
+  if(p.atual!==p.omissao){
+    const bRep=el("button","btn tiny","Repor predefinida");
+    bRep.id="pastaReporBtn";
+    bRep.title=p.omissao;
+    bRep.onclick=async()=>{
+      try{await window.desktop.definir("pastaAutosaves",null);}catch(e){}
+      renderPastaRow();flash("Os autosaves voltam à pasta ao lado do executável.");
+    };
+    btns.append(bRep);
+  }
+  host.append(btns,el("div","foot-note",
+    "O último estado é gravado aqui a cada alteração, com cópias datadas de meia em meia hora. Mudar a pasta leva o autosave atual consigo."));
+}
 function initDesktop(){
   if(!ehDesktop||ehPalco)return;
   document.body.classList.add("desktop");
+  renderPastaRow();
+  try{window.desktop.onPedirSair(()=>sairDesktop());}catch(e){}
+  const ex=document.getElementById("exportBtn");
+  if(ex){
+    const bComo=el("button","btn","Guardar como…");
+    bComo.id="guardarComoBtn";
+    bComo.onclick=()=>guardarDesktop(true);
+    ex.after(bComo);
+  }
   const sb=document.querySelector("#secDados .setup-btns");
   if(sb){
     const b=el("button","btn","Abrir pasta dos autosaves");

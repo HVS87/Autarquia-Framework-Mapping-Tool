@@ -167,7 +167,9 @@ A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), 
 - **Arranca em ecrã inteiro** por omissão (desliga-se em Definições › Segundo ecrã › "Arrancar em ecrã inteiro").
 - **Segundo monitor automático**: ao detetar dois ecrãs pergunta uma vez se quer estender o palco 3D para o outro; a resposta fica guardada e muda-se em Definições ("Estender automaticamente para o segundo ecrã"). Sem janelas do browser nem arrastar — o palco abre já em ecrã inteiro no monitor certo. Ligar ou desligar um monitor com a aplicação aberta também dispara a oferta.
 - **Autosaves em pasta local**: nasce uma pasta `autosaves/` ao lado do executável com `autosave.json` (o último estado, gravado a cada alteração) e cópias datadas de 30 em 30 minutos (guardam-se as 40 mais recentes). Ao arrancar, o ficheiro mais recente é o que se oferece para recuperar. O botão "Abrir pasta dos autosaves" (separador Dados) abre-a no Explorador. Se a pasta do executável for só de leitura, usa-se `%APPDATA%\mapeamento-autarquias-desktop\`.
-- **Definições do .exe** vivem em `definicoes.json`, ao lado da pasta de autosaves.
+- **A pasta dos autosaves muda-se** em Definições › Autosaves e ficheiros ("Alterar pasta…" abre o seletor do sistema; o autosave atual é copiado para a nova pasta; "Repor predefinida" volta à pasta ao lado do executável).
+- **Menu do Esc**: com nada aberto para fechar, o Esc abre um menu com Voltar, Guardar, Guardar como…, Definições e Sair. "Guardar" escreve no ficheiro atual (o último guardado ou aberto) e, sem ficheiro, abre o diálogo do sistema; os botões "Guardar dataset" / "Guardar como…" do separador Dados fazem o mesmo. Sair — pelo menu ou pelo X da janela — com alterações por guardar pergunta primeiro ("Guardar" ou "Sair mesmo assim"); cancelar o diálogo de gravação cancela a saída.
+- **Definições do .exe** vivem em `definicoes.json`, ao lado da pasta de autosaves predefinida.
 - **Funciona sem internet**: o three.js vai dentro do pacote. As exportações PDF/PPTX continuam a precisar de rede na primeira utilização.
 - **Atalhos de teclado** remapeiam-se em Definições › Atalhos de teclado (tal como na versão web).
 
