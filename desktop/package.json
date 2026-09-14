@@ -1,0 +1,37 @@
+{
+  "name": "mapeamento-autarquias-desktop",
+  "productName": "Ferramenta de Mapeamento para Autarquias",
+  "version": "1.0.0",
+  "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa — aplicação de secretária.",
+  "main": "main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "preparar": "powershell -NoProfile -ExecutionPolicy Bypass -File ./preparar-app.ps1",
+    "build": "npm run preparar && electron-builder --win portable nsis",
+    "build:portatil": "npm run preparar && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "pt.autarquias.mapeamento",
+    "productName": "Ferramenta de Mapeamento para Autarquias",
+    "directories": { "output": "dist" },
+    "files": [ "main.js", "preload.js", "app/**/*" ],
+    "win": {
+      "target": [ "portable", "nsis" ],
+      "icon": "app/icons/icon-512.png",
+      "artifactName": "Mapeamento-Autarquias-${version}-${arch}.${ext}"
+    },
+    "portable": { "artifactName": "Mapeamento-Autarquias-${version}-portatil.exe" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "language": "2070",
+      "shortcutName": "Mapeamento para Autarquias"
+    }
+  }
+}

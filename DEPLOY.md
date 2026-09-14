@@ -160,6 +160,34 @@ python3 -m http.server 8000
 
 ---
 
+## Aplicação de secretária (.exe)
+
+A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), independente do browser:
+
+- **Arranca em ecrã inteiro** por omissão (desliga-se em Definições › Segundo ecrã › "Arrancar em ecrã inteiro").
+- **Segundo monitor automático**: ao detetar dois ecrãs pergunta uma vez se quer estender o palco 3D para o outro; a resposta fica guardada e muda-se em Definições ("Estender automaticamente para o segundo ecrã"). Sem janelas do browser nem arrastar — o palco abre já em ecrã inteiro no monitor certo. Ligar ou desligar um monitor com a aplicação aberta também dispara a oferta.
+- **Autosaves em pasta local**: nasce uma pasta `autosaves/` ao lado do executável com `autosave.json` (o último estado, gravado a cada alteração) e cópias datadas de 30 em 30 minutos (guardam-se as 40 mais recentes). Ao arrancar, o ficheiro mais recente é o que se oferece para recuperar. O botão "Abrir pasta dos autosaves" (separador Dados) abre-a no Explorador. Se a pasta do executável for só de leitura, usa-se `%APPDATA%\mapeamento-autarquias-desktop\`.
+- **Definições do .exe** vivem em `definicoes.json`, ao lado da pasta de autosaves.
+- **Funciona sem internet**: o three.js vai dentro do pacote. As exportações PDF/PPTX continuam a precisar de rede na primeira utilização.
+- **Atalhos de teclado** remapeiam-se em Definições › Atalhos de teclado (tal como na versão web).
+
+### Construir
+
+Precisa de Node.js 18+ (uma vez): `winget install OpenJS.NodeJS.LTS`. Depois, na pasta `desktop/`:
+
+```powershell
+.\construir-exe.ps1
+```
+
+O script instala as dependências, prepara a pasta `app/` (copia a página e os ícones, descarrega o three.js) e corre o `electron-builder`. Os resultados ficam em `desktop/dist/`:
+
+- `Mapeamento-Autarquias-1.0.0-portatil.exe` — corre onde estiver, sem instalação (pen USB, pasta partilhada);
+- `Mapeamento-Autarquias-1.0.0-x64.exe` — instalador clássico com atalho no menu Iniciar.
+
+Para experimentar sem empacotar: `npm install` e `npm start` dentro de `desktop/` (abre a página da raiz do projeto; a pasta `autosaves/` nasce na raiz).
+
+---
+
 ## Atualizar a App
 
 1. Edite `network-framework.html` localmente

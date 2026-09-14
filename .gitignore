@@ -4,6 +4,16 @@
 # Local QA artifact — an instrumented copy generated during testing
 network-framework.test.html
 
+# Aplicação de secretária (Electron): dependências, pasta preparada e executáveis
+desktop/node_modules/
+desktop/app/
+desktop/dist/
+desktop/package-lock.json
+
+# Autosaves locais do .exe corrido a partir da raiz do projeto (electron .)
+autosaves/
+definicoes.json
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db

@@ -324,6 +324,12 @@
     border:1px solid var(--gold);border-radius:999px;background:var(--panel)}
   .palco-convite .pc-s{font-size:.78rem;color:var(--ink-dim)}
   #ecraRow .row{display:flex;align-items:center;gap:8px}
+  .atalho-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--hairline)}
+  .atalho-row .row-name{flex:1;font-size:.76rem}
+  .atalho-row kbd{font:inherit;font-size:.68rem;padding:2px 7px;border:1px solid var(--hairline);
+    border-bottom-width:2px;border-radius:6px;color:var(--gold);white-space:nowrap}
+  #atalhosRow>.btn{margin-top:8px}
+  .kbd-nota{font-size:.68rem;color:var(--ink-dim)}
   #ecraRow .row-name{flex:1}
   #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
@@ -2438,6 +2444,8 @@
       <div id="feyPrefsRow"></div>
       <div class="mini-title">Segundo ecrã</div>
       <div id="ecraRow"></div>
+      <div class="mini-title">Atalhos de teclado</div>
+      <div id="atalhosRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -2568,15 +2576,21 @@
     <div class="kbd-row"><kbd>Duplo clique</kbd><span>Modo de foco — destaca o nódulo e esbate o resto</span></div>
     <div class="kbd-row"><kbd>Passar o rato</kbd><span>Realça o nódulo e as suas ligações diretas</span></div>
     <h4>Teclado</h4>
-    <div class="kbd-row"><kbd>← / →</kbd><span>Cena anterior / seguinte do tour</span></div>
+    <div class="kbd-row"><kbd data-atalho="cenaAnterior">←</kbd><span>Cena anterior do tour</span></div>
+    <div class="kbd-row"><kbd data-atalho="cenaSeguinte">→</kbd><span>Cena seguinte do tour</span></div>
     <div class="kbd-row"><kbd>Espaço</kbd><span>Toque: reproduzir/pausar o tour · Manter: espreitar o todo</span></div>
     <div class="kbd-row"><kbd>Tab → setas</kbd><span>Com a rede em foco: ↑ superior · ↓ subordinado · ←/→ irmãos</span></div>
-    <div class="kbd-row"><kbd>R</kbd><span>Recentrar a câmara na vista inicial</span></div>
-    <div class="kbd-row"><kbd>P</kbd><span>Modo apresentação — esconde os painéis</span></div>
-    <div class="kbd-row"><kbd>Ctrl + K</kbd><span>Paleta de comandos — procurar tudo e executar ações</span></div>
-    <div class="kbd-row"><kbd>Ctrl + Z</kbd><span>Anular a última alteração</span></div>
-    <div class="kbd-row"><kbd>Ctrl + ⇧ + Z</kbd><span>Refazer</span></div>
-    <div class="kbd-row"><kbd>?</kbd><span>Abrir esta janela de ajuda</span></div>
+    <div class="kbd-row"><kbd data-atalho="recentrar">R</kbd><span>Recentrar a câmara na vista inicial</span></div>
+    <div class="kbd-row"><kbd data-atalho="apresentacao">P</kbd><span>Modo apresentação — esconde os painéis</span></div>
+    <div class="kbd-row"><kbd data-atalho="vistas">V</kbd><span>Galeria de vistas</span></div>
+    <div class="kbd-row"><kbd data-atalho="ligar">L</kbd><span>Modo ligar — criar uma tarefa arrastando no 3D</span></div>
+    <div class="kbd-row"><kbd data-atalho="ecraInteiro">F11</kbd><span>Ecrã inteiro</span></div>
+    <div class="kbd-row"><kbd data-atalho="palco">Ctrl + ⇧ + P</kbd><span>Abrir o palco no segundo ecrã</span></div>
+    <div class="kbd-row"><kbd data-atalho="paleta">Ctrl + K</kbd><span>Paleta de comandos — procurar tudo e executar ações</span></div>
+    <div class="kbd-row"><kbd data-atalho="anular">Ctrl + Z</kbd><span>Anular a última alteração</span></div>
+    <div class="kbd-row"><kbd data-atalho="refazer">Ctrl + ⇧ + Z</kbd><span>Refazer (também Ctrl + Y)</span></div>
+    <div class="kbd-row"><kbd data-atalho="ajuda">?</kbd><span>Abrir esta janela de ajuda</span></div>
+    <div class="kbd-row"><span class="kbd-nota">Todos estes atalhos mudam-se em Definições › Atalhos de teclado.</span></div>
     <div class="kbd-row"><kbd>Esc</kbd><span>Fechar janelas e libertar o foco</span></div>
     <div class="kbd-row"><kbd>Tab</kbd><span>Percorrer os controlos do painel</span></div>
     <h4>Gestão</h4>
@@ -14115,13 +14129,137 @@ function spaceTaken(){
   const r=a.getAttribute("role");
   return r==="button"||r==="switch"||r==="checkbox"||r==="tab"||r==="menuitem";
 }
+/* ============================================================
+   ATALHOS DE TECLADO — remapeáveis
+   Um mapa (ação → combinação) persistido, consultado pelos dois ouvintes
+   globais. A combinação escreve-se "ctrl+shift+z", "r", "arrowleft",
+   "f11", "?": para teclas de um só carácter o Shift já vem no carácter (o
+   "?" É shift+/), por isso só se regista Shift com Ctrl/Alt ou em teclas
+   nomeadas. Espaço (toque/manter) e Esc ficam fixos: têm semântica própria.
+============================================================ */
+const ATALHOS_KEY="of.atalhos.v1";
+const ATALHOS_DEF={paleta:"ctrl+k",anular:"ctrl+z",refazer:"ctrl+shift+z",
+  recentrar:"r",apresentacao:"p",vistas:"v",ligar:"l",ajuda:"?",
+  ecraInteiro:"f11",palco:"ctrl+shift+p",cenaAnterior:"arrowleft",cenaSeguinte:"arrowright"};
+const ATALHOS_ROT={paleta:"Paleta de comandos",anular:"Anular",refazer:"Refazer",
+  recentrar:"Recentrar a câmara",apresentacao:"Modo apresentação",vistas:"Galeria de vistas",
+  ligar:"Modo ligar — criar tarefa no 3D",ajuda:"Ajuda e atalhos",
+  ecraInteiro:"Ecrã inteiro",palco:"Abrir o palco (segundo ecrã)",
+  cenaAnterior:"Cena anterior do tour",cenaSeguinte:"Cena seguinte do tour"};
+const ATALHOS=(function(){
+  const d=Object.assign({},ATALHOS_DEF);
+  try{
+    const s=JSON.parse(storageGet(ATALHOS_KEY)||"{}");
+    Object.keys(d).forEach(k=>{if(typeof s[k]==="string"&&/^([a-z]+\+)*[^+\s]+$/.test(s[k]))d[k]=s[k];});
+  }catch(e){}
+  return d;
+})();
+function guardaAtalhos(){try{storageSet(ATALHOS_KEY,JSON.stringify(ATALHOS));}catch(e){}}
+function teclaDe(e){
+  let k=(e.key||"").toLowerCase();
+  if(k===" "||k==="spacebar")k="espaco";
+  if(!k||k==="dead"||k==="unidentified"||["control","shift","alt","meta","altgraph"].includes(k))return null;
+  const mods=[];
+  if(e.ctrlKey||e.metaKey)mods.push("ctrl");
+  if(e.altKey)mods.push("alt");
+  if(e.shiftKey&&(mods.length||k.length>1))mods.push("shift");
+  return mods.concat(k).join("+");
+}
+function rotuloTecla(s){
+  const nomes={arrowleft:"←",arrowright:"→",arrowup:"↑",arrowdown:"↓",espaco:"Espaço",
+    escape:"Esc",enter:"Enter",tab:"Tab",backspace:"⌫",delete:"Del",ctrl:"Ctrl",alt:"Alt",shift:"⇧"};
+  return String(s||"").split("+").map(x=>nomes[x]||(x.length===1?x.toUpperCase():x.toUpperCase())).join(" + ");
+}
+function idDoAtalho(e){
+  const tk=teclaDe(e);
+  if(!tk)return null;
+  if(tk==="ctrl+y")return "refazer";        // alias fixo do Windows
+  return Object.keys(ATALHOS).find(id=>ATALHOS[id]===tk)||null;
+}
+/* Ecrã inteiro: na app de secretária é a janela toda; no browser, o F11 é do
+   próprio browser (não se intercepta) — só combinações remapeadas chegam à
+   Fullscreen API. */
+function acaoEcraInteiro(e){
+  if(typeof ehDesktop!=="undefined"&&ehDesktop){alternaEcraInteiro();return true;}
+  if(e&&teclaDe(e)==="f11")return false;
+  alternaEcraInteiro();return true;
+}
+const ACOES_ATALHO={
+  paleta:()=>togglePalette(),
+  anular:()=>undoAction(),
+  refazer:()=>redoAction(),
+  recentrar:()=>resetView(),
+  apresentacao:()=>togglePresent(),
+  vistas:()=>showViewGallery(),
+  ligar:()=>setLinkMode(!linkMode),
+  ajuda:()=>openHelp(),
+  ecraInteiro:e=>acaoEcraInteiro(e),
+  palco:()=>abrirPalco(),
+  cenaAnterior:()=>{autoplay=false;syncPlay();applyScene(sceneIdx-1);},
+  cenaSeguinte:()=>{autoplay=false;syncPlay();nextScene();}
+};
+/* A janela de ajuda mostra o mapa em vigor, não o de fábrica. */
+function refrescaKbdsAjuda(){
+  document.querySelectorAll("kbd[data-atalho]").forEach(k=>{
+    const id=k.dataset.atalho;
+    if(ATALHOS[id])k.textContent=rotuloTecla(ATALHOS[id]);
+  });
+}
+/* Definições › Atalhos: uma linha por ação — combinação, Alterar (prime a
+   nova), Repor quando difere da omissão. Conflitos são recusados. */
+let atalhoACapturar=null;
+function renderAtalhosUI(){
+  const host=document.getElementById("atalhosRow");
+  if(!host)return;
+  host.innerHTML="";
+  Object.keys(ATALHOS_DEF).forEach(id=>{
+    const row=el("div","atalho-row");
+    row.append(el("span","row-name",ATALHOS_ROT[id]));
+    const kb=document.createElement("kbd");
+    kb.textContent=rotuloTecla(ATALHOS[id]);
+    row.append(kb);
+    const bAlt=el("button","btn tiny",atalhoACapturar===id?"Prima a combinação…":"Alterar");
+    bAlt.title="Prima a nova combinação de teclas; Esc cancela";
+    bAlt.onclick=()=>{atalhoACapturar=(atalhoACapturar===id)?null:id;renderAtalhosUI();};
+    row.append(bAlt);
+    if(ATALHOS[id]!==ATALHOS_DEF[id]){
+      const bRep=el("button","btn tiny","Repor");
+      bRep.title="Voltar a "+rotuloTecla(ATALHOS_DEF[id]);
+      bRep.onclick=()=>{ATALHOS[id]=ATALHOS_DEF[id];guardaAtalhos();renderAtalhosUI();refrescaKbdsAjuda();};
+      row.append(bRep);
+    }
+    host.append(row);
+  });
+  const fixos=el("div","foot-note","Fixos: Espaço (toque reproduz o tour, manter espreita o todo) · Esc (fecha janelas) · Ctrl + Y (também refaz).");
+  host.append(fixos);
+  const bTodos=el("button","btn tiny","Repor todos os atalhos");
+  bTodos.onclick=()=>{Object.assign(ATALHOS,ATALHOS_DEF);guardaAtalhos();renderAtalhosUI();refrescaKbdsAjuda();flash("Atalhos repostos.");};
+  host.append(bTodos);
+}
+addEventListener("keydown",e=>{
+  if(!atalhoACapturar)return;
+  e.preventDefault();e.stopPropagation();
+  const tk=teclaDe(e);
+  if(!tk)return;                                   // só um modificador: continua à espera
+  const id=atalhoACapturar;
+  if(tk==="escape"){atalhoACapturar=null;renderAtalhosUI();return;}
+  if(tk==="espaco"||tk==="tab"||tk==="enter"){flash("Essa tecla tem função fixa — escolha outra.",{type:"err"});return;}
+  const outro=Object.keys(ATALHOS).find(k=>k!==id&&ATALHOS[k]===tk);
+  if(outro||tk==="ctrl+y"){flash("“"+rotuloTecla(tk)+"” já está em uso por “"+(outro?ATALHOS_ROT[outro]:"Refazer")+"”.",{type:"err"});return;}
+  ATALHOS[id]=tk;
+  guardaAtalhos();
+  atalhoACapturar=null;
+  renderAtalhosUI();refrescaKbdsAjuda();
+  flash("“"+ATALHOS_ROT[id]+"” passa a "+rotuloTecla(tk)+".");
+},true);
 /* Atalhos de teclado globais. As teclas da visita estavam documentadas no
    README mas nunca tinham sido ligadas — é aqui que vivem agora. */
 addEventListener("keydown",e=>{
+  if(atalhoACapturar)return;
   const el0=e.target;
   const tag=((el0&&el0.tagName)||"").toLowerCase();
   if(tag==="input"||tag==="textarea"||tag==="select"||(el0&&el0.isContentEditable))return;
-  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.metaKey||e.ctrlKey)return;               // combinações com Ctrl vivem no ouvinte seguinte
   if(coachEl.classList.contains("open")||helpEl.classList.contains("open"))return;
   if(reassignEl&&reassignEl.classList.contains("open"))return;
   if(paletteEl&&paletteEl.classList.contains("open"))return;
@@ -14134,9 +14272,7 @@ addEventListener("keydown",e=>{
     kbMove(e.key==="ArrowUp"?"up":e.key==="ArrowDown"?"down":e.key==="ArrowRight"?"right":"left");
     return;
   }
-  if(e.key==="ArrowRight"){e.preventDefault();autoplay=false;syncPlay();nextScene();}
-  else if(e.key==="ArrowLeft"){e.preventDefault();autoplay=false;syncPlay();applyScene(sceneIdx-1);}
-  else if(e.key===" "){
+  if(e.key===" "){
     // Toque = play/pausa do tour; manter = espreitar o todo. Decide-se no keyup.
     // Mas só quando o Espaço não pertence a mais ninguém: um <button> em foco
     // ativa-se com Espaço, e roubá-lo aqui deixava quase todos os comandos
@@ -14147,12 +14283,12 @@ addEventListener("keydown",e=>{
     spacePeeked=false;
     clearTimeout(spaceTimer);
     spaceTimer=setTimeout(()=>{spacePeeked=true;startPeek();},240);
+    return;
   }
-  else if(e.key==="r"||e.key==="R"){e.preventDefault();resetView();}
-  else if(e.key==="p"||e.key==="P"){e.preventDefault();togglePresent();}
-  else if(e.key==="v"||e.key==="V"){e.preventDefault();showViewGallery();}
-  else if(e.key==="l"||e.key==="L"){e.preventDefault();setLinkMode(!linkMode);}
-  else if(e.key==="?"||(e.key==="/"&&e.shiftKey)){e.preventDefault();openHelp();}
+  const id=idDoAtalho(e);
+  if(!id||ATALHOS[id].indexOf("ctrl")===0)return;
+  const feito=ACOES_ATALHO[id](e);
+  if(feito!==false)e.preventDefault();
 });
 addEventListener("keyup",e=>{
   if(e.key!==" ")return;
@@ -14172,16 +14308,26 @@ addEventListener("keyup",e=>{
 /* Modifier shortcuts live in their own listener so the plain-key handler above
    can keep ignoring anything with Ctrl/Cmd held. */
 addEventListener("keydown",e=>{
-  if(!(e.ctrlKey||e.metaKey))return;
-  const k=(e.key||"").toLowerCase();
+  if(!(e.ctrlKey||e.metaKey)||atalhoACapturar)return;
   const tag=((e.target&&e.target.tagName)||"").toLowerCase();
   const typing=tag==="input"||tag==="textarea"||(e.target&&e.target.isContentEditable);
-  if(k==="k"){e.preventDefault();togglePalette();return;}
-  if(typing)return;                       // let fields keep their native undo
-  if(k==="z"){e.preventDefault();if(e.shiftKey)redoAction();else undoAction();}
-  else if(k==="y"){e.preventDefault();redoAction();}
+  const id=idDoAtalho(e);
+  if(!id)return;
+  if(typing&&id!=="paleta")return;        // os campos guardam o seu próprio Ctrl+Z
+  e.preventDefault();
+  ACOES_ATALHO[id](e);
 });
 function offerSessionRestore(){
+  /* no .exe, o ficheiro da pasta "autosaves" é a fonte de verdade quando é
+     mais recente do que o que o armazenamento interno tem */
+  if(ehDesktop){
+    try{
+      const f=window.desktop.lerAutosave();
+      const l=storageGet(AUTOSAVE_KEY);
+      const at=s=>{try{return Date.parse(JSON.parse(s).at)||0;}catch(e){return 0;}};
+      if(f&&(!l||at(f)>at(l)))storageSet(AUTOSAVE_KEY,f);
+    }catch(e){}
+  }
   const raw=storageGet(AUTOSAVE_KEY);
   if(!raw)return;
   let d=null;
@@ -15972,8 +16118,11 @@ function scheduleAutosave(){
   clearTimeout(autosaveTimer);
   autosaveTimer=setTimeout(()=>{
     let gravou=false;
-    try{gravou=storageSet(AUTOSAVE_KEY,
-      JSON.stringify({at:new Date().toISOString(),state:snapshotState()}));}catch(e){}
+    const dados=JSON.stringify({at:new Date().toISOString(),state:snapshotState()});
+    try{gravou=storageSet(AUTOSAVE_KEY,dados);}catch(e){}
+    /* no .exe o mesmo autosave vai para a pasta "autosaves" ao lado do
+       executável — fica sempre disponível localmente, mesmo sem browser */
+    if(ehDesktop&&!ehPalco){try{window.desktop.guardarAutosave(dados);}catch(e){}}
     // Avisa-se uma vez. A promessa de "recuperar a sessão" deixou de valer, e
     // quem está a trabalhar tem de saber disso enquanto ainda pode exportar.
     if(!gravou&&!autosaveWarned){
@@ -16090,8 +16239,13 @@ document.getElementById("redoBtn").onclick=redoAction;
    palco para a sala — e lá dentro a tecla F põe em ecrã inteiro.
 ============================================================ */
 const ehPalco=/^#palco/.test(location.hash);
+/* A aplicação de secretária (Electron) injeta window.desktop pelo preload:
+   ecrãs, autosave em pasta, definições, ecrã inteiro e o palco por IPC. */
+const ehDesktop=!!(window.desktop&&window.desktop.ehDesktop);
 const palcoCanal=(function(){
-  try{return ("BroadcastChannel" in window)?new BroadcastChannel("of-palco"):null;}
+  /* no .exe as janelas são origens opacas (file://): o BroadcastChannel não
+     as liga — o IPC do processo principal faz o transporte */
+  try{return (!ehDesktop&&"BroadcastChannel" in window)?new BroadcastChannel("of-palco"):null;}
   catch(e){return null;}
 })();
 let palcoTimer=0,palcoUltimoEstado=null;
@@ -16103,17 +16257,12 @@ const ECRA_NUNCA_KEY="of.estender.nunca";
 /* Envio em bruto, dos dois lados — o palcoEnvia só fala do principal. */
 function palcoGrita(m){
   try{
-    if(palcoCanal)palcoCanal.postMessage(m);
+    if(ehDesktop)window.desktop.palcoEnviar(m);
+    else if(palcoCanal)palcoCanal.postMessage(m);
     else storageSet("of.palco.msg",JSON.stringify(Object.assign({_r:Math.random()},m)));
   }catch(e){}
 }
-function palcoEnvia(m){
-  if(ehPalco)return;
-  try{
-    if(palcoCanal)palcoCanal.postMessage(m);
-    else storageSet("of.palco.msg",JSON.stringify(Object.assign({_r:Math.random()},m)));
-  }catch(e){}
-}
+function palcoEnvia(m){if(!ehPalco)palcoGrita(m);}
 function palcoEnviaEstado(){
   if(ehPalco)return;
   clearTimeout(palcoTimer);
@@ -16176,11 +16325,13 @@ function palcoMensagem(m){
   else if(m&&m.t==="adeus")palcoVivo=false;
 }
 if(palcoCanal)palcoCanal.onmessage=e=>palcoMensagem(e.data);
+if(ehDesktop)window.desktop.onPalco(palcoMensagem);
 addEventListener("storage",e=>{
   if(e.key!=="of.palco.msg"||!e.newValue)return;
   try{palcoMensagem(JSON.parse(e.newValue));}catch(err){}
 });
 function alternaEcraInteiro(){
+  if(ehDesktop){try{window.desktop.ecraInteiro();}catch(e){}return;}
   /* As duas chamadas devolvem promessas que o browser pode recusar (política
      da página, pedido sem gesto) — recusa silenciosa, sem erro por tratar. */
   if(document.fullscreenElement){
@@ -16194,13 +16345,18 @@ function urlPalco(sufixo){
     ?location.pathname+location.search+sufixo
     :location.href.split("#")[0]+sufixo;
 }
-function palcoAberto(){return palcoVivo||(!!palcoJanela&&!palcoJanela.closed);}
+function palcoAberto(){
+  if(ehDesktop){try{if(window.desktop.palcoAberto())return true;}catch(e){}}
+  return palcoVivo||(!!palcoJanela&&!palcoJanela.closed);
+}
 /* Há mais de um monitor? (Window Management API — Chrome/Edge; noutros
    browsers a propriedade não existe e a deteção fica simplesmente calada.) */
 function haSegundoEcra(){
+  if(ehDesktop){try{return window.desktop.ecras().length>1;}catch(e){return false;}}
   try{return !!(window.screen&&window.screen.isExtended===true);}catch(e){return false;}
 }
 function emEcraInteiro(){
+  if(ehDesktop)return true;   // a app É o ecrã: a oferta faz sentido sempre
   if(document.fullscreenElement)return true;
   /* F11 põe o browser em ecrã inteiro sem fullscreenElement — o display-mode
      apanha esse caso */
@@ -16210,6 +16366,17 @@ function emEcraInteiro(){
    pede autorização da primeira vez; se for recusada (ou não existir), o
    palco abre na mesma e a mensagem diz para o arrastar. */
 async function estenderParaSegundoEcra(){
+  if(ehDesktop){
+    /* o processo principal abre a janela no outro monitor, já em ecrã
+       inteiro — sem janelas do browser, sem arrastar, sem clique */
+    let r=null;
+    try{r=await window.desktop.abrirPalco();}catch(e){}
+    if(r&&r.ok)flash(r.doisEcras
+      ?"Palco aberto no segundo ecrã, em ecrã inteiro."
+      :"Palco aberto numa janela à parte — só há um ecrã ligado.",{key:"palco"});
+    else flash("Não foi possível abrir o palco.",{type:"err",key:"palco"});
+    return;
+  }
   const url=urlPalco("#palco-ecra");
   let alvo=null;
   if(typeof window.getScreenDetails==="function"){
@@ -16240,7 +16407,7 @@ async function estenderParaSegundoEcra(){
     {key:"palco"});
 }
 function abrirPalco(){
-  if(haSegundoEcra()){estenderParaSegundoEcra();return;}
+  if(ehDesktop||haSegundoEcra()){estenderParaSegundoEcra();return;}
   palcoJanela=window.open(urlPalco("#palco"),"palcoFramework");
   if(!palcoJanela){flash("O browser bloqueou a janela do palco — permita pop-ups nesta página.",{type:"err"});return;}
   flash("Palco aberto — arraste a janela para o segundo ecrã; lá dentro, F põe em ecrã inteiro.");
@@ -16253,7 +16420,13 @@ async function verificaSegundoEcra(motivo){
   if(motivo==="ligado")perguntouEcra=false;
   if(perguntouEcra)return;
   if(!emEcraInteiro()||!haSegundoEcra()||palcoAberto())return;
-  if(storageGet(ECRA_NUNCA_KEY)==="1")return;
+  if(ehDesktop){
+    /* a decisão vive nas definições do .exe: true estende sem perguntar,
+       false nunca, null pergunta — e muda-se nas Definições quando se quiser */
+    let d={};try{d=window.desktop.definicoes()||{};}catch(e){}
+    if(d.ecraAuto===false)return;
+    if(d.ecraAuto===true){perguntouEcra=true;estenderParaSegundoEcra();return;}
+  }else if(storageGet(ECRA_NUNCA_KEY)==="1")return;
   perguntouEcra=true;
   const r=await askOpcoes("Segundo ecrã detetado",
     "Pode estender a visualização 3D para o outro monitor — os painéis ficam neste. "+
@@ -16261,9 +16434,12 @@ async function verificaSegundoEcra(motivo){
     [{k:"estender",label:"Estender para o segundo ecrã",primary:true},
      {k:"agora",label:"Agora não"},
      {k:"nunca",label:"Não voltar a perguntar"}]);
-  if(r==="estender")estenderParaSegundoEcra();
-  else if(r==="nunca"){
-    storageSet(ECRA_NUNCA_KEY,"1");
+  if(r==="estender"){
+    if(ehDesktop){try{window.desktop.definir("ecraAuto",true);}catch(e){}renderEcraRow();}
+    estenderParaSegundoEcra();
+  }else if(r==="nunca"){
+    if(ehDesktop){try{window.desktop.definir("ecraAuto",false);}catch(e){}}
+    else storageSet(ECRA_NUNCA_KEY,"1");
     renderEcraRow();
     flash("Não volto a perguntar — pode reativar em Definições › Segundo ecrã.");
   }
@@ -16273,6 +16449,34 @@ function renderEcraRow(){
   const host=document.getElementById("ecraRow");
   if(!host)return;
   host.innerHTML="";
+  if(ehDesktop){
+    let d={};try{d=window.desktop.definicoes()||{};}catch(e){}
+    const linha=(rot,on,fn)=>{
+      const row=el("div","row");
+      row.append(el("span","row-name",rot));
+      const sw=el("button","switch"+(on?" on":""));
+      sw.setAttribute("role","switch");sw.setAttribute("aria-checked",String(on));
+      sw.setAttribute("aria-label",rot);
+      sw.onclick=()=>fn(!on);
+      row.append(sw);host.append(row);
+    };
+    linha("Arrancar em ecrã inteiro",d.ecraInteiro!==false,v=>{
+      try{window.desktop.definir("ecraInteiro",v);window.desktop.ecraInteiro(v);}catch(e){}
+      renderEcraRow();
+    });
+    linha("Estender automaticamente para o segundo ecrã",d.ecraAuto===true,v=>{
+      try{window.desktop.definir("ecraAuto",v);}catch(e){}
+      perguntouEcra=false;
+      if(v){if(haSegundoEcra())estenderParaSegundoEcra();else flash("Fica ligado — abre o palco assim que houver um segundo monitor.");}
+      else{try{window.desktop.fecharPalco();}catch(e){}}
+      renderEcraRow();
+    });
+    let n=1;try{n=window.desktop.ecras().length;}catch(e){}
+    host.append(el("div","foot-note",n>1
+      ?n+" ecrãs ligados — o palco abre no que não é o principal."
+      :"Só um ecrã ligado; ligar outro dispara a oferta (ou a extensão automática)."));
+    return;
+  }
   const on=storageGet(ECRA_NUNCA_KEY)!=="1";
   const row=el("div","row");
   row.append(el("span","row-name","Oferecer o segundo ecrã ao entrar em ecrã inteiro"));
@@ -16293,6 +16497,18 @@ function renderEcraRow(){
     :"Não é detetado nenhum segundo monitor (ou este browser não o sabe dizer — Chrome e Edge sabem).");
   host.append(nota);
 }
+function initDesktop(){
+  if(!ehDesktop||ehPalco)return;
+  document.body.classList.add("desktop");
+  const sb=document.querySelector("#secDados .setup-btns");
+  if(sb){
+    const b=el("button","btn","Abrir pasta dos autosaves");
+    b.id="autosavePastaBtn";
+    b.title="A pasta “autosaves”, ao lado do executável — o último estado e cópias datadas";
+    b.onclick=()=>{try{window.desktop.abrirPasta();}catch(e){}};
+    sb.append(b);
+  }
+}
 function initPalco(){
   const bFs=document.getElementById("fsBtn");
   if(bFs)bFs.onclick=alternaEcraInteiro;
@@ -16311,6 +16527,8 @@ function initPalco(){
       if(window.screen&&typeof window.screen.addEventListener==="function")
         window.screen.addEventListener("change",()=>{renderEcraRow();verificaSegundoEcra("ligado");});
     }catch(e){}
+    /* na app de secretária, ligar ou desligar um monitor chega por IPC */
+    if(ehDesktop){try{window.desktop.onEcras(()=>{renderEcraRow();verificaSegundoEcra("ligado");});}catch(e){}}
     /* uma app instalada pode já arrancar em ecrã inteiro */
     setTimeout(()=>verificaSegundoEcra("arranque"),1200);
     return;
@@ -16325,11 +16543,11 @@ function initPalco(){
   pill.append(bFS2);
   document.body.append(pill);
   addEventListener("keydown",e=>{
-    if((e.key==="f"||e.key==="F")&&!e.ctrlKey&&!e.metaKey){
-      const tag=((e.target&&e.target.tagName)||"").toLowerCase();
-      if(tag==="input"||tag==="textarea")return;
-      e.preventDefault();alternaEcraInteiro();
-    }
+    const tag=((e.target&&e.target.tagName)||"").toLowerCase();
+    if(tag==="input"||tag==="textarea")return;
+    /* o atalho de ecrã inteiro (F11 ou o que estiver mapeado) já é tratado
+       pelo ouvinte global; aqui só a tecla F, herdada do palco original */
+    if(teclaDe(e)==="f"&&ATALHOS.ecraInteiro!=="f"){e.preventDefault();alternaEcraInteiro();}
   });
   /* anunciar ao ecrã principal, com uma segunda tentativa para o caso de o
      principal ainda estar a arrancar */
@@ -16385,7 +16603,10 @@ renderBookmarks();
 renderCodeKey();
 renderQuest();
 renderRetoma();
+initDesktop();
 initPalco();
+renderAtalhosUI();
+refrescaKbdsAjuda();
 settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));

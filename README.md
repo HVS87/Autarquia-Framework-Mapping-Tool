@@ -55,6 +55,9 @@ cd Autarquia-Framework-Mapping-Tool
 2. Clique no ícone "Instalar" na barra de endereços
 3. A app abre em modo standalone — funciona offline após o primeiro carregamento
 
+### Aplicação de secretária (.exe)
+A pasta `desktop/` gera um executável Windows independente do browser: arranca em ecrã inteiro, estende sozinho o palco 3D para um segundo monitor (mediante confirmação, reversível nas Definições) e guarda os autosaves numa pasta `autosaves/` ao lado do executável. Instruções em [DEPLOY.md](DEPLOY.md#aplicação-de-secretária-exe). Os atalhos de teclado remapeiam-se em Definições › Atalhos de teclado.
+
 ## 📖 Guia de Utilização
 
 ### Exploração 3D
