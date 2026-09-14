@@ -316,6 +316,15 @@
   body.palco #radarWrap,body.palco #trailMenu,body.palco #emptyHint,
   body.palco #toasts,body.palco #retoma,body.palco #chevrons,
   body.palco #coach,body.palco #tourEnd,body.palco #installHow{display:none!important}
+  /* Convite de ecrã inteiro no palco aberto pela oferta do segundo ecrã */
+  .palco-convite{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
+    background:rgba(4,8,16,0.42);color:var(--ink);font:inherit}
+  .palco-convite .pc-t{font-size:1.35rem;font-weight:700;padding:14px 26px;
+    border:1px solid var(--gold);border-radius:999px;background:var(--panel)}
+  .palco-convite .pc-s{font-size:.78rem;color:var(--ink-dim)}
+  #ecraRow .row{display:flex;align-items:center;gap:8px}
+  #ecraRow .row-name{flex:1}
   #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
     border:1px solid var(--hairline);opacity:.4;transition:opacity .2s}
@@ -2427,6 +2436,8 @@
       </div>
       <div class="mini-title">Diagrama de interações</div>
       <div id="feyPrefsRow"></div>
+      <div class="mini-title">Segundo ecrã</div>
+      <div id="ecraRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -16078,12 +16089,24 @@ document.getElementById("redoBtn").onclick=redoAction;
    fallback por eventos de storage). O principal fica para os painéis; o
    palco para a sala — e lá dentro a tecla F põe em ecrã inteiro.
 ============================================================ */
-const ehPalco=location.hash==="#palco";
+const ehPalco=/^#palco/.test(location.hash);
 const palcoCanal=(function(){
   try{return ("BroadcastChannel" in window)?new BroadcastChannel("of-palco"):null;}
   catch(e){return null;}
 })();
 let palcoTimer=0,palcoUltimoEstado=null;
+/* palcoVivo: um palco anunciou-se (olá) e ainda não se despediu (adeus);
+   palcoJanela: a janela que este ecrã abriu; perguntouEcra: já se ofereceu
+   o segundo ecrã nesta sessão (ligar um monitor novo volta a oferecer). */
+let palcoVivo=false,palcoJanela=null,perguntouEcra=false;
+const ECRA_NUNCA_KEY="of.estender.nunca";
+/* Envio em bruto, dos dois lados — o palcoEnvia só fala do principal. */
+function palcoGrita(m){
+  try{
+    if(palcoCanal)palcoCanal.postMessage(m);
+    else storageSet("of.palco.msg",JSON.stringify(Object.assign({_r:Math.random()},m)));
+  }catch(e){}
+}
 function palcoEnvia(m){
   if(ehPalco)return;
   try{
@@ -16149,7 +16172,8 @@ function palcoRespondeOla(){
 }
 function palcoMensagem(m){
   if(ehPalco)palcoRecebe(m);
-  else if(m&&m.t==="ola")palcoRespondeOla();
+  else if(m&&m.t==="ola"){palcoVivo=true;palcoRespondeOla();}
+  else if(m&&m.t==="adeus")palcoVivo=false;
 }
 if(palcoCanal)palcoCanal.onmessage=e=>palcoMensagem(e.data);
 addEventListener("storage",e=>{
@@ -16157,23 +16181,140 @@ addEventListener("storage",e=>{
   try{palcoMensagem(JSON.parse(e.newValue));}catch(err){}
 });
 function alternaEcraInteiro(){
-  if(document.fullscreenElement){if(document.exitFullscreen)document.exitFullscreen();}
-  else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen();
+  /* As duas chamadas devolvem promessas que o browser pode recusar (política
+     da página, pedido sem gesto) — recusa silenciosa, sem erro por tratar. */
+  if(document.fullscreenElement){
+    if(document.exitFullscreen)Promise.resolve(document.exitFullscreen()).catch(()=>{});
+  }else if(document.documentElement.requestFullscreen){
+    Promise.resolve(document.documentElement.requestFullscreen()).catch(()=>{});
+  }
+}
+function urlPalco(sufixo){
+  return (location.origin!=="null")
+    ?location.pathname+location.search+sufixo
+    :location.href.split("#")[0]+sufixo;
+}
+function palcoAberto(){return palcoVivo||(!!palcoJanela&&!palcoJanela.closed);}
+/* Há mais de um monitor? (Window Management API — Chrome/Edge; noutros
+   browsers a propriedade não existe e a deteção fica simplesmente calada.) */
+function haSegundoEcra(){
+  try{return !!(window.screen&&window.screen.isExtended===true);}catch(e){return false;}
+}
+function emEcraInteiro(){
+  if(document.fullscreenElement)return true;
+  /* F11 põe o browser em ecrã inteiro sem fullscreenElement — o display-mode
+     apanha esse caso */
+  try{return matchMedia("(display-mode: fullscreen)").matches;}catch(e){return false;}
+}
+/* Abre o palco POSICIONADO no outro ecrã e do tamanho dele. getScreenDetails
+   pede autorização da primeira vez; se for recusada (ou não existir), o
+   palco abre na mesma e a mensagem diz para o arrastar. */
+async function estenderParaSegundoEcra(){
+  const url=urlPalco("#palco-ecra");
+  let alvo=null;
+  if(typeof window.getScreenDetails==="function"){
+    try{
+      const d=await window.getScreenDetails();
+      alvo=(d.screens||[]).find(s=>s!==d.currentScreen)||null;
+    }catch(e){alvo=null;}
+  }
+  const feat=alvo
+    ?("popup,left="+alvo.availLeft+",top="+alvo.availTop+",width="+alvo.availWidth+",height="+alvo.availHeight)
+    :"popup";
+  const abre=()=>{
+    palcoJanela=window.open(url,"palcoFramework",feat);
+    return !!palcoJanela;
+  };
+  if(!abre()){
+    /* o pedido de autorização pode ter gasto o clique: o browser quer outro */
+    flash("O browser pede mais um clique para abrir a janela no segundo ecrã.",
+      {type:"err",duration:0,key:"palco",actions:[{label:"Abrir no segundo ecrã",fn:()=>{
+        if(abre())flash("Palco aberto no segundo ecrã — clique lá uma vez para o pôr em ecrã inteiro.",{key:"palco"});
+        else flash("O browser bloqueou a janela — permita pop-ups nesta página.",{type:"err",key:"palco"});
+      }}]});
+    return;
+  }
+  flash(alvo
+    ?"Palco aberto no segundo ecrã — clique lá uma vez para o pôr em ecrã inteiro."
+    :"Palco aberto — o browser não deu a posição dos ecrãs: arraste a janela para o segundo monitor.",
+    {key:"palco"});
 }
 function abrirPalco(){
-  const url=(location.origin!=="null")
-    ?location.pathname+location.search+"#palco"
-    :location.href.split("#")[0]+"#palco";
-  const w=window.open(url,"palcoFramework");
-  if(!w){flash("O browser bloqueou a janela do palco — permita pop-ups nesta página.",{type:"err"});return;}
+  if(haSegundoEcra()){estenderParaSegundoEcra();return;}
+  palcoJanela=window.open(urlPalco("#palco"),"palcoFramework");
+  if(!palcoJanela){flash("O browser bloqueou a janela do palco — permita pop-ups nesta página.",{type:"err"});return;}
   flash("Palco aberto — arraste a janela para o segundo ecrã; lá dentro, F põe em ecrã inteiro.");
+}
+/* ---- a pergunta ----
+   Em ecrã inteiro, com um segundo monitor e sem palco aberto, oferece-se
+   uma vez por sessão (ou de novo quando um monitor é ligado). */
+async function verificaSegundoEcra(motivo){
+  if(ehPalco||!booted)return;
+  if(motivo==="ligado")perguntouEcra=false;
+  if(perguntouEcra)return;
+  if(!emEcraInteiro()||!haSegundoEcra()||palcoAberto())return;
+  if(storageGet(ECRA_NUNCA_KEY)==="1")return;
+  perguntouEcra=true;
+  const r=await askOpcoes("Segundo ecrã detetado",
+    "Pode estender a visualização 3D para o outro monitor — os painéis ficam neste. "+
+    "O palco segue a seleção, o realce, o tema e os dados.",
+    [{k:"estender",label:"Estender para o segundo ecrã",primary:true},
+     {k:"agora",label:"Agora não"},
+     {k:"nunca",label:"Não voltar a perguntar"}]);
+  if(r==="estender")estenderParaSegundoEcra();
+  else if(r==="nunca"){
+    storageSet(ECRA_NUNCA_KEY,"1");
+    renderEcraRow();
+    flash("Não volto a perguntar — pode reativar em Definições › Segundo ecrã.");
+  }
+}
+/* Definições › Segundo ecrã: reverter o "não voltar a perguntar". */
+function renderEcraRow(){
+  const host=document.getElementById("ecraRow");
+  if(!host)return;
+  host.innerHTML="";
+  const on=storageGet(ECRA_NUNCA_KEY)!=="1";
+  const row=el("div","row");
+  row.append(el("span","row-name","Oferecer o segundo ecrã ao entrar em ecrã inteiro"));
+  const sw=el("button","switch"+(on?" on":""));
+  sw.setAttribute("role","switch");
+  sw.setAttribute("aria-checked",String(on));
+  sw.setAttribute("aria-label","Oferecer o segundo ecrã ao entrar em ecrã inteiro");
+  sw.onclick=()=>{
+    if(storageGet(ECRA_NUNCA_KEY)==="1")storageSet(ECRA_NUNCA_KEY,"0");
+    else storageSet(ECRA_NUNCA_KEY,"1");
+    perguntouEcra=false;
+    renderEcraRow();
+  };
+  row.append(sw);
+  host.append(row);
+  const nota=el("div","foot-note",haSegundoEcra()
+    ?"Segundo monitor detetado agora."
+    :"Não é detetado nenhum segundo monitor (ou este browser não o sabe dizer — Chrome e Edge sabem).");
+  host.append(nota);
 }
 function initPalco(){
   const bFs=document.getElementById("fsBtn");
   if(bFs)bFs.onclick=alternaEcraInteiro;
   const bP=document.getElementById("palcoBtn");
   if(bP)bP.onclick=abrirPalco;
-  if(!ehPalco)return;
+  if(!ehPalco){
+    renderEcraRow();
+    document.addEventListener("fullscreenchange",()=>{if(document.fullscreenElement)verificaSegundoEcra("ecraInteiro");});
+    try{
+      const mq=matchMedia("(display-mode: fullscreen)");
+      const f=()=>{if(mq.matches)verificaSegundoEcra("ecraInteiro");};
+      if(mq.addEventListener)mq.addEventListener("change",f);else if(mq.addListener)mq.addListener(f);
+    }catch(e){}
+    /* ligar (ou desligar) um monitor a meio da sessão */
+    try{
+      if(window.screen&&typeof window.screen.addEventListener==="function")
+        window.screen.addEventListener("change",()=>{renderEcraRow();verificaSegundoEcra("ligado");});
+    }catch(e){}
+    /* uma app instalada pode já arrancar em ecrã inteiro */
+    setTimeout(()=>verificaSegundoEcra("arranque"),1200);
+    return;
+  }
   document.body.classList.add("palco");
   document.title="Palco — "+document.title;
   const pill=el("div","glass");
@@ -16192,11 +16333,24 @@ function initPalco(){
   });
   /* anunciar ao ecrã principal, com uma segunda tentativa para o caso de o
      principal ainda estar a arrancar */
-  const ola=()=>{try{
-    if(palcoCanal)palcoCanal.postMessage({t:"ola"});
-    else storageSet("of.palco.msg",JSON.stringify({t:"ola",_r:Math.random()}));
-  }catch(e){}};
-  ola();setTimeout(ola,800);
+  palcoGrita({t:"ola"});
+  setTimeout(()=>palcoGrita({t:"ola"}),800);
+  addEventListener("pagehide",()=>palcoGrita({t:"adeus"}));
+  /* Aberto pela oferta do segundo ecrã: um convite que ocupa tudo — o
+     browser exige um clique nesta janela para o ecrã inteiro, e assim esse
+     clique pode ser em qualquer lado. */
+  if(location.hash==="#palco-ecra"&&!document.fullscreenElement){
+    const cv=el("button","palco-convite");
+    cv.id="palcoConvite";
+    cv.type="button";
+    cv.append(el("span","pc-t","Clique para ocupar este ecrã inteiro"));
+    cv.append(el("span","pc-s","a visualização segue o ecrã principal"));
+    cv.onclick=()=>alternaEcraInteiro();
+    document.body.append(cv);
+    document.addEventListener("fullscreenchange",()=>{
+      if(document.fullscreenElement&&cv.parentNode)cv.remove();
+    });
+  }
 }
 /* ============================================================
    BOOT
