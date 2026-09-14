@@ -336,6 +336,12 @@
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
     border:1px solid var(--hairline);opacity:.4;transition:opacity .2s}
   #palcoPill:hover{opacity:1}
+  #palcoLegenda{position:fixed;left:50%;bottom:36px;z-index:60;max-width:80vw;
+    transform:translateX(-50%) translateY(14px);padding:10px 22px;border-radius:999px;
+    font-size:1.08rem;letter-spacing:.02em;color:var(--gold);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;opacity:0;pointer-events:none;
+    transition:opacity .45s,transform .45s}
+  #palcoLegenda.on{opacity:1;transform:translateX(-50%) translateY(0)}
   #palcoPill .pp-rot{font-size:.68rem;color:var(--ink-dim)}
   body.palco #stage{cursor:grab}
   .fey-entra{animation:feyEntra .24s ease-out}
@@ -2891,6 +2897,15 @@ function nodePos(n){
 
 let agentCounter=0;
 const agents=[];
+/* O palco é avisado de cada coisa nova (ver NASCIMENTOS NO PALCO). Calado
+   durante importações — uma enxurrada não é uma festa — e enquanto um
+   nódulo novo cria o seu próprio responsável. */
+let palcoMudo=false,criandoNodulo=false;
+function palcoAnuncia(tipo,obj){
+  if(!booted||!obj||palcoMudo||ehPalco)return;
+  const m={t:"nasce",tipo,id:obj.id};
+  palcoEnvia(m);
+}
 function addAgent(nodeId, primary, category, name){
   const a={id:"a"+(++agentCounter), name:name||nextName(),
     category:category||PRIMARY_CAT_BY_TIER[Math.min(byId(nodeId).tier,PRIMARY_CAT_BY_TIER.length-1)], nodeId, primary:!!primary};
@@ -2901,6 +2916,7 @@ function addAgent(nodeId, primary, category, name){
   agents.push(a);
   markDirty();
   if(booted)questMark("agent");
+  if(!criandoNodulo)palcoAnuncia("agente",a);
   return a;
 }
 const agentsOf = nodeId => agents.filter(a=>a.nodeId===nodeId);
@@ -3810,7 +3826,7 @@ function buildNodeVisual(n){
       bloom.scale.setScalar(0.44);
       m.add(bloom);
     }
-    orb.push({mesh:m,r:rad+0.32+(i%2)*0.14,
+    orb.push({mesh:m,agent:a,queda:0,r:rad+0.32+(i%2)*0.14,
       phase:(i/Math.max(shown.length,1))*Math.PI*2,
       speed:(reduceMotion?0:0.9)+(i%3)*0.25,tilt:(i%2?0.5:-0.35)});
     g.add(m);
@@ -4098,12 +4114,15 @@ function createNode(opts){
   buildNodeVisual(n);
   nodes.forEach(applyNodeColor);
   rebuildHierLinks();
-  if(!opts.noAgent)addAgent(n.id,true,PRIMARY_CAT_BY_TIER[Math.min(tier,PRIMARY_CAT_BY_TIER.length-1)]);
+  criandoNodulo=true;
+  try{if(!opts.noAgent)addAgent(n.id,true,PRIMARY_CAT_BY_TIER[Math.min(tier,PRIMARY_CAT_BY_TIER.length-1)]);}
+  finally{criandoNodulo=false;}
   refreshNodeVisual(n);
   renderNodeList();
   renderAgentsTab();
   markDirty();
   if(booted)questMark("node");
+  palcoAnuncia("nodulo",n);
   return n;
 }
 function changeNodeTier(n,newTier){
@@ -4148,6 +4167,7 @@ function createLayer(name,color){
   updateLayerCounts();
   renderGroups();
   markDirty();
+  palcoAnuncia("procedimento",p);
   return p;
 }
 function disposeLayerVisual(p){
@@ -4226,6 +4246,7 @@ function createTask(procIdx,aId,bId,desc,agentId,duration){
   updateLayerCounts();
   markDirty();
   if(booted)questMark("task");
+  palcoAnuncia("tarefa",t);
   return t;
 }
 function moveTaskToLayer(t,newIdx){
@@ -12321,6 +12342,7 @@ importFile.onchange=()=>{
   const r=new FileReader();
   r.onload=()=>{
     const preImport=booted?snapshotState():null;   // so Ctrl+Z can undo the import
+    palcoMudo=true;
     // Durante a reconstrução o modelo está a meio: grupos ainda os antigos,
     // ids por reatribuir, contadores por acertar. Cada markDirty() lá dentro
     // atirava esse estado intermédio para a pilha de anulações, e um Ctrl+Z a
@@ -12503,6 +12525,7 @@ importFile.onchange=()=>{
       flash("Não foi possível ler esse ficheiro — exporte primeiro um dataset daqui.",{type:"err"});
     }finally{
       historyBusy=false;
+      palcoMudo=false;
     }
     importFile.value="";
   };
@@ -13646,7 +13669,8 @@ function animate(){
   processes.forEach((p,i)=>{
     const on=s.show.procs&&p._visible;
     const dim=(effIsolate!==null&&effIsolate!==i);
-    const guideT=!on?0.02:(dim?0.03:0.12);
+    let guideT=!on?0.02:(dim?0.03:0.12);
+    if(nasc&&nasc.tipo==="procedimento"&&nasc.id===p.id)guideT=0.6;
     p._guideMat.opacity+=(guideT-p._guideMat.opacity)*0.08;
     const lblT=!on?0:(dim?0.15:0.9);
     p._label.material.opacity+=(lblT-p._label.material.opacity)*0.08;
@@ -13670,6 +13694,8 @@ function animate(){
         if(acende){matT=Math.max(matT,selMode.procs?0.95:0.8);coneT=Math.max(coneT,0.95);}
         else{matT=Math.min(matT,0.05);coneT=Math.min(coneT,0.06);}
       }
+      const nascT=nascArco(tk,p);
+      if(nascT!==null){matT=nascT;coneT=nascT;}
       tk._mat.opacity+=(matT-tk._mat.opacity)*0.1;
       tk._coneMat.opacity+=(coneT-tk._coneMat.opacity)*0.1;
 
@@ -13714,6 +13740,7 @@ function animate(){
         Math.sin(a.phase*0.9)*a.r*0.35+a.tilt*0.1,
         Math.sin(a.phase)*a.r
       );
+      if(a.queda>0)a.mesh.position.y+=a.queda*2.6;   // a cair para o lugar (nascimento)
     });
     const n=sys.node;
     const isSel=(n===selNode)||(n===dropHoverNode);
@@ -13745,6 +13772,7 @@ function animate(){
       // Morph de cenários: uma unidade que só existe na proposta cresce a
       // partir do nada em vez de aparecer de repente a meio do arrasto.
       if(n._morphScale!==undefined&&n._morphScale<1)sc*=Math.max(0,n._morphScale);
+      if(n._nasce!==undefined)sc*=n._nasce;   // a crescer do nada (nascimento)
       n._mesh.scale.setScalar(sc);
     }
     if(n._ripple&&n._socket){
@@ -13792,6 +13820,7 @@ function animate(){
     }
   });
 
+  stepNascimento(dt);
   renderer.render(scene,camera);
 }
 /* ============================================================
@@ -16317,10 +16346,218 @@ function palcoRecebe(m){
       syncLayerRows();
     }
     if(guarda.tipo)palcoAplicaSel(guarda);
+    nascTenta();   // os anúncios que esperavam por este estado
   }
+  else if(m.t==="nasce")palcoNasce(m);
   else if(m.t==="sel")palcoAplicaSel(m);
   else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
   else if(m.t==="tema")applyTheme(m.id,{silent:true});
+}
+/* ============================================================
+   NASCIMENTOS NO PALCO
+   O ecrã principal manda {t:"nasce",tipo,id} no instante em que cria; o
+   estado com o objeto chega logo a seguir (debounce), por isso o anúncio
+   fica pendente até o objeto existir aqui. Uma coreografia de cada vez,
+   com a câmara a ir ver e a voltar ao que estava.
+============================================================ */
+const nascPendentes=[],nascFila=[],nascTempos=[];
+let nasc=null;
+function nascAcha(m){
+  if(m.tipo==="nodulo")return byId(m.id)||null;
+  if(m.tipo==="agente")return agentById(m.id);
+  if(m.tipo==="procedimento")return processes.find(p=>p.id===m.id)||null;
+  if(m.tipo==="tarefa"){
+    for(const p of processes){const tk=p.tasks.find(x=>x.id===m.id);if(tk)return tk;}
+  }
+  return null;
+}
+function palcoNasce(m){
+  if(!ehPalco||!m.tipo||!m.id)return;
+  const agora=Date.now();
+  nascTempos.push(agora);
+  while(nascTempos.length&&agora-nascTempos[0]>1000)nascTempos.shift();
+  /* uma enxurrada (colar do Excel, duplicar) não é uma festa: cala tudo */
+  if(nascTempos.length>5){nascPendentes.length=0;nascFila.length=0;return;}
+  nascPendentes.push({tipo:m.tipo,id:m.id,em:agora});
+  nascTenta();
+}
+function nascTenta(){
+  if(!ehPalco)return;
+  const agora=Date.now();
+  const resto=[];
+  nascPendentes.forEach(m=>{
+    if(agora-m.em>6000)return;
+    if(nascAcha(m))nascFila.push(m);else resto.push(m);
+  });
+  nascPendentes.length=0;nascPendentes.push(...resto);
+  while(nascFila.length>3)nascFila.shift();
+  if(!nasc&&nascFila.length)nascComeca(nascFila.shift());
+}
+function nascLegenda(txt){
+  const leg=document.getElementById("palcoLegenda");
+  if(!leg)return;
+  leg.textContent=txt;
+  leg.classList.add("on");
+  clearTimeout(nascLegenda._t);
+  nascLegenda._t=setTimeout(()=>leg.classList.remove("on"),2800);
+}
+function nascFaisca(cor,tam){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(tam,10,10),
+    new THREE.MeshBasicMaterial({color:cor,transparent:true,opacity:0,
+      blending:THREE.AdditiveBlending,depthWrite:false}));
+  scene.add(m);
+  return m;
+}
+/* O arco de uma tarefa desenha-se aos poucos: o tubo é indexado por segmento,
+   por isso limitar o intervalo desenhado é traçá-lo de a para b. */
+function nascArcoAplica(tk,u){
+  if(!tk||!tk._tube)return;
+  [tk._tube,tk._flow].forEach(m=>{
+    if(!m)return;
+    const g=m.geometry,total=g.index?g.index.count:g.attributes.position.count;
+    g.setDrawRange(0,u>=1?Infinity:Math.floor(total*u));
+  });
+  if(tk._cone)tk._cone.scale.setScalar(u>=0.75?Math.min(1,(u-0.75)/0.12):0.001);
+}
+function nascArco(tk,p){
+  if(!nasc)return null;
+  if(nasc.tipo==="tarefa")return tk.id===nasc.id?1:null;
+  if(nasc.tipo==="procedimento"&&p.id===nasc.id){
+    const k=p.tasks.indexOf(tk);
+    return (nasc.t>0.6+k*0.35)?1:0.05;
+  }
+  return null;
+}
+function nascComeca(m){
+  const obj=nascAcha(m);
+  if(!obj){nascTenta();return;}
+  const rm=reduceMotion;
+  nasc={tipo:m.tipo,id:m.id,t:0,dur:2.6,
+    prev:{target:rig.goal.target.clone(),radius:rig.goal.radius,phi:rig.goal.phi,auto:rig.auto,focus:focusActive},
+    sel:JSON.stringify(palcoSelMsg(selected))};
+  if(m.tipo==="nodulo"){
+    const n=obj;
+    nasc.dur=rm?1.2:2.8;
+    nascLegenda("Nova unidade · "+n.name);
+    const par=n.parent?byId(n.parent):null;
+    if(par&&par.pos&&n.pos&&!rm){
+      const mid=par.pos.clone().lerp(n.pos,0.5);mid.y+=0.15;
+      nasc.curva=new THREE.QuadraticBezierCurve3(par.pos.clone(),mid,n.pos.clone());
+      nasc.faisca=nascFaisca(GOLD,0.09);
+    }
+    if(n.pos)focusOn(n.pos.clone(),Math.max(8,(n._rad||0.3)*18));
+    if(!rm)n._nasce=0;
+  }else if(m.tipo==="tarefa"){
+    const tk=obj,A=byId(tk.a),B=byId(tk.b),p=processes[tk.proc];
+    if(!A||!B||!p||!A.pos||!B.pos){nasc=null;nascTenta();return;}
+    nasc.dur=rm?1.4:3.0;
+    nascLegenda("Nova tarefa · "+abbrev(A.name)+" → "+abbrev(B.name)+" · "+p.name);
+    const mid=A.pos.clone().lerp(B.pos,0.5);mid.y=p.height;
+    nasc.curva=new THREE.QuadraticBezierCurve3(A.pos.clone(),mid,B.pos.clone());
+    const centro=A.pos.clone().lerp(B.pos,0.5);centro.y=(centro.y+p.height)/2;
+    focusOn(centro,Math.max(8,A.pos.distanceTo(B.pos)*1.25+5));
+    if(!rm){nasc.faisca=nascFaisca(p.color,0.11);nascArcoAplica(tk,0);nodePunch(A);}
+  }else if(m.tipo==="agente"){
+    const a=obj,n=byId(a.nodeId);
+    if(!n||!n.pos){nasc=null;nascTenta();return;}
+    nasc.dur=rm?1.2:2.4;
+    nascLegenda("Nova pessoa · "+a.name+" · "+abbrev(n.name));
+    focusOn(n.pos.clone(),Math.max(7,(n._rad||0.3)*16));
+    const sys=agentSystems.find(s=>s.node===n);
+    nasc.orb=sys?(sys.agents.find(o=>o.agent===a)||null):null;
+    if(nasc.orb&&!rm)nasc.orb.queda=1;
+  }else if(m.tipo==="procedimento"){
+    const p=obj;
+    nasc.dur=rm?1.4:Math.max(3.2,1.8+p.tasks.length*0.35);
+    nascLegenda("Novo procedimento · "+p.name);
+    rig.goal.target.set(0,p.height,0);
+    rig.goal.radius=Math.max(12,rGuide()*2.2+6);
+    rig.goal.phi=0.95;rig.auto=0;focusActive=true;
+    document.body.classList.add("has-focus");
+    if(p._label){nasc.lblScale=p._label.scale.clone();if(!rm)p._label.scale.setScalar(0.001);}
+    if(!rm)p.tasks.forEach(tk=>nascArcoAplica(tk,0));
+  }else{nasc=null;}
+}
+function stepNascimento(dt){
+  if(!nasc)return;
+  nasc.t+=dt;
+  const u=Math.min(1,nasc.t/nasc.dur),rm=reduceMotion;
+  const eo=x=>1-Math.pow(1-x,3);
+  const cl=(x,a,b)=>THREE.MathUtils.clamp((x-a)/(b-a),0,1);
+  /* um estado novo pode ter trocado os objetos: procura-se sempre por id */
+  const obj=nascAcha(nasc);
+  if(!obj){nascTermina();return;}
+  if(nasc.tipo==="nodulo"){
+    const n=obj;
+    if(!rm){
+      const g=Math.min(1,nasc.t/0.9);
+      n._nasce=g<1?eo(g)*(1+0.25*Math.sin(g*Math.PI)):1;
+      if(nasc.t>0.45&&!nasc.fez1){nasc.fez1=true;n._ripple={t:0,dur:1.2};}
+      if(nasc.t>0.9&&!nasc.fez2){nasc.fez2=true;n._flare={t:0};if(n.pos)pingAt(n.pos,Math.max(1.2,(n._rad||0.3)*4));}
+      if(nasc.faisca&&nasc.curva){
+        const s=cl(nasc.t,0.15,0.85);
+        nasc.curva.getPoint(s,nasc.faisca.position);
+        nasc.faisca.material.opacity=Math.sin(s*Math.PI)*0.95;
+      }
+    }
+  }else if(nasc.tipo==="tarefa"){
+    const tk=obj,B=byId(tk.b);
+    if(!rm){
+      const d=cl(nasc.t,0.35,1.85);
+      nascArcoAplica(tk,d);
+      if(nasc.faisca&&nasc.curva){
+        nasc.curva.getPoint(d,nasc.faisca.position);
+        nasc.faisca.material.opacity=Math.sin(d*Math.PI)*0.95;
+      }
+      if(d>=1&&!nasc.fez1&&B){nasc.fez1=true;B._flare={t:0};nodePunch(B);if(B.pos)pingAt(B.pos,1.2);}
+    }
+  }else if(nasc.tipo==="agente"){
+    const a=obj,n=byId(a.nodeId);
+    if(!rm&&n){
+      const g=Math.min(1,nasc.t/0.8);
+      if(nasc.orb)nasc.orb.queda=Math.max(0,1-eo(g));
+      if(g>=1&&!nasc.fez1){nasc.fez1=true;nodePunch(n);n._ripple={t:0,dur:1.0};n._flare={t:0};}
+    }
+  }else if(nasc.tipo==="procedimento"){
+    const p=obj;
+    if(!rm){
+      if(p._label&&nasc.lblScale){
+        const s=Math.min(1,nasc.t/0.7);
+        p._label.scale.copy(nasc.lblScale).multiplyScalar(Math.max(0.001,eo(s)*(1+0.3*Math.sin(s*Math.PI))));
+      }
+      const guia=p._group&&p._group.children[0];
+      if(guia&&guia.geometry){
+        const g=guia.geometry,total=g.index?g.index.count:g.attributes.position.count;
+        const r=cl(nasc.t,0,1.4);
+        g.setDrawRange(0,r>=1?Infinity:Math.floor(total*r));
+      }
+      p.tasks.forEach((tk,k)=>nascArcoAplica(tk,cl(nasc.t,0.6+k*0.35,1.2+k*0.35)));
+    }
+  }
+  if(u>=1)nascTermina();
+}
+function nascTermina(){
+  if(!nasc)return;
+  const obj=nascAcha(nasc);
+  if(nasc.tipo==="nodulo"&&obj)delete obj._nasce;
+  if(nasc.tipo==="tarefa"&&obj)nascArcoAplica(obj,1);
+  if(nasc.tipo==="agente"&&nasc.orb)nasc.orb.queda=0;
+  if(nasc.tipo==="procedimento"&&obj){
+    if(obj._label&&nasc.lblScale)obj._label.scale.copy(nasc.lblScale);
+    const guia=obj._group&&obj._group.children[0];
+    if(guia&&guia.geometry)guia.geometry.setDrawRange(0,Infinity);
+    obj.tasks.forEach(tk=>nascArcoAplica(tk,1));
+  }
+  if(nasc.faisca){scene.remove(nasc.faisca);nasc.faisca.geometry.dispose();nasc.faisca.material.dispose();}
+  /* a câmara volta ao que estava — a menos que a seleção tenha mudado entretanto */
+  if(nasc.sel===JSON.stringify(palcoSelMsg(selected))){
+    const pv=nasc.prev;
+    rig.goal.target.copy(pv.target);rig.goal.radius=pv.radius;rig.goal.phi=pv.phi;rig.auto=pv.auto;
+    focusActive=pv.focus;
+    if(!pv.focus)document.body.classList.remove("has-focus");
+  }
+  nasc=null;
+  nascTenta();
 }
 /* Um palco novo pede tudo: estado fresco, seleção, isolamento e tema. */
 function palcoRespondeOla(){
@@ -16637,6 +16874,10 @@ function initPalco(){
   bFS2.onclick=alternaEcraInteiro;
   pill.append(bFS2);
   document.body.append(pill);
+  const leg=el("div","glass");
+  leg.id="palcoLegenda";
+  leg.setAttribute("aria-live","polite");
+  document.body.append(leg);
   addEventListener("keydown",e=>{
     const tag=((e.target&&e.target.tagName)||"").toLowerCase();
     if(tag==="input"||tag==="textarea")return;

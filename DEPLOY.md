@@ -172,6 +172,7 @@ A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), 
 - **Definições do .exe** vivem em `definicoes.json`, ao lado da pasta de autosaves predefinida.
 - **Funciona sem internet**: o three.js vai dentro do pacote. As exportações PDF/PPTX continuam a precisar de rede na primeira utilização.
 - **Atalhos de teclado** remapeiam-se em Definições › Atalhos de teclado (tal como na versão web).
+- **Nascimentos no palco**: cada nódulo, tarefa, pessoa ou procedimento criado no ecrã principal entra em cena no palco com a sua animação (a câmara vai ver, uma legenda diz o que é, e volta ao que estava). Importações e colagens em massa não disparam animações. Funciona igualmente no palco da versão web.
 
 ### Construir
 
