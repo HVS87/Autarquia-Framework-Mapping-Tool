@@ -186,6 +186,15 @@ O script instala as dependências, prepara a pasta `app/` (copia a página e os 
 
 Para experimentar sem empacotar: `npm install` e `npm start` dentro de `desktop/` (abre a página da raiz do projeto; a pasta `autosaves/` nasce na raiz).
 
+Se o `electron-builder` falhar com "Cannot create symbolic link: A required privilege is not held by the client", é o pacote auxiliar `winCodeSign` a tentar criar ligações simbólicas (só a parte macOS, que aqui não serve). Ou se ativa o Modo de Programador do Windows (Definições › Sistema › Para programadores) e se repete o build, ou se descompacta o `.7z` à mão sem a pasta `darwin`:
+
+```powershell
+$c="$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign"
+.\node_modules\7zip-bin\win\x64\7za.exe x -y (Get-ChildItem $c -Filter *.7z)[0].FullName "-o$c\winCodeSign-2.6.0" "-xr!darwin"
+```
+
+O npm 11+ pede também autorização para o script pós-instalação do Electron (é ele que descarrega o binário): `npm approve-scripts electron` e depois `npm rebuild electron`.
+
 ---
 
 ## Atualizar a App

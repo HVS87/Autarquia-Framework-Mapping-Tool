@@ -1,4 +1,4 @@
-# Prepara a pasta "app" que vai dentro do executável: copia a aplicação e os
+﻿# Prepara a pasta "app" que vai dentro do executável: copia a aplicação e os
 # ícones, descarrega o three.js para o .exe funcionar sem internet, e aponta
 # a página para essa cópia local. Corre antes do electron-builder (npm run build).
 $ErrorActionPreference="Stop"

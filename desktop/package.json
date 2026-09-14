@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa — aplicação de secretária.",
   "main": "main.js",
+  "author": "HVS87",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -19,19 +20,33 @@
   "build": {
     "appId": "pt.autarquias.mapeamento",
     "productName": "Ferramenta de Mapeamento para Autarquias",
-    "directories": { "output": "dist" },
-    "files": [ "main.js", "preload.js", "app/**/*" ],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
     "win": {
-      "target": [ "portable", "nsis" ],
+      "target": [
+        "portable",
+        "nsis"
+      ],
       "icon": "app/icons/icon-512.png",
       "artifactName": "Mapeamento-Autarquias-${version}-${arch}.${ext}"
     },
-    "portable": { "artifactName": "Mapeamento-Autarquias-${version}-portatil.exe" },
+    "portable": {
+      "artifactName": "Mapeamento-Autarquias-${version}-portatil.exe"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "language": "2070",
       "shortcutName": "Mapeamento para Autarquias"
     }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
   }
 }
