@@ -974,6 +974,24 @@
   }
   .layer-pick button.sel{border-color:currentColor}
   .layer-pick button:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+  /* escolher o procedimento de uma tarefa nova: botão de criar, procura, lista que rola */
+  .proc-novo{display:block;width:100%;text-align:center;color:var(--gold);border-color:var(--gold);margin:6px 0 8px}
+  .proc-novo.sel{background:var(--gold);color:var(--bg-deep)}
+  .proc-procura{margin-bottom:6px}
+  .proc-lista{max-height:220px;overflow-y:auto;border:1px solid var(--hairline);border-radius:10px;
+    display:flex;flex-direction:column;background:rgba(255,255,255,0.02)}
+  .proc-item{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;text-align:left;
+    font:inherit;font-size:.74rem;color:var(--ink);background:none;border:0;
+    border-bottom:1px solid var(--hairline);padding:7px 9px;cursor:pointer}
+  .proc-item:last-child{border-bottom:0}
+  .proc-item:hover{background:rgba(128,128,128,0.10)}
+  .proc-item.sel{background:rgba(128,128,128,0.16);box-shadow:inset 3px 0 0 var(--gold)}
+  .proc-item:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+  .proc-item .swatch{width:9px;height:9px;flex:none}
+  .proc-item .proc-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .proc-item .proc-via{flex-basis:100%;font-size:.66rem;color:var(--ink-dim);padding-left:17px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.vp-touch .proc-item{padding:10px 10px}
   .chosen-target{
     display:flex;align-items:center;gap:8px;font-size:.78rem;
     padding:6px 9px;margin-top:4px;border:1px solid var(--hairline);border-radius:7px;
@@ -1488,6 +1506,10 @@
   .fc-index-row:hover{border-color:var(--gold)}
   .fc-index-row .nm{flex:1;min-width:0;font-size:.8rem;font-weight:600;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* o nome vai na cor do procedimento, e há cores que se esbatem na paleta —
+     um contorno leve a preto separa-o do fundo em qualquer tema */
+  .fc-index-row .nm{paint-order:stroke fill;-webkit-text-stroke:.55px rgba(0,0,0,.6);
+    text-shadow:0 1px 2px rgba(0,0,0,.45)}
   .fc-index-row .mini-chain{display:flex;align-items:center;gap:3px;flex:none}
   .fc-index-row .mini-chain i{width:6px;height:6px;border-radius:50%;background:currentColor;
     display:block;opacity:.75;font-style:normal}
@@ -6813,7 +6835,7 @@ function renderAgentsTab(){
    SELECTION + DETAIL PANEL
 ============================================================ */
 const detail=document.getElementById("detail");
-let selected=null,pendingTarget=null,pendingLayer=0,searchQuery="",newLayerMode=false,newLayerName="",groupPanelSearch="",groupAddSearch="";
+let selected=null,pendingTarget=null,pendingLayer=0,searchQuery="",procQuery="",newLayerMode=false,newLayerName="",groupPanelSearch="",groupAddSearch="";
 
 /* --- unified navigation: views are panel selections OR modal screens --- */
 const navStack=[],fwdStack=[];
@@ -6879,7 +6901,7 @@ function applySelection(sel){
   selKin=computeSelKin(sel);
   if(booted)palcoEnviaSelecao(sel);
   if(sel&&sel.type==="node"){
-    pendingTarget=null;searchQuery="";newLayerMode=false;
+    pendingTarget=null;searchQuery="";procQuery="";newLayerMode=false;
     focusOn(sel.node.pos,5);
   }else if(sel&&sel.type==="task"){
     const t=sel.task,A=byId(t.a),B=byId(t.b),p=processes[t.proc];
@@ -7689,19 +7711,15 @@ function renderNodeDetail(head,closeBtn){
     detail.append(chosen);
 
     detail.append(el("h4",null,"No procedimento"));
-    const pick=el("div","layer-pick");
-    processes.forEach((p,pi)=>{
-      const b=el("button",(!newLayerMode&&pi===pendingLayer)?"sel":"",p.name);
-      b.style.color=hex(p.color);
-      b.onclick=()=>{pendingLayer=pi;newLayerMode=false;renderDetail();};
-      pick.append(b);
-    });
-    const nb=el("button",newLayerMode?"sel":"","+ novo procedimento");
-    nb.style.color="var(--gold)";
-    nb.onclick=()=>{newLayerMode=true;renderDetail();};
-    pick.append(nb);
-    detail.append(pick);
-
+    /* Primeiro a porta para o novo; depois a procura e a lista, que rola em
+       vez de se espalhar em fichas quando há dezenas de procedimentos. A
+       procura apanha o nome do procedimento ou o de uma tarefa dele. */
+    if(!processes.length)newLayerMode=true;
+    if(!processes[pendingLayer])pendingLayer=0;
+    const nb=el("button","btn proc-novo"+(newLayerMode?" sel":""),"+ Criar novo procedimento");
+    nb.setAttribute("aria-pressed",String(newLayerMode));
+    nb.onclick=()=>{newLayerMode=!newLayerMode||!processes.length;renderDetail();};
+    detail.append(nb);
     if(newLayerMode){
       const nameIn=el("input","search-input");
       nameIn.placeholder="Nome do novo procedimento…";
@@ -7709,9 +7727,52 @@ function renderNodeDetail(head,closeBtn){
       nameIn.maxLength=28;
       nameIn.setAttribute("aria-label","Nome do novo procedimento");
       nameIn.addEventListener("input",()=>{newLayerName=nameIn.value;});
-      nameIn.style.marginTop="6px";
+      nameIn.style.margin="0 0 8px";
       detail.append(nameIn);
       setTimeout(()=>nameIn.focus(),0);
+    }
+    if(processes.length){
+      const pq=el("input","search-input proc-procura");
+      pq.type="text";
+      pq.placeholder="Procurar procedimento ou tarefa…";
+      pq.value=procQuery;
+      pq.setAttribute("aria-label","Procurar o procedimento pelo nome ou pelo nome de uma tarefa dele");
+      const lista=el("div","proc-lista");
+      lista.setAttribute("role","listbox");
+      lista.setAttribute("aria-label","Procedimentos");
+      const desenhaProcs=()=>{
+        lista.innerHTML="";
+        const q=procQuery.trim().toLowerCase();
+        let algum=false;
+        processes.forEach((p,pi)=>{
+          let via=null;
+          if(q&&!p.name.toLowerCase().includes(q)){
+            const tk=p.tasks.find(x=>((x.nome||"")+" "+(x.desc||"")).toLowerCase().includes(q));
+            if(!tk)return;
+            via=tk.nome||tk.desc||"";
+          }
+          algum=true;
+          const on=!newLayerMode&&pi===pendingLayer;
+          const b=el("button","proc-item"+(on?" sel":""));
+          b.setAttribute("role","option");
+          b.setAttribute("aria-selected",String(on));
+          b.innerHTML=`<span class="swatch" style="background:${hex(p.color)}"></span>`+
+            `<span class="proc-nome">${esc(p.name)}</span>`+
+            `<span class="layer-tag">${p.tasks.length} ${p.tasks.length===1?"tarefa":"tarefas"}</span>`+
+            (via?`<span class="proc-via">tarefa: ${esc(via)}</span>`:"");
+          b.onclick=()=>{pendingLayer=pi;newLayerMode=false;renderDetail();};
+          lista.append(b);
+        });
+        if(!algum)lista.append(el("div","empty-note","Nenhum procedimento (nem tarefa) com esse nome."));
+      };
+      pq.addEventListener("input",()=>{procQuery=pq.value;desenhaProcs();});
+      detail.append(pq,lista);
+      desenhaProcs();
+      setTimeout(()=>{
+        const s=lista.querySelector(".sel");
+        if(s&&s.scrollIntoView)s.scrollIntoView({block:"nearest"});
+        if(document.activeElement!==pq&&procQuery&&!newLayerMode)pq.focus();
+      },0);
     }
 
     const add=el("button","btn primary","Criar tarefa");
@@ -7725,7 +7786,7 @@ function renderNodeDetail(head,closeBtn){
       }
       const prim=primaryOf(n.id);
       const t=createTask(idx,n.id,pendingTarget.id,undefined,prim?prim.id:null);
-      pendingTarget=null;searchQuery="";
+      pendingTarget=null;searchQuery="";procQuery="";
       if(!t){flash("Não foi possível criar a tarefa.",{type:"err"});renderDetail();return;}
       selectTask(t);
     };
@@ -12555,7 +12616,7 @@ function newDataset(){
   nodes.length=0;
   agents.length=0;
   // Reset transient UI state
-  pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";newLayerMode=false;hoverNode=null;
+  pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";procQuery="";newLayerMode=false;hoverNode=null;
   // Restore the default four-tier scaffold
   TIER.length=0;DEFAULT_TIERS.forEach(t=>TIER.push({...t}));
   rebuildTierRings();
@@ -16036,7 +16097,7 @@ function restoreState(json){
     processes.length=0;groups.length=0;
     nodes.slice().forEach(disposeNodeVisual);
     nodes.length=0;agents.length=0;
-    pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";
+    pendingTarget=null;isolateProc=null;pendingLayer=0;searchQuery="";procQuery="";
     newLayerMode=false;hoverNode=null;hoverKin=null;lastHoverNode=null;
     TIER.length=0;
     // Mesmas guardas da importação: Infinity passaria num teste `typeof`
