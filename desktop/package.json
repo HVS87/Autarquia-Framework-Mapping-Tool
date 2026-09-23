@@ -1,7 +1,7 @@
 {
   "name": "mapeamento-autarquias-desktop",
   "productName": "Ferramenta de Mapeamento para Autarquias",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa — aplicação de secretária.",
   "main": "main.js",
   "author": "HVS87",
