@@ -172,6 +172,7 @@ A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), 
 - **Definições do .exe** vivem em `definicoes.json`, ao lado da pasta de autosaves predefinida.
 - **Funciona sem internet**: o three.js vai dentro do pacote. As exportações PDF/PPTX continuam a precisar de rede na primeira utilização.
 - **Atalhos de teclado** remapeiam-se em Definições › Atalhos de teclado (tal como na versão web).
+- **Desempenho** (Definições › Desempenho, na web e no .exe): *Automático* mede o tempo entre frames e, se a animação começar a perder frames, sobe um nível — *Completo* (todos os efeitos) → *Equilibrado* (sem desfoque por trás dos painéis, um pixel por pixel, sem poeira; ritmo inteiro) → *Leve* (o mesmo, a meio ritmo). Cada nível também se escolhe à mão e fica guardado.
 - **Nascimentos no palco**: cada nódulo, tarefa, pessoa ou procedimento criado no ecrã principal entra em cena no palco com a sua animação (a câmara vai ver, uma legenda diz o que é, e volta ao que estava). Importações e colagens em massa não disparam animações. Funciona igualmente no palco da versão web.
 - **Génese ao abrir o segundo ecrã**: quando a função de segundo ecrã abre o palco (automaticamente ou pelo interruptor), a organização inteira nasce com as mesmas coreografias — nível a nível, de cima para baixo, e depois os procedimentos, anel a anel, com a câmara afastada a rodar devagar (até ~16 s; no fim volta ao enquadramento normal). Os nascimentos avulsos que cheguem entretanto esperam pela sua vez.
 

@@ -331,6 +331,10 @@
   #atalhosRow>.btn{margin-top:8px}
   .kbd-nota{font-size:.68rem;color:var(--ink-dim)}
   .pasta-atual{font-size:.7rem;color:var(--gold);word-break:break-all;margin-bottom:6px}
+  /* modo leve: o desfoque por trás dos painéis é refeito a cada frame sobre o
+     canvas vivo — é o efeito mais caro que a página tem, e o primeiro a cair */
+  body.leve *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  body.leve #focusBlur{display:none!important}
   #ecraRow .row-name{flex:1}
   #palcoPill{position:fixed;right:14px;bottom:14px;z-index:60;display:flex;
     gap:10px;align-items:center;padding:8px 12px;border-radius:999px;
@@ -2477,6 +2481,8 @@
       <div id="atalhosRow"></div>
       <div class="mini-title" id="pastaTitulo" hidden>Autosaves e ficheiros</div>
       <div id="pastaRow"></div>
+      <div class="mini-title">Desempenho</div>
+      <div id="desempRow"></div>
       <div class="mini-title">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
@@ -3173,7 +3179,10 @@ const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,0.1,300);
    resto a funcionar e mostramos a mesma estrutura em SVG. */
 let noGL=false,renderer;
 try{
-  renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true,powerPreference:"high-performance"});
+  /* Sem preserveDrawingBuffer: custava uma cópia do buffer em cada frame só
+     para as exportações lerem o canvas — e essas já desenham um frame
+     próprio mesmo antes do toDataURL. */
+  renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:false,powerPreference:"high-performance"});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.setSize(innerWidth,innerHeight);
 }catch(e){
@@ -3958,7 +3967,18 @@ function setColorMode(m){
    HIERARCHY LINKS
 ============================================================ */
 const hierGroup=new THREE.Group();scene.add(hierGroup);
+/* Cada ligação era um mesh e cada faísca outro: oitenta chamadas de desenho
+   por frame só para o esqueleto. Agora os tubos fundem-se num único mesh com
+   a opacidade por vértice (atributo "alfa"), e as faíscas são um só
+   ponto-nuvem com alfa por ponto — duas chamadas em vez de oitenta, e a
+   mesma leitura. */
 const hierSparks=[],hierLinks=[];
+let hierMalha=null,hierPontos=null;
+const __v3=new THREE.Vector3();
+const HIER_VS="attribute float alfa;varying float vA;void main(){vA=alfa;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}";
+const HIER_FS="uniform vec3 cor;varying float vA;void main(){gl_FragColor=vec4(cor,vA);}";
+const FAISCA_VS="attribute float alfa;varying float vA;uniform float tam;uniform float escala;void main(){vA=alfa;vec4 mv=modelViewMatrix*vec4(position,1.0);gl_PointSize=tam*(escala/-mv.z);gl_Position=projectionMatrix*mv;}";
+const FAISCA_FS="uniform sampler2D mapa;uniform vec3 cor;varying float vA;void main(){vec4 tx=texture2D(mapa,gl_PointCoord);gl_FragColor=vec4(cor*tx.rgb,tx.a*vA);}";
 function rebuildHierLinks(){
   while(hierGroup.children.length){
     const m=hierGroup.children[0];
@@ -3966,6 +3986,8 @@ function rebuildHierLinks(){
     m.geometry.dispose();m.material.dispose();
   }
   hierSparks.length=0;hierLinks.length=0;
+  hierMalha=null;hierPontos=null;
+  const geoms=[];
   nodes.forEach(n=>{
     if(!n.parent||!byId(n.parent))return;
     const parent=byId(n.parent);
@@ -3973,22 +3995,56 @@ function rebuildHierLinks(){
     const A=parent.pos,B=n.pos;
     const mid=A.clone().lerp(B,0.5);mid.y+=0.15;
     const curve=new THREE.QuadraticBezierCurve3(A,mid,B);
-    const tube=new THREE.Mesh(
-      new THREE.TubeGeometry(curve,20,0.022,6,false),
-      new THREE.MeshBasicMaterial({color:GOLD,transparent:true,opacity:0.38})
-    );
-    hierGroup.add(tube);
-    hierLinks.push({mat:tube.material,pa:parent,pb:n});
-    // A spark drifting child → parent (accountability flows upward)
-    const spark=new THREE.Mesh(
-      new THREE.SphereGeometry(0.045,8,8),
-      new THREE.MeshBasicMaterial({color:GOLD,transparent:true,opacity:0,
-        blending:THREE.AdditiveBlending,depthWrite:false})
-    );
-    hierGroup.add(spark);
-    hierSparks.push({curve,mesh:spark,mat:spark.material,pa:parent,pb:n,
+    geoms.push(new THREE.TubeGeometry(curve,20,0.022,6,false));
+    hierLinks.push({pa:parent,pb:n,op:0.38,v0:0,v1:0});
+    // uma faísca a subir do filho para o pai (a responsabilidade sobe)
+    hierSparks.push({curve,pa:parent,pb:n,op:0,
       tt:Math.random(),speed:reduceMotion?0:0.05+Math.random()*0.04});
   });
+  if(!geoms.length)return;
+  let nv=0,ni=0;
+  geoms.forEach(g=>{nv+=g.attributes.position.count;ni+=g.index.count;});
+  const pos=new Float32Array(nv*3),alfa=new Float32Array(nv);
+  const idx=new (nv>65535?Uint32Array:Uint16Array)(ni);
+  let vo=0,io=0;
+  geoms.forEach((g,k)=>{
+    const c=g.attributes.position.count,ia=g.index.array;
+    pos.set(g.attributes.position.array,vo*3);
+    alfa.fill(0.38,vo,vo+c);
+    for(let j=0;j<ia.length;j++)idx[io+j]=ia[j]+vo;
+    hierLinks[k].v0=vo;hierLinks[k].v1=vo+c;
+    vo+=c;io+=ia.length;
+    g.dispose();
+  });
+  const mg=new THREE.BufferGeometry();
+  mg.setAttribute("position",new THREE.BufferAttribute(pos,3));
+  mg.setAttribute("alfa",new THREE.BufferAttribute(alfa,1));
+  mg.setIndex(new THREE.BufferAttribute(idx,1));
+  hierMalha=new THREE.Mesh(mg,new THREE.ShaderMaterial({
+    uniforms:{cor:{value:new THREE.Color(GOLD)}},
+    vertexShader:HIER_VS,fragmentShader:HIER_FS,transparent:true,depthWrite:false}));
+  hierMalha.frustumCulled=false;
+  hierGroup.add(hierMalha);
+  const N=hierSparks.length;
+  const pg=new THREE.BufferGeometry();
+  pg.setAttribute("position",new THREE.BufferAttribute(new Float32Array(N*3),3));
+  pg.setAttribute("alfa",new THREE.BufferAttribute(new Float32Array(N),1));
+  hierPontos=new THREE.Points(pg,new THREE.ShaderMaterial({
+    uniforms:{cor:{value:new THREE.Color(GOLD)},mapa:{value:glowTexture(GOLD)},tam:{value:0.17},escala:{value:400}},
+    vertexShader:FAISCA_VS,fragmentShader:FAISCA_FS,transparent:true,depthWrite:false,
+    blending:THEMES[themeId]&&THEMES[themeId].light?THREE.NormalBlending:THREE.AdditiveBlending}));
+  hierPontos.frustumCulled=false;
+  hierGroup.add(hierPontos);
+}
+/* escreve as opacidades calculadas no ciclo de desenho para o atributo */
+function hierAplicaAlfa(){
+  if(!hierMalha)return;
+  const al=hierMalha.geometry.attributes.alfa,arr=al.array;
+  for(let k=0;k<hierLinks.length;k++){
+    const L=hierLinks[k];
+    for(let j=L.v0;j<L.v1;j++)arr[j]=L.op;
+  }
+  al.needsUpdate=true;
 }
 
 /* ============================================================
@@ -4012,7 +4068,7 @@ function buildLayerVisual(p){
   );
   guide.rotation.x=-Math.PI/2;guide.position.y=p.height;
   grp.add(guide);
-  p._guideMat=guide.material;
+  p._guideMat=guide.material;p._guide=guide;
   p._label=null;
   p.refreshLabel=function(){
     if(p._label){grp.remove(p._label);disposeSprite(p._label);}
@@ -4074,6 +4130,7 @@ function buildTaskVisual(t){
     new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
   );
   proxy.userData.task=t;
+  proxy.visible=false;   // só para apontar: o raycaster não olha ao visible, o renderer sim
   p._group.add(proxy);taskPickables.push(proxy);
 
   t._tube=tube;t._mat=mat;t._cone=cone;t._coneMat=cone.material;t._proxy=proxy;
@@ -4199,7 +4256,7 @@ function disposeLayerVisual(p){
     if(m.isSprite)disposeSprite(m);
     else{m.geometry.dispose();m.material.dispose();}
   });
-  p._group=null;p._guideMat=null;p._label=null;
+  p._group=null;p._guideMat=null;p._guide=null;p._label=null;
 }
 function updateGround(){
   const visCount=processes.filter(pp=>pp._visible).length;
@@ -13037,7 +13094,12 @@ function applyTheme(id,opts){
   const blend=T0.light?THREE.NormalBlending:THREE.AdditiveBlending;
   const reblend=m=>{if(m.blending!==blend){m.blending=blend;m.needsUpdate=true;}};
   processes.forEach(p=>p.tasks.forEach(t=>{if(t._flowMat)reblend(t._flowMat);}));
-  hierSparks.forEach(sp=>reblend(sp.mat));
+  if(hierMalha)hierMalha.material.uniforms.cor.value.setHex(T0.gold);
+  if(hierPontos){
+    hierPontos.material.uniforms.cor.value.setHex(T0.gold);
+    hierPontos.material.uniforms.mapa.value=glowTexture(T0.gold);
+    reblend(hierPontos.material);
+  }
   if(starMats[1])reblend(starMats[1]);
   reblend(haloSprite.material);
   reblend(pingSprite.material);
@@ -13526,6 +13588,79 @@ document.getElementById("pptxBtn").onclick=exportPPTX;
 ============================================================ */
 const clock=new THREE.Clock();
 let __auroraFrame=0;
+/* ============================================================
+   DESEMPENHO — três níveis
+   0 completo: todos os efeitos. 1 equilibrado: sem desfoque por trás dos
+   painéis (é o que mais pesa nas placas integradas), um pixel por pixel,
+   sem poeira nem faíscas ambientais — ritmo inteiro. 2 leve: o mesmo, a
+   meio ritmo (um frame sim, outro não). Mede-se o tempo real entre frames
+   (média móvel); em "automático", se a média passar de 26 ms durante dois
+   segundos, sobe-se um nível, e volta-se a medir. Fica até ao fim da sessão
+   ou até a pessoa escolher outra coisa.
+============================================================ */
+const DESEMP_KEY="of.desempenho.v1";
+const NIVEIS={completo:0,equilibrado:1,leve:2};
+let desempenho=(function(){const v=storageGet(DESEMP_KEY);return (v in NIVEIS)?v:"auto";})();
+let nivel=0,leve=false,meioRitmo=false,leveSalta=false,frameEMA=16,lentoDesde=0,avisouNivel=0;
+function aplicaNivel(n){
+  n=Math.max(0,Math.min(2,n|0));
+  if(nivel===n)return;
+  nivel=n;leve=n>=1;meioRitmo=n>=2;
+  document.body.classList.toggle("leve",leve);
+  if(booted)settleViewport();   // repõe a densidade de pixels
+  atualizaNotaDesemp();
+}
+function defineDesempenho(v){
+  desempenho=v;
+  try{storageSet(DESEMP_KEY,v);}catch(e){}
+  aplicaNivel(v in NIVEIS?NIVEIS[v]:0);   // "automático" recomeça do completo e volta a medir
+  lentoDesde=0;
+  renderDesempRow();
+}
+function mideDesempenho(bruto){
+  /* uma pausa longa é mudança de separador ou janela minimizada, não lentidão */
+  if(bruto>0.25||document.visibilityState!=="visible")return;
+  const ms=bruto*1000*(meioRitmo?0.5:1);   // a meio ritmo cada chamada cobre dois frames
+  frameEMA+=(ms-frameEMA)*0.05;
+  if(desempenho!=="auto"||nivel>=2||clock.elapsedTime<5)return;
+  if(frameEMA>26){
+    if(!lentoDesde)lentoDesde=clock.elapsedTime;
+    if(clock.elapsedTime-lentoDesde>2){
+      aplicaNivel(nivel+1);
+      lentoDesde=0;frameEMA=Math.min(frameEMA,22);   // dá tempo ao nível novo antes de subir outra vez
+      if(avisouNivel<nivel){
+        avisouNivel=nivel;
+        flash((nivel===1?"Modo equilibrado ligado":"Modo leve ligado")+" — a animação estava a perder frames. Muda-se em Definições › Desempenho.",{key:"leve"});
+      }
+    }
+  }else lentoDesde=0;
+}
+function renderDesempRow(){
+  const host=document.getElementById("desempRow");
+  if(!host)return;
+  host.innerHTML="";
+  const pick=el("div","layer-pick");
+  [["auto","Automático"],["completo","Completo"],["equilibrado","Equilibrado"],["leve","Leve"]].forEach(([k,rot])=>{
+    const b=el("button",desempenho===k?"sel":"",rot);
+    b.setAttribute("aria-pressed",String(desempenho===k));
+    b.onclick=()=>defineDesempenho(k);
+    pick.append(b);
+  });
+  host.append(pick);
+  const nota=el("div","foot-note");
+  nota.id="desempNota";
+  host.append(nota);
+  atualizaNotaDesemp();
+}
+function atualizaNotaDesemp(){
+  const n=document.getElementById("desempNota");
+  if(!n)return;
+  const estado=["Modo completo: todos os efeitos.",
+    "Modo equilibrado: sem desfoque nos painéis, um pixel por pixel, sem poeira.",
+    "Modo leve: como o equilibrado, a meio ritmo (um frame sim, outro não)."][nivel];
+  n.textContent=estado+" Tempo médio por frame: "+Math.round(frameEMA)+" ms."
+    +(desempenho==="auto"?" O automático sobe um nível se a animação começar a perder frames.":"");
+}
 /* Label decluttering: with 40 nodes captions collide at some camera angles.
    Project them, keep the nearest of any overlapping pair, fade the rest. */
 let hoverTierIdx=null;
@@ -13554,7 +13689,12 @@ function updateDeclutter(){
 let uxTick=0;
 function animate(){
   requestAnimationFrame(animate);
-  const dt=Math.min(clock.getDelta(),0.05);
+  /* modo leve: um frame sim, outro não — trinta estáveis valem mais do que
+     quarenta e cinco aos soluços, e o resto da interface respira */
+  if(meioRitmo&&!reduceMotion&&(leveSalta=!leveSalta))return;
+  const bruto=clock.getDelta();
+  const dt=Math.min(bruto,0.05);
+  mideDesempenho(bruto);
   const t=clock.elapsedTime;
   const s=scenes[sceneIdx];
   // Cheap poll keeps the empty-state prompt correct without hooking every mutation
@@ -13570,6 +13710,7 @@ function animate(){
   if((uxTick&1)===0)updateChevrons();
   if((uxTick&63)===0)nodes.forEach(n=>{n._busy=nodeBusy(n);});
   if((uxTick&15)===0){updateWhereBar();drawRadar();}
+  if((uxTick&63)===0)atualizaNotaDesemp();
   tierRingGroup.children.forEach(r=>{
     const on=(hoverTierIdx!==null&&r.userData.tier===hoverTierIdx);
     const target=on?(0.34+(reduceMotion?0:Math.sin(t*3.2)*0.08)):0.09;
@@ -13610,14 +13751,15 @@ function animate(){
   // Poeira e faísca ocasional de um node ocupado
   {
     // A poeira é puro enfeite: num telemóvel só custa frames
-    const mt=(ambientOn&&!reduceMotion&&vpCls!=="phone")?0.5:0;
+    const mt=(ambientOn&&!reduceMotion&&vpCls!=="phone"&&!leve)?0.5:0;
     moteMat.opacity+=(mt-moteMat.opacity)*0.05;
+    motes.visible=moteMat.opacity>0.01;
     if(moteMat.opacity>0.01){
       motes.rotation.y+=0.05*dt;
       motes.position.y=Math.sin(t*0.12)*0.5;
     }
   }
-  if(ambientOn&&!reduceMotion){
+  if(ambientOn&&!reduceMotion&&!leve){
     sparkTimer+=dt;
     if(sparkTimer>7){
       sparkTimer=0;
@@ -13687,18 +13829,30 @@ function animate(){
       ht=(selMode.nos.has(L.pa.id)&&selMode.nos.has(L.pb.id))
         ?Math.max(ht,0.72*f):Math.min(ht,hierTarget*f*0.12);
     }
-    L.mat.opacity+=(ht-L.mat.opacity)*0.08;
+    L.op+=(ht-L.op)*0.08;
   });
+  hierAplicaAlfa();
   const sparkOn=s.show.hier&&!reduceMotion;
-  hierSparks.forEach(sp=>{
-    sp.tt=(sp.tt+sp.speed*dt)%1;
-    sp.curve.getPoint(1-sp.tt,sp.mesh.position); // child → parent
-    const fade=Math.sin(sp.tt*Math.PI);
-    const f=Math.min(sp.pa._presence!==undefined?sp.pa._presence:1,
-                     sp.pb._presence!==undefined?sp.pb._presence:1);
-    sp.mat.opacity+=(((sparkOn?0.75:0)*fade*f)-sp.mat.opacity)*0.1;
-  });
-  __auroraFrame=(__auroraFrame+1)%6;
+  if(hierPontos){
+    const pa=hierPontos.geometry.attributes.position,al=hierPontos.geometry.attributes.alfa;
+    let vivo=false;
+    for(let k=0;k<hierSparks.length;k++){
+      const sp=hierSparks[k];
+      sp.tt=(sp.tt+sp.speed*dt)%1;
+      sp.curve.getPoint(1-sp.tt,__v3);   // filho → pai
+      pa.setXYZ(k,__v3.x,__v3.y,__v3.z);
+      const fade=Math.sin(sp.tt*Math.PI);
+      const f=Math.min(sp.pa._presence!==undefined?sp.pa._presence:1,
+                       sp.pb._presence!==undefined?sp.pb._presence:1);
+      sp.op+=(((sparkOn?0.75:0)*fade*f)-sp.op)*0.1;
+      al.array[k]=sp.op;
+      if(sp.op>0.01)vivo=true;
+    }
+    pa.needsUpdate=true;al.needsUpdate=true;
+    hierPontos.material.uniforms.escala.value=renderer.domElement.height*0.5;
+    hierPontos.visible=vivo;
+  }
+  __auroraFrame=(__auroraFrame+1)%(leve?18:6);
   if(!reduceMotion&&__auroraFrame===0)aurora.draw(t*0.06);
   amb.color.lerp(mood.ambT,0.04);
   key.color.lerp(mood.keyT,0.04);
@@ -13738,6 +13892,8 @@ function animate(){
     p._guideMat.opacity+=(guideT-p._guideMat.opacity)*0.08;
     const lblT=!on?0:(dim?0.15:0.9);
     p._label.material.opacity+=(lblT-p._label.material.opacity)*0.08;
+    p._label.visible=p._label.material.opacity>0.02;
+    if(p._guide)p._guide.visible=p._guideMat.opacity>0.03;
 
     p.tasks.forEach(tk=>{
       if(!tk._mat)return;
@@ -13767,7 +13923,11 @@ function animate(){
         const fOn=on&&(effIsolate===null||effIsolate===i||isSel||isPlay);
         const fT=isPlay?1.0:(playDim?0:(fOn?(isSel?1.0:0.9):0));
         tk._flowMat.opacity+=(fT-tk._flowMat.opacity)*0.1;
+        tk._flow.visible=tk._flowMat.opacity>0.03;
       }
+      // apagado é apagado: um arco quase invisível continuava a custar uma chamada
+      tk._tube.visible=tk._mat.opacity>0.03;
+      tk._cone.visible=tk._coneMat.opacity>0.03;
     });
   });
 
@@ -13783,6 +13943,8 @@ function animate(){
   }else{
     haloSprite.material.opacity+=(0-haloSprite.material.opacity)*0.15;
   }
+  haloSprite.visible=haloSprite.material.opacity>0.01;
+  pingSprite.visible=!!ping;
   // While something is selected, only its own node(s) keep their captions
   let focusSet=null;
   if(selected){
@@ -13820,6 +13982,7 @@ function animate(){
     // Density: tiers past the chosen depth fade out (and stop being pickable)
     if(n.tier>densityMax)presT=0;
     n._presence+=(presT-n._presence)*0.08;
+    if(n._group)n._group.visible=n._presence>0.015;   // níveis além da densidade escolhida
     // Respiração ambiente + peso ao clicar, combinados numa só escala
     if(n._mesh){
       let sc=1;
@@ -14007,7 +14170,7 @@ function applyViewport(force){
   b.toggle("vp-touch",vp.touch);
 
   // Um telemóvel não tem fôlego para 3× de densidade de pixels nem para poeira
-  const cap=vp.cls==="phone"?1.5:(vp.cls==="tablet"?2:2);
+  const cap=leve?1:(vp.cls==="phone"?1.5:2);   // em modo leve, um pixel por pixel
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,cap));
   camera.aspect=vp.w/vp.h;
   camera.updateProjectionMatrix();
@@ -17098,6 +17261,8 @@ initDesktop();
 initPalco();
 renderAtalhosUI();
 refrescaKbdsAjuda();
+if(desempenho in NIVEIS)aplicaNivel(NIVEIS[desempenho]);
+renderDesempRow();
 settleViewport();         // classificar o aparelho assim que o ecrã assentar
 if(noGL)showFallback("Modo leve ativado — este computador não tem aceleração gráfica 3D.");
 applyFontScale(storageGet(FS_KEY));
