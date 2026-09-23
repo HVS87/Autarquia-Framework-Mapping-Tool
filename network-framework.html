@@ -916,7 +916,11 @@
   button.conn-row:hover{background:rgba(201,214,232,0.06)}
   button.conn-row:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
   /* flex-wrap: nomes de unidade longos passavam da largura do painel */
-  .conn-top{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap}
+  /* é um <button> dentro da linha: sem isto herdava o cinzento e o preto do
+     browser, e nos temas escuros o nome (tinta clara) ficava ilegível */
+  .conn-top{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap;
+    width:100%;text-align:left;background:transparent;border:0;padding:0;color:inherit;font:inherit}
+  .conn-top:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
   .conn-top:hover .conn-name{text-decoration:underline;text-decoration-color:var(--hairline)}
   .conn-row .layer-tag{font-size:.62rem;color:var(--ink-dim);margin-left:auto;white-space:nowrap}
   .conn-agent{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:.68rem;color:var(--ink-dim);flex-wrap:wrap}
@@ -5175,7 +5179,6 @@ menuBtn.onclick=()=>{
    Voltar a Home repõe tudo tal como estava.
 ============================================================ */
 const tabbar=document.getElementById("tabbar");
-const TAB_SEC={nodulos:"secUnidades",procedimentos:"secProc",agentes:"secPessoas",tarefas:"secTarefas",dados:"secDados",definicoes:"secDefinicoes"};
 function tabAtual(){
   if(modalView&&modalView.type==="orgchart")return "organograma";
   return document.body.dataset.tab||"home";
@@ -5238,7 +5241,6 @@ if(tabbar)tabbar.querySelectorAll(".tab").forEach(b=>{b.onclick=()=>setTab(b.dat
    listeners, as pesquisas e os botões — e voltam ao sítio quando se sai.
    Nada é duplicado; a página é o mesmo conteúdo com espaço para trabalhar.
 ============================================================ */
-const pageEl=document.getElementById("page");
 const pageBody=document.getElementById("pageBody");
 const casaDasSeccoes={};       // secId -> marcador da posição original no painel
 function levaParaPagina(secId){
