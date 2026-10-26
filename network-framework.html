@@ -16592,6 +16592,9 @@ function palcoAplicaSel(m){
     if(tk)applySelection({type:"task",task:tk});
   }else if(m.tipo==="agent"){const a=agentById(m.id);if(a)applySelection({type:"agent",agent:a});}
   else if(m.tipo==="group"){const g=groups.find(x=>x.id===m.id);if(g)applySelection({type:"group",group:g});}
+  /* a seleção espelhada aproxima a câmara (focusOn); se a espera já estiver
+     em cena, o enquadramento dela — mais afastado, com o holograma — prevalece */
+  if(foco&&idleObjs)idleComeca(false);
 }
 /* ---- Estado leve: quando só mudaram textos e datas, corrige-se no lugar ----
    Um restoreState custa dezenas de milissegundos (reconstrói os seiscentos
@@ -16641,7 +16644,7 @@ function palcoEstadoLeve(s){
 function palcoRecebe(m){
   if(!ehPalco||!m||!m.t)return;
   if(m.t==="estado"&&typeof m.s==="string"){
-    if(palcoEstadoLeve(m.s)){palcoEstadoAnterior=m.s;return;}
+    if(palcoEstadoLeve(m.s)){palcoEstadoAnterior=m.s;holoAtualiza();return;}
     palcoEstadoAnterior=m.s;
     /* O estado chega com atraso (debounce) e o restore limpa a seleção E o
        isolamento — ambos sobrevivem, reapontados aos objetos novos por id. */
@@ -17032,12 +17035,13 @@ function idleComeca(primeira){
   const objs={cor:GOLD};
   if(foco.tipo==="nodulo"){
     if(!o.pos){idleObjs=null;return;}
-    idleCamara(o.pos,Math.max(6.5,(o._rad||0.3)*15));
+    /* um pouco mais longe do que a seleção: o holograma paira acima do rótulo */
+    idleCamara(o.pos.clone().setY(o.pos.y+0.9),Math.max(8.5,(o._rad||0.3)*18));
     if(primeira)pingAt(o.pos,Math.max(1.2,(o._rad||0.3)*4));
   }else if(foco.tipo==="agente"){
     const n=byId(o.nodeId);
     if(!n||!n.pos){idleObjs=null;return;}
-    idleCamara(n.pos,Math.max(5.5,(n._rad||0.3)*13));
+    idleCamara(n.pos.clone().setY(n.pos.y+0.9),Math.max(7.5,(n._rad||0.3)*16));
     if(primeira)pingAt(n.pos,1.2);
   }else if(foco.tipo==="tarefa"){
     const A=byId(o.a),B=byId(o.b),p=processes[o.proc];
@@ -17059,11 +17063,12 @@ function idleComeca(primeira){
     idleFaisca.material.color.setHex(objs.cor);
     idleFaisca.material.opacity=0;idleFaisca.visible=true;
   }
+  holoComeca();
 }
 function stepIdle(dt){
   if(!foco)return;
   if(!idleObjs){if((uxTick&15)===0)idleComeca(false);return;}
-  if(nasc||genese)return;   // os nascimentos têm a vez; retoma-se depois
+  if(nasc||genese){holoEsconde();return;}   // os nascimentos têm a vez; retoma-se depois
   focoT+=dt;
   const o=nascAcha(foco);
   if(!o){idleObjs=null;return;}
@@ -17109,8 +17114,10 @@ function stepIdle(dt){
       }
     }else idleFaisca.material.opacity=0;
   }
+  stepHolo(dt);
 }
 function idleTermina(){
+  holoTermina();
   nodes.forEach(n=>{if(n._idle!==undefined)delete n._idle;});
   idleHalo.visible=false;idleHalo.material.opacity=0;
   if(idleFaisca){idleFaisca.visible=false;idleFaisca.material.opacity=0;}
@@ -17119,6 +17126,220 @@ function idleTermina(){
     if(selected)applySelection(selected);else releaseFocus();
   }
   idleObjs=null;foco=null;
+}
+/* ============================================================
+   HOLOGRAMA DE EDIÇÃO
+   Sobre o elemento em edição paira uma ficha translúcida, ligada a ele por
+   um feixe, onde os dados reais se escrevem letra a letra com o cursor a
+   piscar. Quando no ecrã principal se altera um campo, o valor reescreve-se
+   aqui a partir da letra que mudou. Glifos sobem pelo feixe e um anel pulsa
+   na base. Custo: um plano com textura de canvas (redesenhada só quando entra
+   uma letra ou o cursor pisca), um cone, um anel e dez sprites.
+============================================================ */
+let holo=null;
+const holoGlifos=[],holoDir=new THREE.Vector3();
+const HOLO_FONTE="'Cascadia Mono','Consolas','Courier New',monospace";
+function holoGlifoTex(ch){
+  holoGlifoTex.cache=holoGlifoTex.cache||{};
+  if(holoGlifoTex.cache[ch])return holoGlifoTex.cache[ch];
+  const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");
+  x.font="500 44px "+HOLO_FONTE;x.textAlign="center";x.textBaseline="middle";
+  x.fillStyle="#fff";x.fillText(ch,32,34);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;
+  return holoGlifoTex.cache[ch]=t;
+}
+/* A ficha: a primeira linha dá o tipo (vai para o cabeçalho) e o nome. */
+function holoLinhas(){
+  const o=foco?nascAcha(foco):null;if(!o)return null;
+  const L=[];
+  const procsTxt=n=>n+(n===1?" procedimento":" procedimentos");
+  const tarefasTxt=(nT,nP)=>nT?nT+" em "+procsTxt(nP):"nenhuma";
+  if(foco.tipo==="nodulo"){
+    const pai=o.parent?byId(o.parent):null,ps=agentsOf(o.id);
+    const procs=processes.filter(p=>p.tasks.some(t=>t.a===o.id||t.b===o.id));
+    const nT=procs.reduce((s,p)=>s+p.tasks.filter(t=>t.a===o.id||t.b===o.id).length,0);
+    L.push(["unidade",o.name],["nível",(TIER[o.tier]&&TIER[o.tier].label)||("N"+(o.tier+1))],
+      ["reporta a",pai?pai.name:"ninguém (topo)"],
+      ["pessoas",ps.length+(ps.some(a=>a.primary)?" (1 titular)":" (sem titular)")],
+      ["tarefas",tarefasTxt(nT,procs.length)],["estado","a editar"]);
+  }else if(foco.tipo==="agente"){
+    const n=byId(o.nodeId);
+    const procs=processes.filter(p=>p.tasks.some(t=>t.agent===o.id));
+    const nT=procs.reduce((s,p)=>s+p.tasks.filter(t=>t.agent===o.id).length,0);
+    L.push(["pessoa",o.name],["categoria",o.category||"sem categoria"],["unidade",n?n.name:"sem unidade"],
+      ["titular",o.primary?"sim":"não"],["tarefas",tarefasTxt(nT,procs.length)],
+      ["estado",o.absent?"ausente":"a editar"]);
+  }else if(foco.tipo==="tarefa"){
+    const A=byId(o.a),B=byId(o.b),ag=o.agent?agentById(o.agent):null;
+    L.push(["tarefa",o.nome||o.desc||"sem nome"],["de",A?A.name:"?"],["para",B?B.name:"?"],
+      ["dura",o.duration||"sem duração"],["quem",ag?ag.name:"ninguém"],["estado",rotuloEstado(o.estado)]);
+  }else if(foco.tipo==="procedimento"){
+    const st=procStats(o),unid=new Set();
+    o.tasks.forEach(t=>{unid.add(t.a);unid.add(t.b);});
+    L.push(["procedimento",o.name],
+      ["tarefas",o.tasks.length+" · "+unid.size+(unid.size===1?" unidade":" unidades")],
+      ["caminho",fmtDays(st.total)],["prazo",Number.isFinite(o.prazo)?fmtDays(o.prazo):"sem prazo"],
+      ["fases",String((o.fases||[]).length||"nenhuma")],["estado",o.done?"concluído":"a editar"]);
+  }else return null;
+  return L.map(l=>[String(l[0]),String(l[1])]);
+}
+/* cada valor tem de caber na linha: corta-se com reticências */
+function holoAjusta(x,L){
+  x.font="15px "+HOLO_FONTE;
+  L.forEach((l,i)=>{
+    const max=284-(i?x.measureText(l[0]+": ").width:0);   // 12 de margem à esquerda, 24 à direita para o cursor
+    let v=l[1];
+    while(v.length>1&&x.measureText(v).width>max)v=v.slice(0,-2)+"…";
+    l[1]=v;
+  });
+  return L;
+}
+function holoTotal(L){return L.reduce((s,l,k)=>s+(k?l[0].length+2:0)+l[1].length,0);}
+/* onde paira: base (o elemento), quanto sobe, e a escala do painel */
+function holoAncora(o){
+  /* acima do rótulo do nódulo (a pastilha com o nome e o titular), não em cima dele */
+  if(foco.tipo==="nodulo")return o.pos?{base:o.pos.clone(),sobe:(o._rad||0.3)+1.7,k:0.9}:null;
+  if(foco.tipo==="agente"){const n=byId(o.nodeId);return (n&&n.pos)?{base:n.pos.clone(),sobe:(n._rad||0.3)+1.7,k:0.9}:null;}
+  /* sobre o cume do arco, bem acima, para o tubo não lhe passar por cima */
+  if(foco.tipo==="tarefa")return (idleObjs&&idleObjs.curva)?{base:idleObjs.curva.getPoint(0.5),sobe:1.3,k:1.25}:null;
+  /* a câmara do procedimento vê o anel inteiro, de longe: o painel cresce com ele */
+  if(foco.tipo==="procedimento")return {base:new THREE.Vector3(0,o.height,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)};
+  return null;
+}
+function holoComeca(){
+  const o=foco?nascAcha(foco):null;
+  if(!o||!idleObjs){holoTermina();return;}
+  const sig=foco.tipo+":"+foco.id;
+  if(holo&&holo.sig===sig){holoAtualiza();return;}   // objetos novos, o mesmo elemento: continua a escrever
+  holoTermina();
+  const c=document.createElement("canvas");c.width=320;c.height=208;
+  const x=c.getContext("2d");
+  const L=holoLinhas();if(!L)return;
+  holoAjusta(x,L);
+  const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
+  const painel=new THREE.Mesh(new THREE.PlaneGeometry(3.2,2.08),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.95,depthWrite:false,side:THREE.DoubleSide}));
+  painel.renderOrder=12;
+  const feixe=new THREE.Mesh(new THREE.CylinderGeometry(1,0.04,1,14,1,true),
+    new THREE.MeshBasicMaterial({color:idleObjs.cor,transparent:true,opacity:0.16,depthWrite:false,
+      side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
+  const anel=new THREE.Mesh(new THREE.RingGeometry(0.85,1,40),
+    new THREE.MeshBasicMaterial({color:idleObjs.cor,transparent:true,opacity:0,depthWrite:false,
+      side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
+  anel.rotation.x=-Math.PI/2;
+  const grupo=new THREE.Group();grupo.add(feixe,anel,painel);scene.add(grupo);
+  holo={sig,c,x,tex,painel,feixe,anel,grupo,linhas:L,total:holoTotal(L),
+    chars:reduceMotion?Infinity:0,desenhado:-1,piscou:-1,fl:1,cor:idleObjs.cor,anelT:0,k:1,base:null,topo:0};
+  holoGlifos.forEach(g=>g.s.material.color.setHex(holo.cor));
+  holoPosiciona(o,0);holoDesenha(true);
+}
+function holoPosiciona(o,t){
+  const a=holoAncora(o);
+  if(!a){holo.grupo.visible=false;return;}
+  holo.grupo.visible=true;
+  const k=a.k,h=2.08*k;
+  const bob=reduceMotion?0:Math.sin(t*1.3)*0.06;
+  holo.painel.scale.setScalar(k);
+  holo.painel.position.set(a.base.x,a.base.y+a.sobe+h/2+bob,a.base.z);
+  holo.painel.quaternion.copy(camera.quaternion);holo.painel.rotateY(-0.22);
+  const y0=a.base.y,y1=holo.painel.position.y-h/2+0.05;
+  holo.feixe.position.set(a.base.x,(y0+y1)/2,a.base.z);
+  holo.feixe.scale.set(k,Math.max(0.05,y1-y0),k);
+  holo.anel.position.set(a.base.x,a.base.y+0.02,a.base.z);
+  holo.base=a.base;holo.topo=y1;holo.k=k;
+}
+function holoDesenha(force){
+  const h=holo,x=h.x,W=h.c.width,H=h.c.height;
+  const n=Math.min(h.total,Math.floor(h.chars));
+  const pisca=reduceMotion?1:Math.floor(focoT*2.6)%2;
+  if(!force&&n===h.desenhado&&pisca===h.piscou)return;
+  h.desenhado=n;h.piscou=pisca;
+  const cor=hex(h.cor);
+  x.clearRect(0,0,W,H);
+  x.fillStyle="rgba(16,26,44,0.78)";x.fillRect(0,0,W,H);
+  x.globalAlpha=0.32;x.fillStyle=cor;x.fillRect(0,0,W,24);x.globalAlpha=1;
+  x.globalAlpha=0.8;x.strokeStyle=cor;x.lineWidth=2;x.strokeRect(1,1,W-2,H-2);x.globalAlpha=1;
+  x.textBaseline="middle";
+  x.font="700 14px "+HOLO_FONTE;x.fillStyle="rgba(178,240,196,0.96)";x.fillText(h.linhas[0][0],10,12);x.fillStyle=cor;
+  x.fillRect(W-24,8,7,7);
+  x.font="15px "+HOLO_FONTE;
+  let resto=n,y=44,cur=[12,44];
+  h.linhas.forEach((l,i)=>{
+    const k=i?l[0]+": ":"",v=l[1];
+    const kk=k.slice(0,Math.max(0,Math.min(k.length,resto)));resto-=k.length;
+    const vv=resto>0?v.slice(0,Math.min(v.length,resto)):"";resto-=v.length;
+    x.fillStyle="rgba(150,210,170,0.8)";x.fillText(kk,12,y);
+    const kw=x.measureText(kk).width;
+    x.fillStyle="rgba(178,240,196,0.96)";x.fillText(vv,12+kw,y);
+    if(kk.length||vv.length||i===0)cur=[12+kw+x.measureText(vv).width,y];
+    if(kk.length<k.length||vv.length<v.length)resto=-1;   // o cursor fica onde se parou
+    y+=24;
+  });
+  if(pisca===0){x.fillStyle="rgba(178,240,196,0.96)";x.fillRect(Math.min(cur[0]+2,W-20),cur[1]-8,8,16);}
+  x.fillStyle="rgba(0,0,0,0.16)";
+  for(let s=0;s<H;s+=3)x.fillRect(0,s,W,1);
+  h.tex.needsUpdate=true;
+}
+/* O principal mudou um campo: a ficha reescreve-se a partir do valor que mudou. */
+function holoAtualiza(){
+  if(!holo||!foco)return;
+  const L=holoLinhas();if(!L)return;
+  holoAjusta(holo.x,L);
+  const velho=holo.linhas;
+  let i=L.findIndex((l,k)=>!velho[k]||velho[k][0]!==l[0]||velho[k][1]!==l[1]);
+  if(i<0&&L.length===velho.length)return;
+  holo.linhas=L;holo.total=holoTotal(L);
+  if(reduceMotion){holo.chars=Infinity;holoDesenha(true);return;}
+  if(i<0)i=L.length-1;
+  let inicio=0;
+  for(let k=0;k<i;k++)inicio+=(k?L[k][0].length+2:0)+L[k][1].length;
+  inicio+=(i?L[i][0].length+2:0);
+  holo.chars=Math.min(holo.chars,inicio);
+  holo.desenhado=-1;
+}
+function holoEsconde(){
+  if(holo)holo.grupo.visible=false;
+  holoGlifos.forEach(g=>g.s.visible=false);
+}
+function stepHolo(dt){
+  if(!holo||!foco)return;
+  const o=nascAcha(foco);if(!o)return;
+  holoPosiciona(o,focoT);
+  if(holo.chars<holo.total)holo.chars=Math.min(holo.total,holo.chars+dt*(22+8*Math.sin(focoT*7)));
+  if(!reduceMotion){if(Math.random()<0.03)holo.fl=0.75;holo.fl=Math.min(1,holo.fl+dt*3);}
+  holo.painel.material.opacity=0.95*holo.fl;
+  holoDesenha(false);
+  const vivo=!leve&&!reduceMotion&&!!holo.base;
+  holo.feixe.visible=vivo;holo.anel.visible=vivo;
+  if(!vivo){holoGlifos.forEach(g=>g.s.visible=false);return;}
+  holo.anelT+=dt;if(holo.anelT>1.8)holo.anelT=0;
+  const s=holo.anelT/1.8;
+  holo.anel.scale.setScalar((0.3+1.3*s)*holo.k);holo.anel.material.opacity=(1-s)*0.45;
+  if(!holoGlifos.length){
+    const chars="01<>{}/=;:";
+    for(let i=0;i<10;i++){
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:holoGlifoTex(chars[i]),color:holo.cor,
+        transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+      scene.add(sp);holoGlifos.push({s:sp,u:Math.random(),v:0.25+Math.random()*0.3,dx:Math.random()-0.5});
+    }
+  }
+  holoDir.set(1,0,0).applyQuaternion(camera.quaternion);
+  const alt=holo.topo-holo.base.y-0.15;
+  holoGlifos.forEach(g=>{
+    g.u-=dt*g.v;if(g.u<0){g.u=1;g.dx=Math.random()-0.5;}
+    const f=1-g.u,sp=f*holo.k*1.1;
+    g.s.position.set(holo.base.x+holoDir.x*g.dx*sp,holo.base.y+0.15+alt*f,holo.base.z+holoDir.z*g.dx*sp);
+    g.s.scale.setScalar(0.15*Math.min(holo.k,1));g.s.material.opacity=0.1+0.5*f;g.s.visible=true;
+  });
+}
+function holoTermina(){
+  if(!holo)return;
+  scene.remove(holo.grupo);
+  holo.tex.dispose();holo.painel.material.dispose();holo.painel.geometry.dispose();
+  holo.feixe.material.dispose();holo.feixe.geometry.dispose();
+  holo.anel.material.dispose();holo.anel.geometry.dispose();
+  holoGlifos.forEach(g=>g.s.visible=false);
+  holo=null;
 }
 /* Um palco novo pede tudo: estado fresco, seleção, isolamento, tema e foco. */
 function palcoRespondeOla(){
