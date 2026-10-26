@@ -13603,7 +13603,15 @@ let __auroraFrame=0;
 const DESEMP_KEY="of.desempenho.v1";
 const NIVEIS={completo:0,equilibrado:1,leve:2};
 let desempenho=(function(){const v=storageGet(DESEMP_KEY);return (v in NIVEIS)?v:"auto";})();
-let nivel=0,leve=false,meioRitmo=false,leveSalta=false,frameEMA=16,lentoDesde=0,avisouNivel=0;
+let nivel=0,leve=false,meioRitmo=false,saltoN=0,frameEMA=16,lentoDesde=0,avisouNivel=0;
+function ritmoPasso(){
+  let p=(meioRitmo&&!reduceMotion)?2:1;
+  if(!ehPalco&&palcoVivo){
+    const aEditar=document.body.classList.contains("page-open")||modal.classList.contains("open");
+    p=Math.max(p,aEditar?6:3);
+  }
+  return p;
+}
 function aplicaNivel(n){
   n=Math.max(0,Math.min(2,n|0));
   if(nivel===n)return;
@@ -13619,10 +13627,10 @@ function defineDesempenho(v){
   lentoDesde=0;
   renderDesempRow();
 }
-function mideDesempenho(bruto){
+function mideDesempenho(bruto,passo){
   /* uma pausa longa é mudança de separador ou janela minimizada, não lentidão */
   if(bruto>0.25||document.visibilityState!=="visible")return;
-  const ms=bruto*1000*(meioRitmo?0.5:1);   // a meio ritmo cada chamada cobre dois frames
+  const ms=bruto*1000/(passo||1);   // cada chamada cobre "passo" frames
   frameEMA+=(ms-frameEMA)*0.05;
   if(desempenho!=="auto"||nivel>=2||clock.elapsedTime<5)return;
   if(frameEMA>26){
@@ -13653,6 +13661,23 @@ function renderDesempRow(){
   nota.id="desempNota";
   host.append(nota);
   atualizaNotaDesemp();
+  if(ehDesktop&&!ehPalco){
+    let d={};try{d=window.desktop.definicoes()||{};}catch(e){}
+    host.append(el("div","mini-title","Motor gráfico"));
+    const pm=el("div","layer-pick");
+    pm.id="motorRow";
+    [[null,"Automático"],["vulkan","Vulkan"],["d3d9","Direct3D 9"],["gl","OpenGL"]].forEach(([k,rot])=>{
+      const b=el("button",(d.motor||null)===k?"sel":"",rot);
+      b.setAttribute("aria-pressed",String((d.motor||null)===k));
+      b.onclick=async()=>{
+        try{await window.desktop.definir("motor",k);}catch(e){}
+        flash("Motor gráfico: "+rot+". Aplica-se no próximo arranque da aplicação.",{key:"motor"});
+        renderDesempRow();
+      };
+      pm.append(b);
+    });
+    host.append(pm,el("div","foot-note","Se o segundo ecrã ficar preso a 30 frames por segundo, experimente Vulkan ou Direct3D 9 — alguns portáteis dividem os frames entre duas janelas com o motor automático."));
+  }
 }
 function atualizaNotaDesemp(){
   const n=document.getElementById("desempNota");
@@ -13691,12 +13716,16 @@ function updateDeclutter(){
 let uxTick=0;
 function animate(){
   requestAnimationFrame(animate);
-  /* modo leve: um frame sim, outro não — trinta estáveis valem mais do que
-     quarenta e cinco aos soluços, e o resto da interface respira */
-  if(meioRitmo&&!reduceMotion&&(leveSalta=!leveSalta))return;
+
+  /* ritmo: 1 normal; 2 a meio ritmo (modo leve); e, com o palco vivo, o ecrã
+     principal cede a placa gráfica ao segundo ecrã — 2, ou 4 quando um
+     editor lhe tapa o 3D. Trinta estáveis valem mais do que quarenta aos
+     soluços, e o resto da interface respira. */
+  const passo=ritmoPasso();
+  if(passo>1&&(++saltoN%passo)!==0)return;
   const bruto=clock.getDelta();
   const dt=Math.min(bruto,0.05);
-  mideDesempenho(bruto);
+  mideDesempenho(bruto,passo);
   const t=clock.elapsedTime;
   const s=scenes[sceneIdx];
   // Cheap poll keeps the empty-state prompt correct without hooking every mutation
@@ -13713,6 +13742,7 @@ function animate(){
   if((uxTick&63)===0)nodes.forEach(n=>{n._busy=nodeBusy(n);});
   if((uxTick&15)===0){updateWhereBar();drawRadar();}
   if((uxTick&63)===0)atualizaNotaDesemp();
+  if(ehPalco&&(uxTick%300)===0&&uxTick>600)palcoGrita({t:"ritmo",ema:Math.round(frameEMA)});
   tierRingGroup.children.forEach(r=>{
     const on=(hoverTierIdx!==null&&r.userData.tier===hoverTierIdx);
     const target=on?(0.34+(reduceMotion?0:Math.sin(t*3.2)*0.08)):0.09;
@@ -13884,6 +13914,7 @@ function animate(){
     m.opacity=m.userData.base+(reduceMotion?0:Math.sin(t*0.7+m.userData.phase)*0.12);
   });
 
+  stepIdle(dt);
   const selTask=(selected&&selected.type==="task")?selected.task:null;
   processes.forEach((p,i)=>{
     const on=s.show.procs&&p._visible;
@@ -14018,7 +14049,7 @@ function animate(){
     const emT=isSel?0.85:0.28;
     n._mesh.material.emissiveIntensity+=(emT-n._mesh.material.emissiveIntensity)*0.1;
     const glowBase=isSel?0.62:0.30;
-    let sparkBoost=0;
+    let sparkBoost=n._idle||0;   // em espera: o elemento editado respira
     if(n._spark){
       n._spark.t+=dt;
       const u=n._spark.t/1.1;
@@ -14034,7 +14065,7 @@ function animate(){
     // Labels: tiers 0–1 always on; outer tiers fade in as the camera approaches
     if(n._label){
       let lt;
-      if(isSel||n===hoverNode)lt=1;
+      if(isSel||n===hoverNode||n._idle!==undefined)lt=1;
       else if(focusSet&&!focusSet.has(n))lt=0.07;
       else if(n.tier<=1)lt=0.95;
       else{
@@ -16539,7 +16570,7 @@ function palcoEnviaEstado(){
     if(s===palcoUltimoEstado)return;
     palcoUltimoEstado=s;
     palcoEnvia({t:"estado",s:s});
-  },180);
+  },320);   // a escrever um nome, menos estados por segundo no palco
 }
 function palcoEnviaSelecao(sel){palcoEnvia(palcoSelMsg(sel));}
 function palcoEnviaIsola(){palcoEnvia({t:"isola",i:isolateProc});}
@@ -16562,9 +16593,56 @@ function palcoAplicaSel(m){
   }else if(m.tipo==="agent"){const a=agentById(m.id);if(a)applySelection({type:"agent",agent:a});}
   else if(m.tipo==="group"){const g=groups.find(x=>x.id===m.id);if(g)applySelection({type:"group",group:g});}
 }
+/* ---- Estado leve: quando só mudaram textos e datas, corrige-se no lugar ----
+   Um restoreState custa dezenas de milissegundos (reconstrói os seiscentos
+   objetos da cena); a escrever um nome no ecrã principal, isso era um soluço
+   por pausa no segundo ecrã. Se a estrutura for a mesma — os mesmos nódulos
+   nos mesmos lugares, as mesmas pessoas nas mesmas unidades, as mesmas
+   tarefas com as mesmas pontas —, só se tocam os campos que mudaram, e só
+   se refaz o rótulo de quem mudou de nome. */
+let palcoEstadoAnterior=null;
+function palcoEstadoLeve(s){
+  if(!palcoEstadoAnterior||!nodes.length)return false;
+  let novo,velho;
+  try{novo=JSON.parse(s);velho=JSON.parse(palcoEstadoAnterior);}catch(e){return false;}
+  const estrutura=o=>JSON.stringify({
+    t:o.tiers,
+    n:o.nodes.map(n=>[n.id,n.tier,n.angle,n.parent]),
+    a:o.agents.map(a=>[a.id,a.nodeId,!!a.primary,!!a.absent,a.subst||null]),
+    l:o.layers.map(q=>[q.id,q.color,!!q.visible,q.tasks.map(x=>[x.id,x.a,x.b])]),
+    g:o.groups.map(g=>[g.id,g.layers])
+  });
+  if(estrutura(novo)!==estrutura(velho))return false;
+  novo.nodes.forEach((nn,i)=>{
+    const vn=velho.nodes[i],n=byId(nn.id);
+    if(n&&nn.name!==vn.name){n.name=nn.name;refreshNodeVisual(n);}
+  });
+  const tocar=new Set();
+  novo.agents.forEach((na,i)=>{
+    const va=velho.agents[i],a=agentById(na.id);
+    if(a&&(na.name!==va.name||na.category!==va.category)){a.name=na.name;a.category=na.category;tocar.add(a.nodeId);}
+  });
+  tocar.forEach(id=>{const n=byId(id);if(n)refreshNodeVisual(n);});
+  novo.layers.forEach((np,i)=>{
+    const vp=velho.layers[i],q=layerById(np.id);
+    if(!q)return;
+    if(np.name!==vp.name){q.name=np.name;if(q.refreshLabel)q.refreshLabel();if(q._nameEl)q._nameEl.textContent=np.name;}
+    q.done=!!np.done;q.prazo=np.prazo;q.gatilho=np.gatilho;q.produto=np.produto;q.fases=np.fases;
+    np.tasks.forEach((nt,k)=>{
+      const x=q.tasks[k];
+      if(!x||x.id!==nt.id)return;
+      x.desc=nt.desc;x.nome=nt.nome;x.estado=nt.estado;x.link=nt.link;x.nota=nt.nota;x.agent=nt.agent;x.duration=nt.duration;
+    });
+  });
+  novo.groups.forEach(ng=>{const g=groups.find(x=>x.id===ng.id);if(g)g.name=ng.name;});
+  if(typeof novo.orgName==="string")orgName=novo.orgName;
+  return true;
+}
 function palcoRecebe(m){
   if(!ehPalco||!m||!m.t)return;
   if(m.t==="estado"&&typeof m.s==="string"){
+    if(palcoEstadoLeve(m.s)){palcoEstadoAnterior=m.s;return;}
+    palcoEstadoAnterior=m.s;
     /* O estado chega com atraso (debounce) e o restore limpa a seleção E o
        isolamento — ambos sobrevivem, reapontados aos objetos novos por id. */
     const guarda=palcoSelMsg(selected);
@@ -16580,8 +16658,10 @@ function palcoRecebe(m){
        os anúncios que esperavam por este estado ficam para depois da génese */
     if(!palcoTeveEstado){palcoTeveEstado=true;geneseComeca();}
     nascTenta();
+    if(foco){idleObjs=null;idleComeca(false);}   // os objetos são novos: reatar sem ping
   }
   else if(m.t==="nasce")palcoNasce(m);
+  else if(m.t==="foco")palcoFoco(m);
   else if(m.t==="sel")palcoAplicaSel(m);
   else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
   else if(m.t==="tema")applyTheme(m.id,{silent:true});
@@ -16653,6 +16733,10 @@ function nascArcoAplica(tk,u){
   if(tk._cone)tk._cone.scale.setScalar(u>=0.75?Math.min(1,(u-0.75)/0.12):0.001);
 }
 function nascArco(tk,p){
+  if(foco&&idleObjs&&!nasc){
+    if(foco.tipo==="tarefa"&&tk.id===foco.id)return 1;
+    if(foco.tipo==="procedimento"&&p.id===foco.id)return (p.tasks.indexOf(tk)===idleObjs.k)?1:0.62;
+  }
   if(!nasc)return null;
   if(nasc.tipo==="tarefa")return tk.id===nasc.id?1:null;
   if(nasc.tipo==="procedimento"&&p.id===nasc.id){
@@ -16800,6 +16884,7 @@ function nascTermina(){
 function nascGuia(p){
   if(nasc&&nasc.tipo==="procedimento"&&nasc.id===p.id)return 0.6;
   if(genese&&genese.guias.has(p.id))return 0.5;
+  if(foco&&idleObjs&&foco.tipo==="procedimento"&&p.id===foco.id)return 0.3+0.15*Math.sin(focoT*1.6);
   return null;
 }
 function geneseComeca(){
@@ -16879,16 +16964,186 @@ function geneseTermina(){
   genese=null;
   nascTenta();
 }
-/* Um palco novo pede tudo: estado fresco, seleção, isolamento e tema. */
+/* ---- O que está a ser editado, para o palco o pôr em cena ----
+   Por ordem de prioridade: a tarefa no editor, a tarefa aberta no fluxograma,
+   o procedimento no diagrama, o procedimento de uma criação guiada, e por fim
+   a seleção. Uma sondagem leve de três em três décimos basta: não há evento
+   único que apanhe todos os editores. */
+let ultimoFoco="";
+function contextoEdicao(){
+  if(teState&&teState.t)return {tipo:"tarefa",id:teState.t.id};
+  if(fcSel&&fcSel.id)return {tipo:"tarefa",id:fcSel.id};
+  if(modalView&&(modalView.type==="feynman"||modalView.type==="flowchart")&&modalView.layer)return {tipo:"procedimento",id:modalView.layer.id};
+  if(npState&&npState.p)return {tipo:"procedimento",id:npState.p.id};
+  if(selected){
+    if(selected.type==="node"&&selected.node)return {tipo:"nodulo",id:selected.node.id};
+    if(selected.type==="task"&&selected.task)return {tipo:"tarefa",id:selected.task.id};
+    if(selected.type==="agent"&&selected.agent)return {tipo:"agente",id:selected.agent.id};
+  }
+  return null;
+}
+function palcoEnviaFoco(forcar){
+  if(ehPalco||!booted)return;
+  const c=contextoEdicao();
+  const sig=c?c.tipo+":"+c.id:"";
+  if(!forcar&&sig===ultimoFoco)return;
+  ultimoFoco=sig;
+  palcoEnvia({t:"foco",tipo:c?c.tipo:null,id:c?c.id:null});
+}
+if(!ehPalco)setInterval(()=>palcoEnviaFoco(false),300);
+
+/* ============================================================
+   EM ESPERA NO PALCO
+   Enquanto no ecrã principal se edita um nódulo, uma pessoa, uma tarefa ou um
+   procedimento, o palco põe esse elemento em cena e mantém-no vivo: a câmara
+   orbita devagar, o elemento respira, as faíscas percorrem-lhe o caminho.
+   Barato por desenho — um só sprite e um só ponto por coreografia — para
+   nunca comprometer os sessenta frames. Cede a vez aos nascimentos e à
+   génese, e retoma quando acabam.
+============================================================ */
+let foco=null,focoT=0,idleObjs=null,idleFaisca=null;
+const idleHalo=(function(){
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:haloSprite.material.map,color:GOLD3D,transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,depthWrite:false}));
+  s.visible=false;scene.add(s);
+  return s;
+})();
+function palcoFoco(m){
+  if(!ehPalco)return;
+  const novo=(m&&m.tipo&&m.id)?{tipo:m.tipo,id:m.id}:null;
+  const sig=novo?novo.tipo+":"+novo.id:"",atual=foco?foco.tipo+":"+foco.id:"";
+  if(sig===atual)return;
+  idleTermina();
+  foco=novo;focoT=0;
+  if(foco)idleComeca(true);
+}
+/* a câmara da espera: sem o ping do focusOn, porque isto corre também a cada
+   estado novo (uma tecla numa renomeação) e um ping por tecla seria ruído */
+function idleCamara(ponto,raio){
+  focusActive=true;
+  rig.goal.target.copy(ponto);
+  rig.goal.radius=raio;
+  document.body.classList.add("has-focus");
+}
+function idleComeca(primeira){
+  const o=foco?nascAcha(foco):null;
+  if(!o){idleObjs=null;return;}   // o estado ainda não chegou: tenta-se de novo quando chegar
+  const objs={cor:GOLD};
+  if(foco.tipo==="nodulo"){
+    if(!o.pos){idleObjs=null;return;}
+    idleCamara(o.pos,Math.max(6.5,(o._rad||0.3)*15));
+    if(primeira)pingAt(o.pos,Math.max(1.2,(o._rad||0.3)*4));
+  }else if(foco.tipo==="agente"){
+    const n=byId(o.nodeId);
+    if(!n||!n.pos){idleObjs=null;return;}
+    idleCamara(n.pos,Math.max(5.5,(n._rad||0.3)*13));
+    if(primeira)pingAt(n.pos,1.2);
+  }else if(foco.tipo==="tarefa"){
+    const A=byId(o.a),B=byId(o.b),p=processes[o.proc];
+    if(!A||!B||!p||!A.pos||!B.pos){idleObjs=null;return;}
+    const mid=A.pos.clone().lerp(B.pos,0.5);mid.y=p.height;
+    objs.curva=new THREE.QuadraticBezierCurve3(A.pos.clone(),mid,B.pos.clone());
+    objs.cor=p.color;objs.uAnt=0;
+    const centro=A.pos.clone().lerp(B.pos,0.5);centro.y=(centro.y+p.height)/2;
+    idleCamara(centro,Math.max(7,A.pos.distanceTo(B.pos)*1.1+4));
+  }else if(foco.tipo==="procedimento"){
+    objs.cor=o.color;objs.k=-1;
+    idleCamara(new THREE.Vector3(0,o.height,0),Math.max(11,rGuide()*2.0+6));
+    rig.goal.phi=0.98;
+  }else{idleObjs=null;return;}
+  idleObjs=objs;
+  rig.auto=reduceMotion?0:0.085;   // órbita lenta: a cena nunca fica parada
+  if(foco.tipo==="tarefa"||foco.tipo==="procedimento"){
+    if(!idleFaisca)idleFaisca=nascFaisca(objs.cor,0.1);
+    idleFaisca.material.color.setHex(objs.cor);
+    idleFaisca.material.opacity=0;idleFaisca.visible=true;
+  }
+}
+function stepIdle(dt){
+  if(!foco)return;
+  if(!idleObjs){if((uxTick&15)===0)idleComeca(false);return;}
+  if(nasc||genese)return;   // os nascimentos têm a vez; retoma-se depois
+  focoT+=dt;
+  const o=nascAcha(foco);
+  if(!o){idleObjs=null;return;}
+  const pulso=0.5+0.5*Math.sin(focoT*1.6);
+  if(foco.tipo==="nodulo"){
+    o._idle=0.22+0.28*pulso;
+    if(focoT-(idleObjs.ultOnda||0)>3.4){idleObjs.ultOnda=focoT;if(!reduceMotion)o._ripple={t:0,dur:1.4};}
+  }else if(foco.tipo==="agente"){
+    const n=byId(o.nodeId);
+    const sys=n&&agentSystems.find(s=>s.node===n);
+    const orb=sys&&sys.agents.find(x=>x.agent===o);
+    if(n)n._idle=0.12+0.15*pulso;
+    if(orb){
+      orb.mesh.getWorldPosition(idleHalo.position);
+      idleHalo.scale.setScalar(0.55+0.18*pulso);
+      idleHalo.material.opacity=0.55+0.3*pulso;
+      idleHalo.visible=true;
+    }else idleHalo.visible=false;
+  }else if(foco.tipo==="tarefa"){
+    const u=(focoT*0.32)%1;
+    idleObjs.curva.getPoint(u,idleFaisca.position);
+    idleFaisca.material.opacity=reduceMotion?0:Math.sin(u*Math.PI)*0.9;
+    const A=byId(o.a),B=byId(o.b);
+    if(A)A._idle=0.15+0.25*Math.max(0,Math.cos(u*Math.PI));    // a origem brilha ao partir
+    if(B)B._idle=0.15+0.35*Math.max(0,-Math.cos(u*Math.PI));   // o destino ao chegar
+    if(u<idleObjs.uAnt&&B&&!reduceMotion)B._ripple={t:0,dur:1.0};
+    idleObjs.uAnt=u;
+  }else if(foco.tipo==="procedimento"){
+    const N=o.tasks.length;
+    if(N){
+      const ciclo=(focoT*0.45)%N,k=Math.floor(ciclo),u=ciclo-k;
+      const tk=o.tasks[k],A=byId(tk.a),B=byId(tk.b);
+      if(A&&B&&A.pos&&B.pos){
+        if(idleObjs.k!==k){
+          idleObjs.k=k;
+          const mid=A.pos.clone().lerp(B.pos,0.5);mid.y=o.height;
+          idleObjs.curva=new THREE.QuadraticBezierCurve3(A.pos.clone(),mid,B.pos.clone());
+          if(!reduceMotion)A._ripple={t:0,dur:0.9};
+        }
+        idleObjs.curva.getPoint(u,idleFaisca.position);
+        idleFaisca.material.opacity=reduceMotion?0:Math.sin(u*Math.PI)*0.9;
+        A._idle=0.3;B._idle=0.3*u;
+      }
+    }else idleFaisca.material.opacity=0;
+  }
+}
+function idleTermina(){
+  nodes.forEach(n=>{if(n._idle!==undefined)delete n._idle;});
+  idleHalo.visible=false;idleHalo.material.opacity=0;
+  if(idleFaisca){idleFaisca.visible=false;idleFaisca.material.opacity=0;}
+  if(idleObjs){
+    /* a câmara volta a quem manda: a seleção espelhada, ou a vista geral */
+    if(selected)applySelection(selected);else releaseFocus();
+  }
+  idleObjs=null;foco=null;
+}
+/* Um palco novo pede tudo: estado fresco, seleção, isolamento, tema e foco. */
 function palcoRespondeOla(){
   palcoUltimoEstado=null;
   palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
   palcoEnvia({t:"tema",id:themeId});
+  palcoEnviaFoco(true);
+}
+/* Em alguns portáteis, o motor gráfico por omissão (Direct3D 11) dá a cada uma
+   de duas janelas um vsync sim, outro não — o palco fica preso a trinta
+   frames por mais leve que seja a cena. O palco mede-se e avisa; o Vulkan ou
+   o Direct3D 9 (Definições › Motor gráfico) costumam resolver. */
+let avisouMotor=false;
+function palcoRitmo(ema){
+  if(!ehDesktop||avisouMotor||!(ema>=28&&ema<=36))return;
+  let d={};try{d=window.desktop.definicoes()||{};}catch(e){}
+  if(d.motor)return;   // já escolheu outro motor
+  avisouMotor=true;
+  flash("O segundo ecrã está preso a 30 frames por segundo. Em Definições › Motor gráfico, o Vulkan costuma resolver (pede um reinício).",{key:"motor"});
 }
 function palcoMensagem(m){
   if(ehPalco)palcoRecebe(m);
   else if(m&&m.t==="ola"){palcoVivo=true;palcoRespondeOla();}
   else if(m&&m.t==="adeus")palcoVivo=false;
+  else if(m&&m.t==="ritmo")palcoRitmo(m.ema);
 }
 if(palcoCanal)palcoCanal.onmessage=e=>palcoMensagem(e.data);
 if(ehDesktop)window.desktop.onPalco(palcoMensagem);

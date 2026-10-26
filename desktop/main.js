@@ -23,9 +23,11 @@ function pastaBase(){
 const BASE=pastaBase();
 const PASTA_AUTOSAVES_OMISSAO=path.join(BASE,"autosaves");
 const FICHEIRO_DEFS=path.join(BASE,"definicoes.json");
+/* MAPA_HTML aponta para outra página (uma cópia instrumentada para QA, por
+   exemplo); só faz sentido fora do pacote. */
 const HTML=app.isPackaged
   ?path.join(app.getAppPath(),"app","network-framework.html")
-  :path.join(__dirname,"..","network-framework.html");
+  :(process.env.MAPA_HTML||path.join(__dirname,"..","network-framework.html"));
 
 /* a pasta dos autosaves muda-se nas Definições; sem escolha, fica ao lado do exe */
 function pastaAutosaves(){
@@ -35,7 +37,7 @@ function pastaAutosaves(){
 function garantePasta(){try{fs.mkdirSync(pastaAutosaves(),{recursive:true});}catch(e){}}
 
 /* ---------- definições ---------- */
-const DEFS_OMISSAO={ecraInteiro:true,ecraAuto:null,pastaAutosaves:null};
+const DEFS_OMISSAO={ecraInteiro:true,ecraAuto:null,pastaAutosaves:null,motor:null};
 function lerDefs(){
   try{
     const d=JSON.parse(fs.readFileSync(FICHEIRO_DEFS,"utf8"));
@@ -192,6 +194,15 @@ ipcMain.on("palco-msg",(e,m)=>{
     if(!w.isDestroyed()&&w.webContents!==e.sender)w.webContents.send("palco-msg",m);
   });
 });
+
+/* O motor gráfico (backend ANGLE) escolhe-se nas Definições e aplica-se ao
+   arrancar: em alguns portáteis o Direct3D 11 dá a cada uma de duas janelas
+   um vsync sim, outro não — trinta frames por janela, por mais leve que seja
+   a cena; o Vulkan e o Direct3D 9 não. Sem escolha, fica o do Chromium. */
+{
+  const motor=lerDefs().motor;
+  if(["vulkan","d3d9","gl","d3d11"].includes(motor))app.commandLine.appendSwitch("use-angle",motor);
+}
 
 /* ---------- ciclo de vida ---------- */
 if(!app.requestSingleInstanceLock()){app.quit();}
