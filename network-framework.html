@@ -16667,7 +16667,18 @@ function palcoRecebe(m){
   else if(m.t==="foco")palcoFoco(m);
   else if(m.t==="sel")palcoAplicaSel(m);
   else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
-  else if(m.t==="tema")applyTheme(m.id,{silent:true});
+  else if(m.t==="tema"){applyTheme(m.id,{silent:true});holoTema();}
+}
+/* O tema mudou: o painel redesenha-se com as tintas novas e, se a moldura é o
+   dourado do tema (nódulo, pessoa), o feixe, o anel e os glifos acompanham. */
+function holoTema(){
+  if(!holo)return;
+  if(foco&&(foco.tipo==="nodulo"||foco.tipo==="agente")){
+    holo.cor=GOLD3D;
+    holo.feixe.material.color.setHex(GOLD3D);holo.anel.material.color.setHex(GOLD3D);
+    holoGlifos.forEach(g=>g.s.material.color.setHex(GOLD3D));
+  }
+  holo.desenhado=-1;
 }
 /* ============================================================
    NASCIMENTOS NO PALCO
@@ -17254,13 +17265,18 @@ function holoDesenha(force){
   const pisca=reduceMotion?1:Math.floor(focoT*2.6)%2;
   if(!force&&n===h.desenhado&&pisca===h.piscou)return;
   h.desenhado=n;h.piscou=pisca;
-  const cor=hex(h.cor);
+  /* as cores vêm do tema: o fundo e as tintas das pastilhas dos rótulos (o
+     holograma fica da família delas), a moldura na cor do elemento — o
+     dourado do tema para nódulos e pessoas, a cor do procedimento nas tarefas */
+  const T=THEMES[themeId]||THEMES.nocturno;
+  const cor=hex(h.cor),fundo=T.pill||T.css["--panel"],tinta=T.pillInk||T.css["--ink"],
+    tintaDim=T.pillSub||T.css["--ink-dim"],ouro=T.css["--gold"];
   x.clearRect(0,0,W,H);
-  x.fillStyle="rgba(16,26,44,0.78)";x.fillRect(0,0,W,H);
+  x.fillStyle=fundo;x.fillRect(0,0,W,H);
   x.globalAlpha=0.32;x.fillStyle=cor;x.fillRect(0,0,W,24);x.globalAlpha=1;
   x.globalAlpha=0.8;x.strokeStyle=cor;x.lineWidth=2;x.strokeRect(1,1,W-2,H-2);x.globalAlpha=1;
   x.textBaseline="middle";
-  x.font="700 14px "+HOLO_FONTE;x.fillStyle="rgba(178,240,196,0.96)";x.fillText(h.linhas[0][0],10,12);x.fillStyle=cor;
+  x.font="700 14px "+HOLO_FONTE;x.fillStyle=tinta;x.fillText(h.linhas[0][0],10,12);x.fillStyle=cor;
   x.fillRect(W-24,8,7,7);
   x.font="15px "+HOLO_FONTE;
   let resto=n,y=44,cur=[12,44];
@@ -17268,14 +17284,14 @@ function holoDesenha(force){
     const k=i?l[0]+": ":"",v=l[1];
     const kk=k.slice(0,Math.max(0,Math.min(k.length,resto)));resto-=k.length;
     const vv=resto>0?v.slice(0,Math.min(v.length,resto)):"";resto-=v.length;
-    x.fillStyle="rgba(150,210,170,0.8)";x.fillText(kk,12,y);
+    x.fillStyle=tintaDim;x.fillText(kk,12,y);
     const kw=x.measureText(kk).width;
-    x.fillStyle="rgba(178,240,196,0.96)";x.fillText(vv,12+kw,y);
+    x.fillStyle=tinta;x.fillText(vv,12+kw,y);
     if(kk.length||vv.length||i===0)cur=[12+kw+x.measureText(vv).width,y];
     if(kk.length<k.length||vv.length<v.length)resto=-1;   // o cursor fica onde se parou
     y+=24;
   });
-  if(pisca===0){x.fillStyle="rgba(178,240,196,0.96)";x.fillRect(Math.min(cur[0]+2,W-20),cur[1]-8,8,16);}
+  if(pisca===0){x.fillStyle=ouro;x.fillRect(Math.min(cur[0]+2,W-20),cur[1]-8,8,16);}
   x.fillStyle="rgba(0,0,0,0.16)";
   for(let s=0;s<H;s+=3)x.fillRect(0,s,W,1);
   h.tex.needsUpdate=true;
