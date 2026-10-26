@@ -7,7 +7,15 @@ Duas formas de a ter no Windows:
 
 Os executáveis não estão assinados digitalmente. Na primeira execução o SmartScreen mostra "Editor desconhecido" — *Mais informações › Executar mesmo assim*.
 
-### Novidades desta versão
+### Novidades desta versão (1.2.0)
+- **Em espera no palco**: enquanto no ecrã principal se edita um nódulo, uma pessoa, uma tarefa ou um procedimento, o segundo ecrã põe esse elemento em cena e mantém-no vivo — câmara em órbita lenta, o elemento a respirar, uma faísca a percorrer a tarefa ou o procedimento passo a passo.
+- **Holograma de edição**: sobre o elemento em edição paira uma ficha translúcida, nas tintas do tema, ligada a ele por um feixe com glifos a subir e um anel a pulsar; os dados reais escrevem-se letra a letra e cada campo alterado reescreve-se a partir da letra que mudou.
+- **Obra e radar**: uma unidade, pessoa ou procedimento acabados de criar constroem-se em estaleiro à medida que o nome se escreve (esqueleto, andaime, grua, partículas da peça-mãe); a escolher o destino de uma tarefa nova ou a unidade de uma pessoa nova, um radar varre até ao candidato.
+- **Dois ecrãs sem soluços**: cada tecla numa renomeação chega ao palco em ~1 ms (sem reconstruir a cena); o ecrã principal cede a placa gráfica ao palco; **Motor gráfico** em Definições › Desempenho (Vulkan para demonstrações a dois ecrãs em portáteis que prendem as janelas a 30 fps).
+- **Toque**: interruptores, amostras de cor, nomes e botões de escolha com alvos maiores em ecrãs tácteis.
+- **Desempenho**: o Automático já não desce de nível por causa do vsync dividido entre duas janelas; e as rondas de QA (web, telemóvel, tablet, .exe) não deixaram erros por fechar.
+
+### Novidades da 1.1.0
 - **Desempenho**: metade das chamadas de desenho e sem cópia do buffer por frame; três níveis em Definições › Desempenho (Completo · Equilibrado · Leve) e um Automático que sobe de nível se a animação perder frames.
 - **Nova tarefa a partir de um nódulo**: o procedimento escolhe-se por procura (pelo nome do procedimento ou de uma tarefa dele) ou numa lista que rola, com "Criar novo procedimento" em cima.
 - **Nascimentos no palco**: cada nódulo, tarefa, pessoa ou procedimento novo entra em cena no segundo ecrã com a sua animação; ao abrir o palco, a organização inteira nasce (génese).
