@@ -1374,10 +1374,17 @@
   body.vp-touch .switch{width:30px;height:17px}
   body.vp-touch .switch::after{width:12px;height:12px;top:1.5px}
   body.vp-touch .switch.on::after{transform:translateX(13px)}
+  /* O interruptor fica pequeno à vista mas o dedo apanha-o numa área de 44px:
+     um halo invisível à volta, que não mexe no desenho nem no espaçamento. */
+  body.vp-touch .switch::before{content:"";position:absolute;inset:-14px -8px}
+  body.vp-touch .swatch-btn{width:24px;height:24px}
+  body.vp-touch .row-name,body.vp-touch .pp-head .nm{min-height:28px;padding:5px 0}
+  body.vp-touch .layer-pick button{min-height:32px;padding:6px 10px}
+  body.vp-touch #procExplore [role="button"]{min-width:24px;min-height:24px}
   /* O nome da autarquia é editável no sítio, mas sendo texto sublinhado não
      tem altura própria: com o cabeçalho comprimido em modo deitado ficava com
      21px e era preciso acertar-lhe na linha. Uma altura mínima e um pouco de
-     folga em baixo dão-lhe um alvo em condições sem lhe mexer no aspecto. */
+     folga em baixo dão-lhe um alvo em condições sem lhe mexer no aspeto. */
   body.vp-touch #orgName{min-height:28px;padding-bottom:4px}
 
   /* A rotação não deve ser uma animação: o que muda, muda já */
@@ -13639,7 +13646,13 @@ function mideDesempenho(bruto,passo){
   const ms=bruto*1000/(passo||1);   // cada chamada cobre "passo" frames
   frameEMA+=(ms-frameEMA)*0.05;
   if(desempenho!=="auto"||nivel>=2||clock.elapsedTime<5)return;
-  if(frameEMA>26){
+  /* Só a média conta: uma tremura de frames isolados (um em sete a dobrar)
+     vem do motor gráfico e não do peso da cena — subir de nível não a cura e
+     custava metade dos frames no palco. E com duas janelas presas a trinta
+     pelo motor por omissão (28–36 ms certinhos), subir de nível também não
+     ganha um frame: fica o aviso do motor gráfico, não a degradação. */
+  const dividido=ehDesktop&&(ehPalco||palcoVivo)&&frameEMA>=28&&frameEMA<=36;
+  if(frameEMA>26&&!dividido){
     if(!lentoDesde)lentoDesde=clock.elapsedTime;
     if(clock.elapsedTime-lentoDesde>2){
       aplicaNivel(nivel+1);
@@ -13682,7 +13695,7 @@ function renderDesempRow(){
       };
       pm.append(b);
     });
-    host.append(pm,el("div","foot-note","Se o segundo ecrã ficar preso a 30 frames por segundo, experimente Vulkan ou Direct3D 9 — alguns portáteis dividem os frames entre duas janelas com o motor automático."));
+    host.append(pm,el("div","foot-note","Com um só ecrã, o automático (Direct3D 11) é o mais estável. Se o segundo ecrã ficar preso a 30 frames por segundo, experimente Vulkan — alguns portáteis dividem os frames entre duas janelas com o motor automático. Direct3D 9 e OpenGL servem só como recurso: em placas integradas podem ficar lentos."));
   }
 }
 function atualizaNotaDesemp(){
