@@ -2945,6 +2945,8 @@ function addAgent(nodeId, primary, category, name){
   // chamar isto com primary=true numa unidade que já tem titular passa a
   // render-lhe o lugar em vez de criar dois responsáveis em simultâneo.
   if(a.primary)agentsOf(nodeId).forEach(x=>{x.primary=false;});
+  a._nomeInicial=a.name;
+  if(booted&&!palcoMudo&&!criandoNodulo)a._novo=true;
   agents.push(a);
   markDirty();
   if(booted)questMark("agent");
@@ -4191,6 +4193,8 @@ function createNode(opts){
   const n={id:opts.id||("x"+(++customNodeCounter)+"_"+Date.now().toString(36)),
     name:opts.name||"Novo Nódulo",tier,angle,parent,custom:true};
   n.pos=nodePos(n);
+  n._nomeInicial=n.name;
+  if(booted&&!palcoMudo)n._novo=true;   // em construção até ter nome (ver contextoEdicao)
   nodes.push(n);
   applyRingRelax(tier);
   computeColors();
@@ -4244,6 +4248,8 @@ function changeNodeTier(n,newTier){
 function createLayer(name,color){
   const p=makeLayerData(name||("Novo Procedimento "+processes.length),
     color!==undefined?color:LAYER_COLORS[processes.length%LAYER_COLORS.length]);
+  p._nomeInicial=p.name;
+  if(booted&&!palcoMudo)p._novo=true;
   buildLayerVisual(p);
   addLayerRow(p);
   relayoutLayers();
@@ -10816,7 +10822,7 @@ function renderFeynman(p){
 ============================================================ */
 const nodePickEl=document.getElementById("nodePick");
 const agentPickEl=document.getElementById("agentPick");
-let npState=null,apState=null;
+let npState=null,apState=null,npPairado=null;
 function closeNodePick(){nodePickEl.classList.remove("open");npState=null;}
 function closeAgentPick(){agentPickEl.classList.remove("open");apState=null;}
 document.getElementById("npCancel").onclick=()=>closeNodePick();
@@ -10965,8 +10971,8 @@ function buildNodePick(){
       const tt=g.querySelector("title");
       if(tt)tt.textContent+=" — etapa de: "+[...new Set(eta.map(x=>x.p.name))].join(", ");
     }
-    g.addEventListener("pointerenter",()=>{g.classList.add("pk-hover");pairado=n.id;aplicaTamanhos();});
-    g.addEventListener("pointerleave",()=>{g.classList.remove("pk-hover");if(pairado===n.id){pairado=null;aplicaTamanhos();}});
+    g.addEventListener("pointerenter",()=>{g.classList.add("pk-hover");pairado=npPairado=n.id;aplicaTamanhos();});
+    g.addEventListener("pointerleave",()=>{g.classList.remove("pk-hover");if(pairado===n.id){pairado=npPairado=null;aplicaTamanhos();}});
     const escolhe=()=>{npPick(n,g,ancoraFio);aplicaTamanhos();};
     g.addEventListener("click",escolhe);
     g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();escolhe();}});
@@ -16207,6 +16213,7 @@ function inlineRename(host,getVal,setVal,maxLen){
   const old=getVal();
   const inp=el("input");
   inp.type="text";inp.value=old;inp.maxLength=maxLen||40;
+  inp.setAttribute("aria-label","Novo nome");
   inp.style.font="inherit";inp.style.width="100%";inp.style.minWidth="90px";
   const prev=host.textContent;
   host.textContent="";
@@ -16889,6 +16896,8 @@ function nascTermina(){
   }
   nasc=null;
   nascTenta();
+  /* a espera (e a obra) retomam o seu enquadramento, que o nascimento tinha desfeito */
+  if(!nasc&&!genese&&foco&&idleObjs)idleComeca(false);
 }
 /* ---- Génese: o palco abre (segundo ecrã) e a organização inteira nasce com
    as mesmas coreografias — nível a nível, de cima para baixo, e depois os
@@ -16977,32 +16986,81 @@ function geneseTermina(){
   }
   genese=null;
   nascTenta();
+  if(!nasc&&!genese&&foco&&idleObjs)idleComeca(false);
 }
 /* ---- O que está a ser editado, para o palco o pôr em cena ----
    Por ordem de prioridade: a tarefa no editor, a tarefa aberta no fluxograma,
    o procedimento no diagrama, o procedimento de uma criação guiada, e por fim
    a seleção. Uma sondagem leve de três em três décimos basta: não há evento
    único que apanhe todos os editores. */
-let ultimoFoco="";
+let ultimoFoco="",focoObjAnterior=null;
+/* O campo onde se está a escrever um nome (título do nódulo, da pessoa, do
+   procedimento, renomear no sítio): o palco escreve-o letra a letra. */
+function campoNome(){
+  const a=document.activeElement;
+  if(!a||!(a.tagName==="INPUT"||a.tagName==="TEXTAREA"))return null;
+  const s=(a.getAttribute("aria-label")||"")+" "+(a.placeholder||"");
+  return /\bnome\b/i.test(s)?a:null;
+}
+/* Uma peça acabada de criar está "em construção" enquanto tiver o nome
+   provisório ou enquanto o nome novo ainda se escreve; fica construída quando
+   o nome mudou e se saiu do campo — ou quando se passa a outra coisa. */
+function marcaNovo(c,o){
+  if(!o||!o._novo)return c;
+  const campo=campoNome();
+  if(o.name!==o._nomeInicial&&!campo){delete o._novo;return c;}
+  c.novo=true;c.inicial=o._nomeInicial;c.nome=campo?campo.value:o.name;
+  return c;
+}
 function contextoEdicao(){
+  /* procuras: o seletor de nódulos aberto para uma tarefa ou uma pessoa nova */
+  if(npState&&nodePickEl.classList.contains("open")){
+    if(npState.modo==="agente")return {tipo:"procura",de:"agente",alvo:npPairado};
+    if(!npState.modo||npState.modo==="retarget")
+      return {tipo:"procura",de:"tarefa",origem:npState.origem?npState.origem.id:null,
+        pid:npState.p?npState.p.id:null,alvo:npPairado};
+  }
   if(teState&&teState.t)return {tipo:"tarefa",id:teState.t.id};
   if(fcSel&&fcSel.id)return {tipo:"tarefa",id:fcSel.id};
-  if(modalView&&(modalView.type==="feynman"||modalView.type==="flowchart")&&modalView.layer)return {tipo:"procedimento",id:modalView.layer.id};
-  if(npState&&npState.p)return {tipo:"procedimento",id:npState.p.id};
+  if(modalView&&(modalView.type==="feynman"||modalView.type==="flowchart")&&modalView.layer)return marcaNovo({tipo:"procedimento",id:modalView.layer.id},modalView.layer);
+  if(npState&&npState.p)return marcaNovo({tipo:"procedimento",id:npState.p.id},npState.p);
   if(selected){
-    if(selected.type==="node"&&selected.node)return {tipo:"nodulo",id:selected.node.id};
+    if(selected.type==="node"&&selected.node){
+      const n=selected.node;
+      if(pendingTarget&&newLayerMode){
+        const campo=campoNome();
+        return {tipo:"novo",de:"procedimento",origem:n.id,alvo:pendingTarget.id,nome:campo?campo.value:newLayerName};
+      }
+      if(!pendingTarget&&searchQuery.trim()){
+        const q=searchQuery.trim().toLowerCase();
+        const hit=nodes.find(m=>m.id!==n.id&&m.name.toLowerCase().includes(q));
+        return {tipo:"procura",de:"tarefa",origem:n.id,alvo:hit?hit.id:null};
+      }
+      return marcaNovo({tipo:"nodulo",id:n.id},n);
+    }
     if(selected.type==="task"&&selected.task)return {tipo:"tarefa",id:selected.task.id};
-    if(selected.type==="agent"&&selected.agent)return {tipo:"agente",id:selected.agent.id};
+    if(selected.type==="agent"&&selected.agent)return marcaNovo({tipo:"agente",id:selected.agent.id},selected.agent);
   }
+  return null;
+}
+function objDoContexto(c){
+  if(!c||!c.id)return null;
+  if(c.tipo==="nodulo")return byId(c.id);
+  if(c.tipo==="agente")return agentById(c.id);
+  if(c.tipo==="procedimento")return layerById(c.id);
   return null;
 }
 function palcoEnviaFoco(forcar){
   if(ehPalco||!booted)return;
   const c=contextoEdicao();
-  const sig=c?c.tipo+":"+c.id:"";
+  /* passar a outra coisa dá a obra por construída */
+  const o=objDoContexto(c);
+  if(focoObjAnterior&&focoObjAnterior!==o&&focoObjAnterior._novo)delete focoObjAnterior._novo;
+  focoObjAnterior=o;
+  const sig=c?JSON.stringify(c):"";
   if(!forcar&&sig===ultimoFoco)return;
   ultimoFoco=sig;
-  palcoEnvia({t:"foco",tipo:c?c.tipo:null,id:c?c.id:null});
+  palcoEnvia(Object.assign({t:"foco",tipo:null,id:null},c||{}));
 }
 if(!ehPalco)setInterval(()=>palcoEnviaFoco(false),300);
 
@@ -17025,12 +17083,28 @@ const idleHalo=(function(){
 })();
 function palcoFoco(m){
   if(!ehPalco)return;
-  const novo=(m&&m.tipo&&m.id)?{tipo:m.tipo,id:m.id}:null;
-  const sig=novo?novo.tipo+":"+novo.id:"",atual=foco?foco.tipo+":"+foco.id:"";
-  if(sig===atual)return;
+  let novo=null;
+  if(m&&m.tipo&&(m.id||m.tipo==="novo"||m.tipo==="procura")){novo=Object.assign({},m);delete novo.t;}
+  const chave=f=>f?[f.tipo,f.id||"",f.de||"",f.origem||"",f.pid||""].join(":"):"";
+  if(novo&&foco&&chave(novo)===chave(foco)){
+    /* o mesmo elemento: só mudou o nome a escrever, o alvo da procura, ou a obra acabou */
+    const acabou=!!foco.novo&&!novo.novo;
+    delete foco.nome;delete foco.alvo;delete foco.novo;delete foco.inicial;
+    Object.assign(foco,novo);
+    if(acabou)obraConclui();
+    if(holo)holoAtualiza();
+    return;
+  }
+  if(!novo&&!foco)return;
   idleTermina();
   foco=novo;focoT=0;
   if(foco)idleComeca(true);
+}
+/* O objeto do foco — ou um substituto para o que ainda não existe. */
+function focoObj(){
+  if(!foco)return null;
+  if(foco.tipo==="novo"||foco.tipo==="procura")return {virtual:true};
+  return nascAcha(foco);
 }
 /* a câmara da espera: sem o ping do focusOn, porque isto corre também a cada
    estado novo (uma tecla numa renomeação) e um ping por tecla seria ruído */
@@ -17041,7 +17115,7 @@ function idleCamara(ponto,raio){
   document.body.classList.add("has-focus");
 }
 function idleComeca(primeira){
-  const o=foco?nascAcha(foco):null;
+  const o=focoObj();
   if(!o){idleObjs=null;return;}   // o estado ainda não chegou: tenta-se de novo quando chegar
   const objs={cor:GOLD};
   if(foco.tipo==="nodulo"){
@@ -17064,10 +17138,25 @@ function idleComeca(primeira){
     idleCamara(centro,Math.max(7,A.pos.distanceTo(B.pos)*1.1+4));
   }else if(foco.tipo==="procedimento"){
     objs.cor=o.color;objs.k=-1;
-    idleCamara(new THREE.Vector3(0,o.height,0),Math.max(11,rGuide()*2.0+6));
-    rig.goal.phi=0.98;
+    const fundo=!!ground&&o.height<ground.position.y-0.5;   // um anel por baixo do chão vê-se de baixo, de lado
+    idleCamara(new THREE.Vector3(0,o.height,0),fundo?Math.max(11,rGuide()*1.5+4):Math.max(11,rGuide()*2.0+6));
+    rig.goal.phi=fundo?1.45:0.98;
+  }else if(foco.tipo==="novo"){
+    /* um procedimento que ainda não existe: um anel fantasma à altura que lhe cabe */
+    const hs=processes.map(p2=>p2.height).filter(Number.isFinite);
+    objs.cor=LAYER_COLORS[processes.length%LAYER_COLORS.length];
+    objs.altura=hs.length?Math.min.apply(null,hs)-1.15:layerHeight(0);   // o anel seguinte, abaixo do mais fundo
+    idleCamara(new THREE.Vector3(0,objs.altura,0),Math.max(11,rGuide()*1.5+4));
+    /* um anel fundo vê-se de lado, por baixo do chão — de cima só se veria o pavimento */
+    rig.goal.phi=(ground&&objs.altura<ground.position.y-0.5)?1.45:0.98;
+  }else if(foco.tipo==="procura"){
+    const org=foco.origem?byId(foco.origem):null;
+    if(org&&org.pos)idleCamara(org.pos.clone().setY(org.pos.y+0.6),Math.max(9,(org._rad||0.3)*18));
+    else idleCamara(new THREE.Vector3(0,lowestTierY()+0.5,0),Math.max(14,rGuide()*2.2+6));
   }else{idleObjs=null;return;}
   idleObjs=objs;
+  if(foco.tipo==="procura")procuraComeca();
+  else if(foco.novo||foco.tipo==="novo")obraComeca();
   rig.auto=reduceMotion?0:0.085;   // órbita lenta: a cena nunca fica parada
   if(foco.tipo==="tarefa"||foco.tipo==="procedimento"){
     if(!idleFaisca)idleFaisca=nascFaisca(objs.cor,0.1);
@@ -17081,9 +17170,11 @@ function stepIdle(dt){
   if(!idleObjs){if((uxTick&15)===0)idleComeca(false);return;}
   if(nasc||genese){holoEsconde();return;}   // os nascimentos têm a vez; retoma-se depois
   focoT+=dt;
-  const o=nascAcha(foco);
+  const o=focoObj();
   if(!o){idleObjs=null;return;}
   const pulso=0.5+0.5*Math.sin(focoT*1.6);
+  if(foco.tipo==="procura")stepProcura(dt);
+  stepObra(dt);
   if(foco.tipo==="nodulo"){
     o._idle=0.22+0.28*pulso;
     if(focoT-(idleObjs.ultOnda||0)>3.4){idleObjs.ultOnda=focoT;if(!reduceMotion)o._ripple={t:0,dur:1.4};}
@@ -17128,7 +17219,7 @@ function stepIdle(dt){
   stepHolo(dt);
 }
 function idleTermina(){
-  holoTermina();
+  holoTermina();obraTermina();procuraTermina();
   nodes.forEach(n=>{if(n._idle!==undefined)delete n._idle;});
   idleHalo.visible=false;idleHalo.material.opacity=0;
   if(idleFaisca){idleFaisca.visible=false;idleFaisca.material.opacity=0;}
@@ -17161,7 +17252,22 @@ function holoGlifoTex(ch){
 }
 /* A ficha: a primeira linha dá o tipo (vai para o cabeçalho) e o nome. */
 function holoLinhas(){
-  const o=foco?nascAcha(foco):null;if(!o)return null;
+  if(!foco)return null;
+  const nomeNovo=()=>(foco.nome&&foco.nome!==foco.inicial)?foco.nome:"(sem nome)";
+  if(foco.tipo==="novo"){
+    const org=foco.origem?byId(foco.origem):null,alvo=foco.alvo?byId(foco.alvo):null;
+    return [["novo procedimento · em construção",foco.nome||"(sem nome)"],["tarefas","nenhuma ainda"],
+      ["de",org?org.name:"?"],["para",alvo?alvo.name:"?"],["estado","a nascer…"]];
+  }
+  if(foco.tipo==="procura"){
+    const org=foco.origem?byId(foco.origem):null,alvo=foco.alvo?byId(foco.alvo):null;
+    if(foco.de==="agente")return [["nova pessoa · a escolher unidade",alvo?alvo.name:"?"],
+      ["unidade",alvo?alvo.name:"ainda por escolher"],["estado","à procura…"]];
+    const p=foco.pid?layerById(foco.pid):null;
+    return [["nova tarefa · a escolher destino",alvo?alvo.name:"?"],["de",org?org.name:"?"],
+      ["para",alvo?alvo.name:"ainda por escolher"],["procedimento",p?p.name:"a escolher a seguir"],["estado","à procura…"]];
+  }
+  const o=nascAcha(foco);if(!o)return null;
   const L=[];
   const procsTxt=n=>n+(n===1?" procedimento":" procedimentos");
   const tarefasTxt=(nT,nP)=>nT?nT+" em "+procsTxt(nP):"nenhuma";
@@ -17192,6 +17298,10 @@ function holoLinhas(){
       ["caminho",fmtDays(st.total)],["prazo",Number.isFinite(o.prazo)?fmtDays(o.prazo):"sem prazo"],
       ["fases",String((o.fases||[]).length||"nenhuma")],["estado",o.done?"concluído":"a editar"]);
   }else return null;
+  if(foco.novo){
+    L[0][0]+=" · em construção";L[0][1]=nomeNovo();
+    L[L.length-1]=["estado","a nascer…"];
+  }
   return L.map(l=>[String(l[0]),String(l[1])]);
 }
 /* cada valor tem de caber na linha: corta-se com reticências */
@@ -17215,10 +17325,16 @@ function holoAncora(o){
   if(foco.tipo==="tarefa")return (idleObjs&&idleObjs.curva)?{base:idleObjs.curva.getPoint(0.5),sobe:1.3,k:1.25}:null;
   /* a câmara do procedimento vê o anel inteiro, de longe: o painel cresce com ele */
   if(foco.tipo==="procedimento")return {base:new THREE.Vector3(0,o.height,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)};
+  if(foco.tipo==="novo")return idleObjs?{base:new THREE.Vector3(0,idleObjs.altura,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)}:null;
+  if(foco.tipo==="procura"){
+    const org=foco.origem?byId(foco.origem):null;
+    if(org&&org.pos)return {base:org.pos.clone(),sobe:(org._rad||0.3)+1.7,k:0.95};
+    return {base:new THREE.Vector3(0,lowestTierY()+0.5,0),sobe:1.6,k:Math.max(1.9,rGuide()*0.22)};
+  }
   return null;
 }
 function holoComeca(){
-  const o=foco?nascAcha(foco):null;
+  const o=focoObj();
   if(!o||!idleObjs){holoTermina();return;}
   const sig=foco.tipo+":"+foco.id;
   if(holo&&holo.sig===sig){holoAtualiza();return;}   // objetos novos, o mesmo elemento: continua a escrever
@@ -17229,7 +17345,7 @@ function holoComeca(){
   holoAjusta(x,L);
   const tex=new THREE.CanvasTexture(c);tex.minFilter=THREE.LinearFilter;
   const painel=new THREE.Mesh(new THREE.PlaneGeometry(3.2,2.08),
-    new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.95,depthWrite:false,side:THREE.DoubleSide}));
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:0.95,depthWrite:false,side:THREE.DoubleSide,fog:false}));
   painel.renderOrder=12;
   const feixe=new THREE.Mesh(new THREE.CylinderGeometry(1,0.04,1,14,1,true),
     new THREE.MeshBasicMaterial({color:idleObjs.cor,transparent:true,opacity:0.16,depthWrite:false,
@@ -17310,7 +17426,9 @@ function holoAtualiza(){
   let inicio=0;
   for(let k=0;k<i;k++)inicio+=(k?L[k][0].length+2:0)+L[k][1].length;
   inicio+=(i?L[i][0].length+2:0);
-  holo.chars=Math.min(holo.chars,inicio);
+  let comum=0;
+  if(velho[i]&&velho[i][0]===L[i][0]){const a=velho[i][1],b=L[i][1];while(comum<a.length&&comum<b.length&&a[comum]===b[comum])comum++;}
+  holo.chars=Math.min(holo.chars,inicio+comum);
   holo.desenhado=-1;
 }
 function holoEsconde(){
@@ -17319,7 +17437,7 @@ function holoEsconde(){
 }
 function stepHolo(dt){
   if(!holo||!foco)return;
-  const o=nascAcha(foco);if(!o)return;
+  const o=focoObj();if(!o)return;
   holoPosiciona(o,focoT);
   if(holo.chars<holo.total)holo.chars=Math.min(holo.total,holo.chars+dt*(22+8*Math.sin(focoT*7)));
   if(!reduceMotion){if(Math.random()<0.03)holo.fl=0.75;holo.fl=Math.min(1,holo.fl+dt*3);}
@@ -17356,6 +17474,198 @@ function holoTermina(){
   holo.anel.material.dispose();holo.anel.geometry.dispose();
   holoGlifos.forEach(g=>g.s.visible=false);
   holo=null;
+}
+/* ============================================================
+   OBRA — a peça nova em construção
+   Enquanto uma unidade, uma pessoa ou um procedimento acabados de criar ainda
+   não têm nome, o palco mostra-os em estaleiro: a peça em esqueleto, um
+   andaime tracejado à volta, uma grua a assentar tesselas na superfície, a
+   planta no chão e partículas a chegar da peça-mãe. Cada letra do nome que
+   se escreve no ecrã principal sobe um andar; ao sair do campo com o nome
+   novo, o andaime dissolve-se e a peça fica inteira. Um procedimento que
+   ainda nem existe (a ser nomeado no seletor) aparece como anel fantasma.
+============================================================ */
+let obra=null;
+function obraAlvo(){
+  if(!foco||!idleObjs)return null;
+  if(foco.tipo==="novo")return {pos:new THREE.Vector3(0,idleObjs.altura,0),raio:rGuide(),anel:true,
+    pai:new THREE.Vector3(0,lowestTierY(),0)};
+  const o=nascAcha(foco);if(!o)return null;
+  if(foco.tipo==="nodulo"){
+    if(!o.pos)return null;
+    const pai=o.parent?byId(o.parent):null;
+    return {pos:o.pos.clone(),raio:(o._rad||0.3),mesh:o._mesh,
+      pai:(pai&&pai.pos)?pai.pos.clone():o.pos.clone().setY(o.pos.y+3)};
+  }
+  if(foco.tipo==="agente"){
+    const n=byId(o.nodeId),sys=n&&agentSystems.find(s=>s.node===n),orb=sys&&sys.agents.find(x=>x.agent===o);
+    if(!orb||!n||!n.pos)return null;
+    const pos=new THREE.Vector3();orb.mesh.getWorldPosition(pos);
+    return {pos,raio:0.16,mesh:orb.mesh,segue:orb.mesh,pai:n.pos.clone()};
+  }
+  if(foco.tipo==="procedimento")return {pos:new THREE.Vector3(0,o.height,0),raio:rGuide(),anel:true,guia:o._guide,
+    pai:new THREE.Vector3(0,lowestTierY(),0)};
+  return null;
+}
+function obraComeca(){
+  const pAnt=obra?obra.p:0;
+  obraTermina();
+  const a=obraAlvo();if(!a)return;
+  const cor=idleObjs.cor||GOLD3D,g=new THREE.Group();
+  const r=a.anel?a.raio:a.raio*2.0,h=a.anel?1.0:a.raio*3.0,base=a.anel?-0.5:-a.raio*1.5,N=a.anel?8:4;
+  const tracejado=()=>new THREE.LineDashedMaterial({color:cor,dashSize:a.anel?0.3:0.1,gapSize:a.anel?0.18:0.07,
+    transparent:true,opacity:0.8,depthWrite:false,fog:false});
+  /* andaime: postes, três travessas e uma diagonal por face (tudo relativo à peça) */
+  const pts=[];
+  for(let i=0;i<N;i++){
+    const t1=i/N*Math.PI*2+(a.anel?0:Math.PI/4),t2=(i+1)/N*Math.PI*2+(a.anel?0:Math.PI/4);
+    const x=Math.cos(t1)*r,z=Math.sin(t1)*r,x2=Math.cos(t2)*r,z2=Math.sin(t2)*r;
+    pts.push(x,base,z,x,base+h,z);
+    for(let k=1;k<=3;k++){const y=base+h*k/3;pts.push(x,y,z,x2,y,z2);}
+    pts.push(x,base,z,x2,base+h/3,z2);
+  }
+  const andaime=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(pts,3)),tracejado());
+  andaime.computeLineDistances();andaime.geometry.setDrawRange(0,0);
+  const chao=[];for(let i=0;i<=48;i++){const q=i/48*Math.PI*2;chao.push(Math.cos(q)*r*1.15,base-0.02,Math.sin(q)*r*1.15);}
+  const planta=new THREE.Line(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(chao,3)),tracejado());
+  planta.computeLineDistances();
+  const grua=new THREE.Line(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute([0,0,0,0,0,0],3)),
+    new THREE.LineBasicMaterial({color:cor,transparent:true,opacity:0.9,depthWrite:false,fog:false}));
+  /* tesselas: pontos na superfície, assentes um a um */
+  const tp=[],NT=a.anel?96:48;
+  for(let i=0;i<NT;i++){
+    if(a.anel){const q=i/NT*Math.PI*2;tp.push(Math.cos(q)*a.raio,0,Math.sin(q)*a.raio);}
+    else{const y=1-(i/(NT-1))*2,rr=Math.sqrt(Math.max(0,1-y*y)),q=i*2.399963;tp.push(Math.cos(q)*rr*a.raio*1.05,y*a.raio*1.05,Math.sin(q)*rr*a.raio*1.05);}
+  }
+  const tesselas=new THREE.Points(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(tp,3)),
+    new THREE.PointsMaterial({color:cor,size:a.anel?0.16:Math.max(0.06,a.raio*0.24),transparent:true,opacity:0.95,depthWrite:false,fog:false}));
+  tesselas.geometry.setDrawRange(0,0);
+  g.add(andaime,planta,grua,tesselas);
+  let fantasma=null;
+  if(foco.tipo==="novo"){
+    const fp=[];for(let i=0;i<=96;i++){const q=i/96*Math.PI*2;fp.push(Math.cos(q)*a.raio,0,Math.sin(q)*a.raio);}
+    fantasma=new THREE.Line(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(fp,3)),tracejado());
+    fantasma.computeLineDistances();fantasma.material.opacity=0.5;g.add(fantasma);
+  }
+  g.position.copy(a.pos);scene.add(g);
+  /* partículas da peça-mãe (coordenadas do mundo) */
+  const NP=24,part=new THREE.Points(new THREE.BufferGeometry().setAttribute("position",new THREE.BufferAttribute(new Float32Array(NP*3),3)),
+    new THREE.PointsMaterial({color:cor,size:0.1,transparent:true,opacity:0.85,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  const pu=[];for(let i=0;i<NP;i++)pu.push({u:Math.random(),v:0.35+Math.random()*0.4,dx:(Math.random()-0.5)*0.9,dz:(Math.random()-0.5)*0.9});
+  scene.add(part);
+  /* a peça real fica em esqueleto enquanto se constrói */
+  let mat=null,orig=null;
+  if(a.mesh&&a.mesh.material){mat=a.mesh.material;orig={transparent:mat.transparent,opacity:mat.opacity,wireframe:!!mat.wireframe};mat.transparent=true;}
+  obra={g,a,andaime,planta,grua,tesselas,part,pu,fantasma,mat,orig,nSeg:pts.length/6,nT:NT,p:pAnt,t:0,r,h,base};
+}
+function obraProgresso(){
+  const escrito=String(foco.nome||"").trim();
+  if(foco.tipo==="novo")return Math.min(1,0.12+0.88*escrito.length/12);
+  if(!escrito||escrito===foco.inicial)return 0.12;
+  return Math.min(1,0.15+0.85*escrito.length/12);
+}
+function stepObra(dt){
+  if(!obra||!foco)return;
+  const a=obra.a;obra.t+=dt;
+  obra.p+=(obraProgresso()-obra.p)*Math.min(1,dt*4);
+  const p=obra.p;
+  if(a.segue){a.segue.getWorldPosition(a.pos);obra.g.position.copy(a.pos);}
+  obra.andaime.geometry.setDrawRange(0,Math.floor(obra.nSeg*p)*2);
+  obra.tesselas.geometry.setDrawRange(0,Math.floor(obra.nT*p));
+  /* a grua roda no topo e desce o braço para pousar a tessela seguinte */
+  const ang=obra.t*1.8,gp=obra.grua.geometry.attributes.position.array;
+  gp[0]=0;gp[1]=obra.base+obra.h+0.15;gp[2]=0;
+  gp[3]=Math.cos(ang)*obra.r;gp[4]=obra.base+obra.h*(0.55+0.45*Math.abs(Math.sin(obra.t*0.9)));gp[5]=Math.sin(ang)*obra.r;
+  obra.grua.geometry.attributes.position.needsUpdate=true;
+  obra.grua.visible=p<0.98&&!reduceMotion;
+  const pa=obra.part.geometry.attributes.position.array;
+  obra.pu.forEach((q,i)=>{
+    q.u-=dt*q.v;if(q.u<0)q.u=1;
+    const f=1-q.u;
+    pa[i*3]=a.pai.x+(a.pos.x-a.pai.x)*f+q.dx*(1-f);
+    pa[i*3+1]=a.pai.y+(a.pos.y-a.pai.y)*f+Math.sin(f*Math.PI)*0.5;
+    pa[i*3+2]=a.pai.z+(a.pos.z-a.pai.z)*f+q.dz*(1-f);
+  });
+  obra.part.geometry.attributes.position.needsUpdate=true;
+  obra.part.visible=!reduceMotion&&!leve;
+  if(obra.mat){obra.mat.wireframe=p<0.85;obra.mat.opacity=0.3+0.7*p;}
+  if(a.guia){const g2=a.guia.geometry,total=g2.index?g2.index.count:g2.attributes.position.count;g2.setDrawRange(0,Math.floor(total*p/3)*3);}
+}
+/* o nome ficou: um clarão, uma onda, e o andaime vai-se */
+function obraConclui(){
+  if(!obra)return;
+  const a=obra.a;
+  pingAt(a.pos,Math.max(1.2,a.raio*4));
+  const o=nascAcha(foco);
+  if(o&&foco.tipo==="nodulo"&&!reduceMotion)o._ripple={t:0,dur:1.2};
+  obraTermina();
+}
+function obraTermina(){
+  if(!obra)return;
+  if(obra.mat&&obra.orig){obra.mat.wireframe=obra.orig.wireframe;obra.mat.opacity=obra.orig.opacity;obra.mat.transparent=obra.orig.transparent;}
+  if(obra.a.guia)obra.a.guia.geometry.setDrawRange(0,Infinity);
+  scene.remove(obra.g);scene.remove(obra.part);
+  obra.g.traverse(m=>{if(m.geometry)m.geometry.dispose();if(m.material)m.material.dispose();});
+  obra.part.geometry.dispose();obra.part.material.dispose();
+  obra=null;
+}
+/* ============================================================
+   PROCURA — o radar
+   A escolher o destino de uma tarefa nova, um arco tracejado varre a partir
+   da origem e estica-se até ao nódulo candidato (o primeiro resultado da
+   pesquisa, ou o que está sob o ponteiro no seletor). A escolher a unidade
+   de uma pessoa nova, um orbe paira sobre a unidade candidata — ou ronda a
+   organização enquanto não há nenhuma.
+============================================================ */
+let procura=null;
+function procuraComeca(){
+  procuraTermina();
+  const linha=new THREE.Line(new THREE.BufferGeometry().setAttribute("position",new THREE.BufferAttribute(new Float32Array(41*3),3)),
+    new THREE.LineDashedMaterial({color:GOLD3D,dashSize:0.25,gapSize:0.15,transparent:true,opacity:0.8,depthWrite:false,fog:false}));
+  linha.visible=false;scene.add(linha);
+  procura={linha,alvoId:undefined};
+}
+function stepProcura(dt){
+  if(!procura||!foco)return;
+  const org=foco.origem?byId(foco.origem):null,alvo=foco.alvo?byId(foco.alvo):null;
+  if(procura.alvoId!==foco.alvo){
+    procura.alvoId=foco.alvo;
+    if(alvo&&alvo.pos&&!reduceMotion)alvo._ripple={t:0,dur:0.9};
+    if(alvo&&alvo.pos&&!(org&&org.pos))idleCamara(alvo.pos.clone().setY(alvo.pos.y+0.6),Math.max(9,(alvo._rad||0.3)*18));
+  }
+  if(foco.de==="tarefa"&&org&&org.pos){
+    let fim;
+    if(alvo&&alvo.pos)fim=alvo.pos.clone();
+    else{const ang=focoT*1.4;fim=org.pos.clone().add(new THREE.Vector3(Math.cos(ang)*2.6,0,Math.sin(ang)*2.6));}
+    const mid=org.pos.clone().lerp(fim,0.5);mid.y+=1.2+org.pos.distanceTo(fim)*0.15;
+    const c=new THREE.QuadraticBezierCurve3(org.pos.clone(),mid,fim),arr=procura.linha.geometry.attributes.position.array;
+    for(let i=0;i<=40;i++){const q=c.getPoint(i/40);arr[i*3]=q.x;arr[i*3+1]=q.y;arr[i*3+2]=q.z;}
+    procura.linha.geometry.attributes.position.needsUpdate=true;
+    procura.linha.computeLineDistances();
+    procura.linha.visible=true;
+    procura.linha.material.opacity=alvo?0.95:0.5;
+    /* uma faísca percorre o arco: a linha tracejada sozinha é fina de mais ao longe */
+    if(!idleFaisca)idleFaisca=nascFaisca(GOLD3D,0.1);
+    idleFaisca.material.color.setHex(GOLD3D);
+    const u=(focoT*0.6)%1;c.getPoint(u,idleFaisca.position);
+    idleFaisca.material.opacity=reduceMotion?0:Math.sin(u*Math.PI)*0.9;idleFaisca.visible=true;
+    org._idle=0.25;
+    if(alvo)alvo._idle=0.3+0.3*Math.sin(focoT*4);
+    idleHalo.position.copy(fim);idleHalo.scale.setScalar(alvo?0.9:0.5);
+    idleHalo.material.opacity=alvo?0.7:0.45;idleHalo.visible=true;
+  }else{
+    procura.linha.visible=false;
+    let pos;
+    if(alvo&&alvo.pos){pos=alvo.pos.clone().setY(alvo.pos.y+(alvo._rad||0.3)+0.5);alvo._idle=0.35;}
+    else{const ang=focoT*0.5,rr=rGuide()*0.55;pos=new THREE.Vector3(Math.cos(ang)*rr,lowestTierY()+1.2,Math.sin(ang)*rr);}
+    idleHalo.position.copy(pos);idleHalo.scale.setScalar(0.8+0.15*Math.sin(focoT*3));
+    idleHalo.material.opacity=0.6;idleHalo.visible=true;
+  }
+}
+function procuraTermina(){
+  if(!procura)return;
+  scene.remove(procura.linha);procura.linha.geometry.dispose();procura.linha.material.dispose();
+  procura=null;
 }
 /* Um palco novo pede tudo: estado fresco, seleção, isolamento, tema e foco. */
 function palcoRespondeOla(){
