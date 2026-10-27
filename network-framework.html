@@ -1391,6 +1391,30 @@
   .alerta-row{padding:6px 0;border-bottom:1px solid var(--hairline);font-size:.78rem;color:var(--ink)}
   .cred-perm{display:block;margin:6px 0;font-size:.78rem;color:var(--ink)}
   .pel-legenda{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+  /* árvore de objetos: linhas com recuo, caixa com tampa que abre ao receber */
+  .obj-tree-row{position:relative}
+  .obj-tree-row .tg{flex:none;width:16px;text-align:center;color:var(--ink-dim);font-size:.62rem;cursor:pointer}
+  .obj-tree-row .caixa{flex:none;width:20px;height:20px;margin-right:6px;overflow:visible}
+  .caixa .corpo{fill:var(--panel);stroke:var(--steel);stroke-width:1.2}
+  .caixa .tampa{fill:var(--gold);stroke:var(--steel);stroke-width:1.2;transform-origin:3px 7px;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+  .caixa .brilho{fill:var(--gold);opacity:0;transition:opacity .25s}
+  .obj-tree-row.caixa-aberta{outline:1px dashed var(--gold);outline-offset:-2px;background:rgba(232,180,76,.08)}
+  .obj-tree-row.caixa-aberta .caixa .tampa{transform:rotate(-75deg)}
+  .obj-tree-row.caixa-aberta .caixa .brilho{opacity:.6}
+  body[data-tema="lisboa"] .caixa .corpo{fill:#EAF2FF;stroke:#3E7CB1}
+  body[data-tema="lisboa"] .caixa .tampa{fill:#3E7CB1;stroke:#1F4F7E}
+  body[data-tema="calcada"] .caixa .corpo{fill:#D8C9A4;stroke:#7A5C2E}
+  body[data-tema="calcada"] .caixa .tampa{fill:#B8935A;stroke:#5A3F1A}
+  body[data-tema="verde"] .caixa .corpo{fill:#1F3F30;stroke:#8FB8A4}
+  body[data-tema="verde"] .caixa .tampa{fill:#D9C36A;stroke:#8FB8A4}
+  body[data-tema="contraste"] .caixa .corpo{fill:#fff;stroke:#000;stroke-width:2}
+  body[data-tema="contraste"] .caixa .tampa{fill:#F0E442;stroke:#000;stroke-width:2}
+  @keyframes depositar{to{transform:scale(.15);opacity:0}}
+  .obj-tree-row.a-depositar{animation:depositar .35s ease-in forwards;transform-origin:left center}
+  .obj-raiz-zona{border:1px dashed var(--hairline);border-radius:8px;padding:6px 10px;font-size:.72rem;color:var(--ink-dim);margin:6px 0}
+  .obj-raiz-zona.caixa-aberta{border-color:var(--gold);color:var(--gold)}
+  .repo-row .repo-tipo{font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border:1px solid currentColor;border-radius:999px;margin-right:8px;flex:none}
+  .repo-row.restrito{opacity:.7}
   .pel-legenda .chip{cursor:default}
 
   /* ---- Alvos de toque maiores em qualquer aparelho tátil ---- */
@@ -2356,6 +2380,7 @@
     <button class="tab" role="tab" data-tab="tarefas" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 6 8.5 9.5 5M4 13.5 6 15.5 9.5 12M4 20.3 6 22.3 9.5 19"/><path d="M13 7h8M13 14h8M13 21h8"/></svg></span>Tarefas</button>
     <button class="tab" role="tab" data-tab="objetos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg></span>Objetos</button>
     <button class="tab" role="tab" data-tab="pelouros" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 7.6 8 9 4.6-1.4 8-4.5 8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Pelouros</button>
+    <button class="tab" role="tab" data-tab="repositorios" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h10l6 6v10H4z"/><path d="M14 4v6h6M8 14h8M8 18h5"/></svg></span>Repositórios</button>
     <button class="tab" role="tab" data-tab="dados" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Dados</button>
     <button class="tab" role="tab" data-tab="definicoes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>Definições</button>
   </nav>
@@ -2509,6 +2534,14 @@
     <div class="sec-body">
       <div id="objetoList"></div>
       <div class="foot-note">Património, equipamentos, viaturas, chaves, contratos: cada objeto tem número, categoria, atributos, alertas, localização, associações, valores e observações. O que se vê e edita depende da credencial de segurança de quem consulta.</div>
+    </div>
+  </details>
+
+  <details id="secRepositorios">
+    <summary>Repositórios</summary>
+    <div class="sec-body">
+      <div id="repoList"></div>
+      <div class="foot-note">Documentos, multimédia, atas e minutas, ligados a procedimentos, tarefas, nódulos e pessoas. Cada repositório tem uma credencial mínima de acesso: abaixo dela vê-se que existe, mas não se abre.</div>
     </div>
   </details>
 
@@ -3016,8 +3049,8 @@ const primaryOf = nodeId => agents.find(a=>a.nodeId===nodeId&&a.primary)||null;
 /* governação (ver o bloco GOVERNAÇÃO mais abaixo) */
 const CRED_ROT=["","Consulta","Operacional","Chefia","Direção","Executivo"];
 const PERFIL_KEY="of.perfil.v1";
-const pelouros=[],objetos=[];
-let pelouroCounter=0,objetoCounter=0;
+const pelouros=[],objetos=[],repositorios=[];
+let pelouroCounter=0,objetoCounter=0,repoCounter=0;
 const ALERTAS={avisoDias:2,escalaDias:7};
 let perfil={tipo:"admin",id:null};
 try{const pf=JSON.parse(localStorage.getItem(PERFIL_KEY)||"null");if(pf&&(pf.tipo==="admin"||pf.tipo==="agente"))perfil=pf;}catch(e){}
@@ -5281,6 +5314,7 @@ function setTab(id){
   }
   if(id==="home"){
     delete document.body.dataset.tab;
+    objVista="lista";objMapaMostra(false);
     closePage();
     /* `panel-open` quer dizer "o painel está a tapar a cena", e é isso que
        esconde o cartão de arranque. Sai sempre — em ecrã largo o painel é uma
@@ -5299,6 +5333,10 @@ function setTab(id){
     if(id==="tarefas")renderTaskListAll();
     if(id==="pelouros")renderPelouros();
     if(id==="objetos")renderObjetos();
+    if(id==="repositorios")renderRepositorios();
+    /* o separador Objetos abre sempre a lista; o mapa 3D sai pelo botão da lista e fica sozinho em cena */
+    if(id==="objetos")objVista="lista";
+    objMapaMostra(false);
     if(id==="dados"){renderQualidade();renderDiario();}
     showPage(id);
   }
@@ -5340,7 +5378,7 @@ function devolveSeccoes(){
 }
 function showPage(tab){
   devolveSeccoes();
-  const mapa={nodulos:["secUnidades"],agentes:["secPessoas"],tarefas:["secTarefas"],pelouros:["secPelouros"],objetos:["secObjetos"],
+  const mapa={nodulos:["secUnidades"],agentes:["secPessoas"],tarefas:["secTarefas"],pelouros:["secPelouros"],objetos:["secObjetos"],repositorios:["secRepositorios"],
     dados:["secDados"],definicoes:["secDefinicoes"],procedimentos:["secProc"]};
   (mapa[tab]||[]).forEach(levaParaPagina);
   if(tab==="procedimentos")renderPageProcs();
@@ -5351,6 +5389,7 @@ function showPage(tab){
 }
 function closePage(){
   if(!document.body.classList.contains("page-open"))return;
+  if(objVista!=="mapa")objMapaMostra(false);   // o mapa 3D vive com a página fechada
   devolveSeccoes();
   document.body.classList.remove("page-open");
   delete document.body.dataset.page;
@@ -6988,6 +7027,7 @@ function viewsEqual(a,b){
   if(a.type==="feynman")return a.layer===b.layer;
   if(a.type==="group")return a.group===b.group;
   if(a.type==="objeto")return a.objeto===b.objeto;
+  if(a.type==="repositorio")return a.repositorio===b.repositorio;
   if(a.type==="orgchart")return true;
   if(a.type==="flowindex")return true;
   if(a.type==="health")return true;
@@ -7007,6 +7047,7 @@ function viewValid(v){
   if(v.type==="feynman")return processes.includes(v.layer);
   if(v.type==="group")return groups.includes(v.group);
   if(v.type==="objeto")return objetos.includes(v.objeto);
+  if(v.type==="repositorio")return repositorios.includes(v.repositorio);
   if(v.type==="orgchart")return true;
   if(v.type==="flowindex")return true;
   if(v.type==="health")return true;
@@ -7033,7 +7074,8 @@ function applySelection(sel){
            (sel.type==="task"&&!sel.task)||
            (sel.type==="agent"&&!sel.agent)||
            (sel.type==="group"&&!sel.group)||
-           (sel.type==="objeto"&&!sel.objeto)))sel=null;
+           (sel.type==="objeto"&&!sel.objeto)||
+           (sel.type==="repositorio"&&!sel.repositorio)))sel=null;
   selected=sel;
   selKin=computeSelKin(sel);
   if(booted)palcoEnviaSelecao(sel);
@@ -7050,6 +7092,9 @@ function applySelection(sel){
   }else if(sel&&sel.type==="agent"){
     const n=byId(sel.agent.nodeId);
     if(n)focusOn(n.pos,5);
+  }else if(sel&&sel.type==="objeto"&&objMapaAtivo&&objCubo(sel.objeto)){
+    const c=objCubo(sel.objeto);
+    focusOn(c.mesh.position.clone(),Math.max(4.5,c.lado*8));
   }else{
     releaseFocus();
   }
@@ -7631,6 +7676,7 @@ function renderDetail(){
   if(selected.type==="agent"&&!agents.includes(selected.agent)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="group"&&!groups.includes(selected.group)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="objeto"&&!objetos.includes(selected.objeto)){selected=null;releaseFocus();detail.classList.remove("open");return;}
+  if(selected.type==="repositorio"&&!repositorios.includes(selected.repositorio)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="task"&&!(processes[selected.task.proc]&&processes[selected.task.proc].tasks.includes(selected.task))){selected=null;releaseFocus();detail.classList.remove("open");return;}
   detail.classList.add("open");
 
@@ -7659,6 +7705,7 @@ function renderDetail(){
   else if(selected.type==="agent")renderAgentDetail(head,closeBtn);
   else if(selected.type==="group")renderGroupDetail(head,closeBtn);
   else if(selected.type==="objeto")renderObjetoDetail(head,closeBtn);
+  else if(selected.type==="repositorio")renderRepositorioDetail(head,closeBtn);
   else renderTaskDetail(head,closeBtn);
   labelFields(detail);
 }
@@ -7725,6 +7772,7 @@ function renderNodeDetail(head,closeBtn){
     (reports.length?`<br>Supervisiona <b>${reports.length}</b>: ${reports.map(r=>esc(r.name)).join(", ")}`:"");
   detail.append(meta);
   renderPelouroDoNodulo(n);
+  renderReposDe("nodulo",n.id);
 
   // Agents
   detail.append(el("h4",null,"Equipa"));
@@ -8057,6 +8105,7 @@ function renderAgentDetail(head,closeBtn){
     });
   });
   if(!any)detail.append(el("div","empty-note","Nenhuma tarefa atribuída a este agente."));
+  renderReposDe("agente",a.id);
 }
 
 function renderGroupDetail(head,closeBtn){
@@ -8252,6 +8301,7 @@ function renderTaskDetail(head,closeBtn){
 
   detail.append(grid);
   renderValidacaoTarefa(t,p);
+  renderReposDe("tarefa",t.id);
 
   detail.append(el("h4",null,"Descrição"));
   const box=el("textarea","desc-box");
@@ -8304,15 +8354,28 @@ function raycastNodeAt(x,y){
 (function(){
   const cv=renderer.domElement;
   cv.addEventListener("dragover",e=>{
+    if(dragPayload&&dragPayload.kind==="objeto"){
+      const alvo=objMapaAtivo?objCuboEm(e.clientX,e.clientY):null;
+      const o=objetoById(dragPayload.id);
+      if(alvo&&o&&alvo!==o&&!descendeObjeto(alvo,o)){e.preventDefault();caixaAbre(alvo);}
+      else caixaAbre(null);
+      return;
+    }
     if(!dragPayload||dragPayload.kind!=="agent"){dropHoverNode=null;return;}
     const a=agentById(dragPayload.id);
     const n=raycastNodeAt(e.clientX,e.clientY);
     if(a&&n&&a.nodeId!==n.id){e.preventDefault();dropHoverNode=n;}
     else dropHoverNode=null;
   });
-  cv.addEventListener("dragleave",()=>{dropHoverNode=null;});
+  cv.addEventListener("dragleave",()=>{dropHoverNode=null;caixaAbre(null);});
   cv.addEventListener("drop",e=>{
     e.preventDefault();
+    if(dragPayload&&dragPayload.kind==="objeto"){
+      const alvo=objMapaAtivo?objCuboEm(e.clientX,e.clientY):null;
+      const o=objetoById(dragPayload.id);
+      if(alvo&&o&&alvo!==o&&!descendeObjeto(alvo,o))depositaObjeto(o,alvo);
+      dragPayload=null;caixaAbre(null);return;
+    }
     const n=raycastNodeAt(e.clientX,e.clientY);
     if(dragPayload&&dragPayload.kind==="agent"){
       const a=agentById(dragPayload.id);
@@ -8326,6 +8389,11 @@ function raycast(e){
   mouse.x=(e.clientX/innerWidth)*2-1;
   mouse.y=-(e.clientY/innerHeight)*2+1;
   ray.setFromCamera(mouse,camera);
+  if(objMapaAtivo){
+    const oh=ray.intersectObjects(objPickables);
+    if(oh.length)return {type:"objeto",objeto:oh[0].object.userData.objeto};
+    return null;
+  }
   const nodeHits=ray.intersectObjects(nodePickables);
   for(const h of nodeHits){
     const nd=h.object.userData.node;
@@ -8358,6 +8426,7 @@ function isolateProcedureOf(t){
 function handleClick(e){
   const hit=raycast(e);
   if(!hit){clearSelection();return;}
+  if(hit.type==="objeto"){selectObjeto(hit.objeto);return;}
   if(hit.type==="node"){kbFocus=hit.node;nodePunch(hit.node);selectNode(hit.node);}
   else if(e.shiftKey)isolateProcedureOf(hit.task);
   else selectTask(hit.task);
@@ -8868,6 +8937,7 @@ function renderFlowchart(p){
   nameIn.addEventListener("keydown",e=>{if(e.key==="Enter")nameIn.blur();});
   nameWrap.append(nameIn);
   top.append(nameWrap);
+  top.append(reposChips("procedimento",p.id));
 
   const acts=el("div","fc-acts");
   const MODES=[{k:"flow",l:"Fluxo"},{k:"lanes",l:"Pistas"},{k:"gantt",l:"Cronograma"}];
@@ -12773,7 +12843,7 @@ importFile.onchange=()=>{
 /* New Dataset — wipe everything and start fresh with only the Executivo apex node. */
 function newDataset(){
   clearSelection();                              // close modal/detail, clear nav history
-  pelouros.length=0;objetos.length=0;
+  pelouros.length=0;objetos.length=0;repositorios.length=0;objMapaSuja();
   // Dispose & clear procedures (with their tasks) and their sidebar rows
   processes.slice().forEach(p=>{
     p.tasks.slice().forEach(disposeTaskVisual);
@@ -13183,6 +13253,8 @@ function applyTheme(id,opts){
   (T0.gp||["#E0554F","#4A90E2","#5CC46A","#E8C445"]).forEach((v,i)=>
     document.documentElement.style.setProperty(["--gp-a","--gp-b","--gp-c","--gp-d"][i],v));
   document.body.classList.toggle("theme-light",!!T0.light);
+  document.body.dataset.tema=themeId;
+  objMapaTema();
   GOLD=T0.gold;GOLD3D=T0.gold;
   THEME_LIGHT=!!T0.light;
   PILL_BG=T0.pill;
@@ -14033,6 +14105,7 @@ function animate(){
   });
 
   stepIdle(dt);
+  stepObjMapa(dt);
   const selTask=(selected&&selected.type==="task")?selected.task:null;
   processes.forEach((p,i)=>{
     const on=s.show.procs&&p._visible;
@@ -16127,6 +16200,8 @@ function paletteActions(){
     {kind:"Ação",label:"Estado da rede",run:showHealth},
     {kind:"Ação",label:"Pelouros — quem responde por cada braço",run:()=>setTab("pelouros")},
     {kind:"Ação",label:"Objetos — património e inventário",run:()=>setTab("objetos")},
+    {kind:"Ação",label:"Objetos — mapa 3D em cubos",run:()=>{objVista="mapa";setTab("objetos");}},
+    {kind:"Ação",label:"Repositórios — documentos, multimédia, atas, minutas",run:()=>setTab("repositorios")},
     {kind:"Ação",label:"Tarefas em atraso",run:()=>{filtroTarefas={k:"atraso",pessoa:null};setTab("tarefas");}},
     {kind:"Ação",label:"Os meus alertas",run:()=>{filtroTarefas={k:"minhas",pessoa:null};setTab("tarefas");}},
     {kind:"Ação",label:"Guardar como app (instalar)",run:askToInstall},
@@ -16763,6 +16838,11 @@ function palcoEstadoLeve(s){
   });
   novo.groups.forEach(ng=>{const g=groups.find(x=>x.id===ng.id);if(g)g.name=ng.name;});
   if(typeof novo.orgName==="string")orgName=novo.orgName;
+  /* objetos e repositórios não entram na assinatura estrutural: trocam-se por inteiro (barato) */
+  if(novo.extras&&typeof novo.extras==="object"){
+    if(Array.isArray(novo.extras.objetos)){objetos.length=0;novo.extras.objetos.forEach(x=>{if(x&&x.id)objetos.push(objetoSaneado(x));});objMapaSuja();}
+    if(Array.isArray(novo.extras.repositorios)){repositorios.length=0;novo.extras.repositorios.forEach(x=>{if(x&&x.id)repositorios.push(repoSaneado(x));});}
+  }
   return true;
 }
 function palcoRecebe(m){
@@ -16814,6 +16894,7 @@ function holoTema(){
 const nascPendentes=[],nascFila=[],nascTempos=[];
 let nasc=null,genese=null,palcoTeveEstado=false;
 function nascAcha(m){
+  if(m&&m.tipo==="objeto")return objetoById(m.id);
   if(m.tipo==="nodulo")return byId(m.id)||null;
   if(m.tipo==="agente")return agentById(m.id);
   if(m.tipo==="procedimento")return processes.find(p=>p.id===m.id)||null;
@@ -17157,6 +17238,7 @@ function contextoEdicao(){
     }
     if(selected.type==="task"&&selected.task)return {tipo:"tarefa",id:selected.task.id};
     if(selected.type==="agent"&&selected.agent)return marcaNovo({tipo:"agente",id:selected.agent.id},selected.agent);
+    if(selected.type==="objeto"&&selected.objeto)return {tipo:"objeto",id:selected.objeto.id};
   }
   return null;
 }
@@ -17393,7 +17475,7 @@ function campoSug(valor,lista,placeholder,onCommit,rotulo){
 function valorPatrimonial(o){const v=(o.valores||[]).filter(x=>x.tipo==="patrimonio").sort((a,b)=>a.data<b.data?1:-1)[0];return v?v.valor:null;}
 function somaValores(o,tipo){return (o.valores||[]).filter(x=>x.tipo===tipo).reduce((s,x)=>s+(+x.valor||0),0);}
 function fmtEuro(v){return (Math.round(v*100)/100).toLocaleString("pt-PT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
-function tocaObjeto(o){o.alterado=hojeISO();markDirty();}
+function tocaObjeto(o){o.alterado=hojeISO();markDirty();objMapaSuja();}
 function alertaObjetoAtivo(o,a){
   if(o.arquivado)return false;
   if(a.tipo==="recorrente")return !!a.proximo&&diasEntre(hojeISO(),a.proximo)<=ALERTAS.avisoDias;
@@ -17404,33 +17486,98 @@ function alertaObjetoAtivo(o,a){
 let objQuery="",objFiltro="ativos";
 const objAlertaNovo={};
 function selectObjeto(o){navigateTo({type:"objeto",objeto:o});}
+let objVista="lista";
+function filhosDe(o){return objetos.filter(x=>x.loc&&x.loc.tipo==="objeto"&&x.loc.objId===o.id).sort((a,b)=>a.num-b.num);}
+function objetoRaiz(o){return !(o.loc&&o.loc.tipo==="objeto"&&o.loc.objId&&objetoById(o.loc.objId));}
+function caixaSVG(){
+  const s=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  s.setAttribute("viewBox","0 0 20 20");s.setAttribute("class","caixa");s.setAttribute("aria-hidden","true");
+  s.innerHTML='<rect class="brilho" x="1" y="1" width="18" height="18" rx="3"/><rect class="corpo" x="3" y="7" width="14" height="10" rx="1.5"/><rect class="tampa" x="3" y="4" width="14" height="4" rx="1"/>';
+  return s;
+}
+/* Largar um objeto noutro: fica dentro dele. O destino "abre" (tampa) enquanto
+   se arrasta por cima; ao largar, o arrastado encolhe para dentro e a árvore
+   redesenha-se com ele lá. */
+function depositaObjeto(o,alvo){
+  if(!o||o===alvo)return false;
+  if(alvo&&descendeObjeto(alvo,o)){flash("Um objeto não pode ficar dentro de um que já está dentro dele.",{type:"err",key:"obj"});return false;}
+  if(!podeEditarObjeto(o)){flash("Sem credencial para mover este objeto.",{type:"err",key:"obj"});return false;}
+  o.loc=o.loc||{};
+  if(alvo){o.loc.tipo="objeto";o.loc.objId=alvo.id;alvo._recolhido=false;}
+  else{if(o.loc.tipo==="objeto"){o.loc.tipo="";o.loc.objId=null;}}
+  anotaHistorico(alvo?"pôr “"+o.name+"” dentro de “"+alvo.name+"”":"tirar “"+o.name+"” de dentro");
+  tocaObjeto(o);objMapaSuja();
+  if(alvo)objCaixaDeposita(o,alvo);
+  return true;
+}
 function renderObjetos(){
   const host=document.getElementById("objetoList");if(!host)return;host.innerHTML="";
   const topo=el("div","setup-btns");
-  if(podeGerirObjetos()){const nb=el("button","btn primary","+ Novo objeto");nb.onclick=()=>{const o=criaObjeto();renderObjetos();selectObjeto(o);};topo.append(nb);}
-  host.append(topo);
+  if(podeGerirObjetos()){const nb=el("button","btn primary","+ Novo objeto");nb.onclick=()=>{const o=criaObjeto();objMapaSuja();renderObjetos();selectObjeto(o);};topo.append(nb);}
+  const vista=el("div","layer-pick");
+  [["lista","Lista"],["mapa","Mapa 3D"]].forEach(([k,r])=>{const b=el("button",objVista===k?"sel":"",r);b.setAttribute("aria-pressed",String(objVista===k));b.title=k==="mapa"?"Vê a hierarquia em cubos na cena 3D (a página fecha-se; volte pelo separador Objetos)":"Lista hierárquica";
+    b.onclick=()=>{objVista=k;if(k==="mapa"){objMapaMostra(true);closePage();flash("Mapa de objetos: clique num cubo para abrir a ficha. O separador Objetos volta à lista.",{key:"objmapa"});}else{objMapaMostra(false);renderObjetos();}};vista.append(b);});
+  topo.append(vista);host.append(topo);
   const busca=el("input","search-input");busca.placeholder="Procurar por número, nome, categoria ou atributo…";busca.value=objQuery;
   busca.setAttribute("aria-label","Procurar objetos");
-  busca.addEventListener("input",()=>{objQuery=busca.value;renderObjetos();if(objQuery)setTimeout(()=>{const b=host.querySelector(".search-input");if(b&&document.activeElement!==b){b.focus();b.setSelectionRange(b.value.length,b.value.length);}},0);});
+  busca.addEventListener("input",()=>{objQuery=busca.value;renderObjetos();setTimeout(()=>{const b=host.querySelector(".search-input");if(b&&document.activeElement!==b){b.focus();b.setSelectionRange(b.value.length,b.value.length);}},0);});
   host.append(busca);
   const chips=el("div","chips");
   [["ativos","Ativos"],["inventario","Inventário"],["arquivados","Arquivados"],["todos","Todos"]].forEach(([k,r])=>{const c=el("button","chip"+(objFiltro===k?" on":""),r);c.type="button";c.onclick=()=>{objFiltro=k;renderObjetos();};chips.append(c);});
   host.append(chips);
   const q=normaliza(objQuery);
-  const lista=objetos.filter(o=>podeVerObjeto(o))
-    .filter(o=>objFiltro==="todos"||(objFiltro==="arquivados"?o.arquivado:(objFiltro==="inventario"?(o.inventario&&!o.arquivado):!o.arquivado)))
-    .filter(o=>!q||normaliza("#"+o.num+" "+o.name+" "+o.categoria+" "+(o.atributos||[]).join(" ")).includes(q));
-  if(!lista.length)host.append(el("div","empty-note",objetos.length?"Nada com este filtro.":"Ainda não há objetos."));
-  lista.forEach(o=>{
-    const row=el("button","row obj-row"+(o.arquivado?" arquivado":""));row.type="button";row.title="Abrir a ficha do objeto";
-    row.append(el("span","obj-num","#"+o.num),el("span","row-name",o.name));
-    row.append(el("span","t-route",(o.categoria||"sem categoria")+(o.inventario?" · inventário":"")+(o.arquivado?" · arquivado":"")+(objetosDentro(o).length?" · contém "+objetosDentro(o).length:"")));
+  const passa=o=>podeVerObjeto(o)&&(objFiltro==="todos"||(objFiltro==="arquivados"?o.arquivado:(objFiltro==="inventario"?(o.inventario&&!o.arquivado):!o.arquivado)))
+    &&(!q||normaliza("#"+o.num+" "+o.name+" "+o.categoria+" "+(o.atributos||[]).join(" ")).includes(q));
+  const pode=podeGerirObjetos();
+  if(pode&&!q){
+    const zona=el("div","obj-raiz-zona","Largue aqui um objeto para o tirar de dentro de outro.");
+    zona.addEventListener("dragover",e=>{if(dragPayload&&dragPayload.kind==="objeto"){e.preventDefault();zona.classList.add("caixa-aberta");}});
+    zona.addEventListener("dragleave",()=>zona.classList.remove("caixa-aberta"));
+    zona.addEventListener("drop",e=>{e.preventDefault();zona.classList.remove("caixa-aberta");const o=dragPayload&&objetoById(dragPayload.id);dragPayload=null;if(o&&!objetoRaiz(o)){depositaObjeto(o,null);renderObjetos();}});
+    host.append(zona);
+  }
+  let total=0;
+  const linha=(o,nivel)=>{
+    const filhos=filhosDe(o);
+    const row=el("button","row obj-row obj-tree-row"+(o.arquivado?" arquivado":""));row.type="button";row.title="Abrir a ficha · arraste para pôr dentro de outro objeto";
+    row.style.marginLeft=(nivel*18)+"px";row.dataset.oid=o.id;
+    const tg=el("span","tg",filhos.length?(o._recolhido?"▸":"▾"):"");
+    if(filhos.length){tg.title=o._recolhido?"Expandir":"Recolher";tg.setAttribute("role","button");tg.onclick=e=>{e.stopPropagation();o._recolhido=!o._recolhido;renderObjetos();};}
+    row.append(tg,caixaSVG(),el("span","obj-num","#"+o.num),el("span","row-name",o.name));
+    row.append(el("span","t-route",(o.categoria||"sem categoria")+(o.inventario?" · inventário":"")+(o.arquivado?" · arquivado":"")+(filhos.length?" · contém "+filhos.length:"")));
     const al=(o.alertas||[]).filter(a=>alertaObjetoAtivo(o,a)).length;
     if(al)row.append(el("span","alerta-pill amarelo",al+" alerta"+(al===1?"":"s")));
-    row.onclick=()=>selectObjeto(o);host.append(row);
-  });
+    if(pode){
+      const mais=el("span","icon-btn","+");mais.title="Novo objeto dentro deste";mais.setAttribute("role","button");mais.setAttribute("aria-label","Novo objeto dentro de "+o.name);
+      mais.onclick=e=>{e.stopPropagation();const n=criaObjeto();n.loc={tipo:"objeto",lat:null,lng:null,texto:"",objId:o.id};o._recolhido=false;objMapaSuja();renderObjetos();selectObjeto(n);};
+      row.append(mais);
+      row.draggable=true;
+      row.addEventListener("dragstart",e=>{dragPayload={kind:"objeto",id:o.id};e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",o.id);});
+      row.addEventListener("dragend",()=>{dragPayload=null;caixaAbre(null);host.querySelectorAll(".caixa-aberta").forEach(x=>x.classList.remove("caixa-aberta"));});
+      row.addEventListener("dragover",e=>{
+        if(!dragPayload||dragPayload.kind!=="objeto")return;
+        const d=objetoById(dragPayload.id);
+        if(!d||d===o||descendeObjeto(o,d))return;
+        e.preventDefault();row.classList.add("caixa-aberta");
+      });
+      row.addEventListener("dragleave",()=>row.classList.remove("caixa-aberta"));
+      row.addEventListener("drop",e=>{
+        e.preventDefault();row.classList.remove("caixa-aberta");
+        const d=dragPayload&&objetoById(dragPayload.id);dragPayload=null;
+        if(!d||d===o)return;
+        const de=host.querySelector('[data-oid="'+d.id+'"]');
+        if(depositaObjeto(d,o)){if(de){de.classList.add("a-depositar");setTimeout(renderObjetos,340);}else renderObjetos();}
+      });
+    }
+    row.onclick=()=>selectObjeto(o);
+    host.append(row);total++;
+    if(!o._recolhido&&!q)filhos.filter(passa).forEach(f=>linha(f,nivel+1));
+  };
+  if(q)objetos.filter(passa).sort((a,b)=>a.num-b.num).forEach(o=>linha(o,0));
+  else objetos.filter(o=>objetoRaiz(o)&&passa(o)).sort((a,b)=>a.num-b.num).forEach(o=>linha(o,0));
+  if(!total)host.append(el("div","empty-note",objetos.length?"Nada com este filtro.":"Ainda não há objetos."));
   const inv=objetos.filter(o=>o.inventario&&!o.arquivado);
-  host.append(el("div","foot-note",objetos.length+" objeto"+(objetos.length===1?"":"s")+" · "+inv.length+" no inventário · credencial atual: "+(ehAdmin()?"Systems Admin":CRED_ROT[credAtual()])+"."));
+  host.append(el("div","foot-note",objetos.length+" objeto"+(objetos.length===1?"":"s")+" · "+inv.length+" no inventário · credencial atual: "+(ehAdmin()?"Systems Admin":CRED_ROT[credAtual()])+(objVista==="mapa"?" · no mapa, clique num cubo para abrir a ficha; arraste uma linha da lista para um cubo para o pôr lá dentro.":".")));
 }
 function renderObjetoDetail(head,closeBtn){
   const o=selected.objeto;const ver=podeVerObjeto(o),edit=podeEditarObjeto(o),vals=podeVerValores(o);
@@ -17568,6 +17715,11 @@ function renderObjetoDetail(head,closeBtn){
     detail.append(cg);
   }
   const acts=el("div","setup-btns");acts.style.marginTop="12px";
+  if(podeGerirObjetos()&&!o.arquivado){
+    const nd=el("button","btn tiny","+ Novo objeto dentro deste");
+    nd.onclick=()=>{const n=criaObjeto();n.loc={tipo:"objeto",lat:null,lng:null,texto:"",objId:o.id};o._recolhido=false;objMapaSuja();renderObjetos();selectObjeto(n);};
+    acts.append(nd);
+  }
   if(credAtual()>=(o.cred.editar||2)){
     const arq=el("button","btn tiny",o.arquivado?"Reativar":"Arquivar");
     arq.title=o.arquivado?"Volta a ativo":"Marca como inativo — continua pesquisável e conta para o histórico e a estatística";
@@ -17578,7 +17730,7 @@ function renderObjetoDetail(head,closeBtn){
       if(!await askConfirm("Eliminar o objeto #"+o.num+" “"+o.name+"” da base de dados?"))return;
       objetos.splice(objetos.indexOf(o),1);
       objetos.forEach(x=>{if(x.loc&&x.loc.objId===o.id){x.loc.tipo="";x.loc.objId=null;}x.assoc=(x.assoc||[]).filter(a=>a.id!==o.id);x.alertas=(x.alertas||[]).filter(a=>a.objId!==o.id);});
-      anotaHistorico("eliminar o objeto");markDirty();clearSelection();renderObjetos();
+      anotaHistorico("eliminar o objeto");markDirty();objMapaSuja();clearSelection();renderObjetos();
     };
     acts.append(del);
   }
@@ -17716,7 +17868,7 @@ function renderAlertasRow(){
 /* ---- Estado guardado ---- */
 function agenteParaEstado(a){return {id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,primary:!!a.primary,absent:!!a.absent,subst:a.subst||null,cred:credDe(a),podeCredSub:!!a.podeCredSub,podeCredArvore:!!a.podeCredArvore};}
 function tarefaParaEstado(t){return {id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom,prazoDias:Number.isFinite(t.prazoDias)?t.prazoDias:null,ativaDesde:t.ativaDesde||null,validadoPor:t.validadoPor||null,validadoEm:t.validadoEm||null};}
-function extrasParaEstado(){return {pelouros:pelouros.map(pl=>({id:pl.id,name:pl.name,resp:pl.resp||null,nodes:pl.nodes.slice()})),objetos:objetos.map(o=>JSON.parse(JSON.stringify(o))),alertas:{avisoDias:ALERTAS.avisoDias,escalaDias:ALERTAS.escalaDias},objetoCounter,pelouroCounter};}
+function extrasParaEstado(){return {pelouros:pelouros.map(pl=>({id:pl.id,name:pl.name,resp:pl.resp||null,nodes:pl.nodes.slice()})),objetos:objetos.map(o=>JSON.parse(JSON.stringify(o))),repositorios:repositorios.map(r=>JSON.parse(JSON.stringify(r))),alertas:{avisoDias:ALERTAS.avisoDias,escalaDias:ALERTAS.escalaDias},objetoCounter,pelouroCounter,repoCounter};}
 const DATA_ISO=/^\d{4}-\d{2}-\d{2}$/;
 function objetoSaneado(o){
   const s=v=>String(v==null?"":v),lista=v=>Array.isArray(v)?v:[],loc=o.loc||{},cred=o.cred||{};
@@ -17754,8 +17906,296 @@ function extrasDoEstado(s){
   const num=(id,pre)=>{const m=String(id||"").match(new RegExp("^"+pre+"(\\d+)$"));return m?+m[1]:0;};
   pelouroCounter=Math.max(pelouroCounter,x.pelouroCounter|0,...pelouros.map(pl=>num(pl.id,"P")));
   objetoCounter=Math.max(objetoCounter,x.objetoCounter|0,...objetos.map(o=>o.num|0));
+  repositorios.length=0;
+  (Array.isArray(x.repositorios)?x.repositorios:[]).slice(0,5000).forEach(r=>{if(r&&typeof r==="object"&&r.id)repositorios.push(repoSaneado(r));});
+  repoCounter=Math.max(repoCounter,x.repoCounter|0,...repositorios.map(r=>r.num|0));
+  objMapaSuja();
   atualizaAtivas();
-  if(booted){renderPelouros();renderObjetos();renderPerfilRow();renderAlertasRow();}
+  if(booted){renderPelouros();renderObjetos();renderRepositorios();renderPerfilRow();renderAlertasRow();}
+}
+
+/* ============================================================
+   MAPA DE OBJETOS — cubos
+   A hierarquia dos objetos vê-se em cubos (a organização é de esferas): as
+   raízes num anel, os que estão dentro em volta de quem os contém, um
+   andar abaixo por nível. Enquanto o mapa está à vista, a organização e os
+   procedimentos escondem-se. Cada cubo tem uma tampa que abre quando se
+   lhe arrasta um objeto para cima — e as faces vestem-se com o tema.
+============================================================ */
+let objMapaAtivo=false,objMapaPorFazer=true,objGrupo=null,objAberto=null;
+const objCubos=new Map(),objPickables=[],objVoos=[];
+const objTexCache={};
+function corObjeto(o){return o.arquivado?0x8A8A8A:new THREE.Color().setHSL(nameHue(o.categoria||o.name)/360,0.48,THEME_LIGHT?0.42:0.58).getHex();}
+/* as faces por tema: azulejo em Lisboa, cartão na Calçada, madeira no Verde,
+   traço grosso no Contraste, grelha fina de néon no Noturno */
+function objTextura(){
+  if(objTexCache[themeId])return objTexCache[themeId];
+  const c=document.createElement("canvas");c.width=c.height=128;const x=c.getContext("2d");
+  const T=THEMES[themeId]||THEMES.nocturno;
+  if(themeId==="lisboa"){
+    x.fillStyle="#EEF4FF";x.fillRect(0,0,128,128);x.strokeStyle="#3E7CB1";x.lineWidth=2;
+    for(let i=0;i<4;i++)for(let j=0;j<4;j++){x.strokeRect(i*32+2,j*32+2,28,28);x.fillStyle=(i+j)%2?"#3E7CB1":"#9AC2E8";x.beginPath();x.moveTo(i*32+16,j*32+6);x.lineTo(i*32+26,j*32+16);x.lineTo(i*32+16,j*32+26);x.lineTo(i*32+6,j*32+16);x.closePath();x.fill();}
+  }else if(themeId==="calcada"){
+    x.fillStyle="#D9C7A0";x.fillRect(0,0,128,128);x.strokeStyle="rgba(120,90,40,.35)";x.lineWidth=1;
+    for(let i=0;i<128;i+=6){x.beginPath();x.moveTo(0,i);x.lineTo(128,i);x.stroke();}
+    x.fillStyle="rgba(150,110,50,.55)";x.fillRect(44,0,40,128);   // a fita de embalar
+  }else if(themeId==="verde"){
+    x.fillStyle="#2A4A3A";x.fillRect(0,0,128,128);
+    for(let i=0;i<4;i++){x.fillStyle=i%2?"#35604A":"#2E5542";x.fillRect(0,i*32,128,30);x.strokeStyle="rgba(217,195,106,.5)";x.strokeRect(1,i*32+1,126,28);}
+  }else if(themeId==="contraste"){
+    x.fillStyle="#FFFFFF";x.fillRect(0,0,128,128);x.strokeStyle="#000";x.lineWidth=10;x.strokeRect(5,5,118,118);
+  }else{
+    x.fillStyle="#0E1A30";x.fillRect(0,0,128,128);x.strokeStyle="rgba(232,180,76,.35)";x.lineWidth=1;
+    for(let i=16;i<128;i+=16){x.beginPath();x.moveTo(i,0);x.lineTo(i,128);x.moveTo(0,i);x.lineTo(128,i);x.stroke();}
+    x.strokeStyle="rgba(232,180,76,.9)";x.lineWidth=3;x.strokeRect(2,2,124,124);
+  }
+  const tex=new THREE.CanvasTexture(c);tex.anisotropy=ANISO||1;
+  return objTexCache[themeId]=tex;
+}
+function objMapaTema(){
+  if(!objGrupo)return;
+  const tex=objTextura();
+  objCubos.forEach(c=>{c.mesh.material.map=tex;c.mesh.material.needsUpdate=true;c.tampa.material.map=tex;c.tampa.material.needsUpdate=true;c.arestas.material.color.setHex(objCorAresta());});
+}
+function objCorAresta(){const T=THEMES[themeId]||THEMES.nocturno;return new THREE.Color(T.css["--steel"]||"#C9D6E8").getHex();}
+function objMapaSuja(){objMapaPorFazer=true;}
+function objCubo(o){return o?objCubos.get(o.id)||null:null;}
+function objCuboEm(x,y){
+  mouse.x=(x/innerWidth)*2-1;mouse.y=-(y/innerHeight)*2+1;ray.setFromCamera(mouse,camera);
+  const h=ray.intersectObjects(objPickables);return h.length?h[0].object.userData.objeto:null;
+}
+function objLayout(){
+  const pos=new Map();
+  const raizes=objetos.filter(objetoRaiz).sort((a,b)=>a.num-b.num);
+  const desc=o=>filhosDe(o).reduce((s,f)=>s+1+desc(f),0);
+  const R=Math.max(2.4,0.62*raizes.length),y0=4.2;
+  const coloca=(o,x,y,z,ang,nivel)=>{
+    const n=desc(o),lado=Math.min(1.25,0.46+0.08*Math.min(8,n));
+    pos.set(o.id,{x,y,z,lado,nivel});
+    const fs=filhosDe(o);if(!fs.length)return;
+    const r=Math.max(0.95,0.42*fs.length)*(nivel?0.85:1),abre=nivel?Math.PI*0.9:Math.PI*2;
+    fs.forEach((f,i)=>{const a=ang+(fs.length===1?0:(i-(fs.length-1)/2)*abre/(nivel?Math.max(1,fs.length-1):fs.length));coloca(f,x+Math.cos(a)*r,y-1.5,z+Math.sin(a)*r,a,nivel+1);});
+  };
+  raizes.forEach((o,i)=>{const a=i/raizes.length*Math.PI*2;coloca(o,Math.cos(a)*R,y0,Math.sin(a)*R,a,0);});
+  return pos;
+}
+function objMapaConstroi(){
+  objMapaDesfaz();
+  objGrupo=new THREE.Group();scene.add(objGrupo);
+  const tex=objTextura(),aresta=objCorAresta(),lay=objLayout();
+  const linhas=[];
+  objetos.forEach(o=>{
+    const L=lay.get(o.id);if(!L)return;
+    const cor=corObjeto(o);
+    const mat=new THREE.MeshPhongMaterial({map:tex,color:cor,emissive:cor,emissiveIntensity:0.12,shininess:40,transparent:true,opacity:o.arquivado?0.45:1});
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(L.lado,L.lado*0.9,L.lado),mat);
+    mesh.position.set(L.x,L.y,L.z);mesh.userData.objeto=o;
+    const arestas=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:aresta,transparent:true,opacity:0.9}));
+    mesh.add(arestas);
+    /* a tampa: uma lâmina presa pela aresta de trás, que roda para abrir */
+    const eixo=new THREE.Group();eixo.position.set(0,L.lado*0.45,-L.lado/2);
+    const tampa=new THREE.Mesh(new THREE.BoxGeometry(L.lado*1.02,L.lado*0.08,L.lado*1.02),new THREE.MeshPhongMaterial({map:tex,color:cor,emissive:GOLD3D,emissiveIntensity:0,shininess:60}));
+    tampa.position.set(0,L.lado*0.04,L.lado/2);eixo.add(tampa);mesh.add(eixo);
+    const rot=textSprite(abbrev(o.name),"#"+o.num+(o.categoria?" · "+o.categoria:""),hex(cor));
+    rot.position.set(0,L.lado*0.45+0.42,0);rot.material.opacity=0.92;rot.scale.multiplyScalar(0.62);mesh.add(rot);
+    objGrupo.add(mesh);objPickables.push(mesh);
+    objCubos.set(o.id,{o,mesh,tampa,eixo,arestas,rot,lado:L.lado,cor,abre:0,abreAlvo:0,brilho:0});
+    const pai=(o.loc&&o.loc.tipo==="objeto")?lay.get(o.loc.objId):null;
+    if(pai)linhas.push(L.x,L.y,L.z,pai.x,pai.y,pai.z);
+  });
+  if(linhas.length){
+    const lg=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(linhas,3)),new THREE.LineBasicMaterial({color:aresta,transparent:true,opacity:0.45}));
+    objGrupo.add(lg);
+  }
+  objGrupo.visible=objMapaAtivo;objMapaPorFazer=false;
+}
+function objMapaDesfaz(){
+  if(!objGrupo)return;
+  scene.remove(objGrupo);
+  objGrupo.traverse(m=>{if(m.geometry)m.geometry.dispose();if(m.material&&m.material.map&&!Object.values(objTexCache).includes(m.material.map))m.material.map.dispose();if(m.material)m.material.dispose();});
+  objGrupo=null;objCubos.clear();objPickables.length=0;objVoos.length=0;objAberto=null;
+}
+function objMapaCentro(){const r=objetos.filter(objetoRaiz).length;return {c:new THREE.Vector3(0,3.2,0),raio:Math.max(9,0.62*r*2.4+7)};}
+function objMapaMostra(on){
+  on=!!on;
+  if(on===objMapaAtivo&&!(on&&objMapaPorFazer))return;
+  objMapaAtivo=on;
+  if(on){
+    if(objMapaPorFazer||!objGrupo)objMapaConstroi();
+    objGrupo.visible=true;
+    if(!ehPalco){const m=objMapaCentro();focusOn(m.c,m.raio);rig.goal.phi=1.0;}
+  }else{
+    if(objGrupo)objGrupo.visible=false;
+    if(!ehPalco&&selected&&selected.type==="objeto")releaseFocus();
+  }
+  /* a organização cede o lugar ao mapa (e volta) */
+  const org=!on;
+  nodeGroup.visible=org;hierGroup.visible=org;tierRingGroup.visible=org;
+  if(typeof hierMalha!=="undefined"&&hierMalha)hierMalha.visible=org;
+  if(typeof hierPontos!=="undefined"&&hierPontos)hierPontos.visible=org;
+  processes.forEach(p=>{if(p._group)p._group.visible=org&&!!p._visible;});
+}
+function caixaAbre(o){
+  if(objAberto&&objAberto!==o){const c=objCubo(objAberto);if(c){c.abreAlvo=0;c.brilho=0;}}
+  objAberto=o||null;
+  const c=objCubo(o);if(c){c.abreAlvo=1;c.brilho=1;}
+  document.body.classList.toggle("caixa-aberta-3d",!!o);
+}
+/* ao largar, o cubo arrastado voa para dentro da caixa e encolhe; depois o mapa refaz-se */
+function objCaixaDeposita(o,alvo){
+  const de=objCubo(o),para=objCubo(alvo);
+  if(!de||!para){objMapaSuja();return;}
+  para.abreAlvo=1;para.brilho=1;
+  objVoos.push({de,para,t:0,dur:0.7,ini:de.mesh.position.clone(),esc:de.mesh.scale.x});
+}
+function stepObjMapa(dt){
+  if(objMapaAtivo){
+    if(objMapaPorFazer&&!objVoos.length)objMapaConstroi();
+    processes.forEach(p=>{if(p._group&&p._group.visible)p._group.visible=false;});
+  }
+  if(!objGrupo||!objGrupo.visible)return;
+  objCubos.forEach(c=>{
+    c.abre+=(c.abreAlvo-c.abre)*Math.min(1,dt*6);
+    c.eixo.rotation.x=-c.abre*1.95;
+    c.tampa.material.emissiveIntensity=c.brilho*0.9*c.abre;
+    c.mesh.material.emissiveIntensity=0.12+0.5*c.brilho*c.abre;
+  });
+  for(let i=objVoos.length-1;i>=0;i--){
+    const v=objVoos[i];v.t+=dt;const u=Math.min(1,v.t/v.dur),e=u*u*(3-2*u);
+    const alvo=v.para.mesh.position.clone().setY(v.para.mesh.position.y+v.para.lado*0.9);
+    v.de.mesh.position.lerpVectors(v.ini,alvo,e);v.de.mesh.position.y+=Math.sin(u*Math.PI)*1.2;
+    v.de.mesh.scale.setScalar(v.esc*(1-0.85*e));
+    if(u>=1){v.para.abreAlvo=0;v.para.brilho=0;objVoos.splice(i,1);objMapaSuja();}
+  }
+}
+/* ============================================================
+   REPOSITÓRIOS
+   Documentos, multimédia, atas e minutas: cada um com formato, ligação
+   (endereço web ou caminho de rede), data, observações, as associações a
+   procedimentos, tarefas, nódulos e pessoas, e a credencial mínima de
+   acesso — abaixo dela a pessoa vê que o repositório existe, mas não o abre.
+============================================================ */
+const REPO_TIPOS={documento:"Documento",multimedia:"Multimédia",ata:"Ata",minuta:"Minuta"};
+const REPO_FORMATOS={documento:["PDF","DOCX","XLSX","PPTX","ODT","TXT","outro"],multimedia:["MP4","MOV","MP3","WAV","JPG","PNG","outro"],ata:["PDF","DOCX","ODT","outro"],minuta:["DOCX","ODT","PDF","outro"]};
+let repoQuery="",repoFiltro="todos";
+function criaRepositorio(tipo,assoc){
+  const r={id:"R"+(++repoCounter),num:repoCounter,tipo:REPO_TIPOS[tipo]?tipo:"documento",nome:"Novo "+(REPO_TIPOS[tipo]||"documento").toLowerCase()+" "+repoCounter,formato:"PDF",ligacao:"",data:hojeISO(),obs:"",assoc:assoc?assoc.slice():[],cred:1,criado:hojeISO()};
+  repositorios.push(r);anotaHistorico("criar o repositório");markDirty();return r;
+}
+function repoById(id){return repositorios.find(r=>r.id===id)||null;}
+function podeAcederRepo(r){return credAtual()>=(r.cred||1);}
+function podeEditarRepo(r){return podeAcederRepo(r)&&credAtual()>=2;}
+function repoSaneado(r){
+  const s=v=>String(v==null?"":v);
+  return {id:s(r.id).slice(0,20),num:Math.max(1,r.num|0),tipo:REPO_TIPOS[r.tipo]?r.tipo:"documento",nome:s(r.nome||"Repositório").slice(0,80),formato:s(r.formato||"outro").slice(0,12),
+    ligacao:s(r.ligacao).slice(0,500),data:DATA_ISO.test(s(r.data))?r.data:hojeISO(),obs:s(r.obs).slice(0,1000),
+    assoc:(Array.isArray(r.assoc)?r.assoc:[]).filter(a=>a&&a.id&&["procedimento","tarefa","nodulo","agente"].includes(a.tipo)).slice(0,80).map(a=>({tipo:a.tipo,id:s(a.id).slice(0,24)})),
+    cred:credValida(r.cred||1),criado:DATA_ISO.test(s(r.criado))?r.criado:hojeISO()};
+}
+function reposDe(tipo,id){return repositorios.filter(r=>r.assoc.some(a=>a.tipo===tipo&&a.id===id));}
+function tarefaById(id){for(const p of processes){const t=p.tasks.find(x=>x.id===id);if(t)return t;}return null;}
+function nomeAssoc(a){
+  if(a.tipo==="procedimento"){const p=layerById(a.id);return p?"⟳ "+p.name:null;}
+  if(a.tipo==="tarefa"){const t=tarefaById(a.id);if(!t)return null;const A=byId(t.a),B=byId(t.b);return "tarefa "+(t.nome||((A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")));}
+  if(a.tipo==="nodulo"){const n=byId(a.id);return n?"◉ "+n.name:null;}
+  if(a.tipo==="agente"){const g=agentById(a.id);return g?"★ "+g.name:null;}
+  return null;
+}
+function abreAssoc(a){
+  if(a.tipo==="procedimento"){const p=layerById(a.id);if(p)showFlowchart(p);}
+  else if(a.tipo==="tarefa"){const t=tarefaById(a.id);if(t)selectTask(t);}
+  else if(a.tipo==="nodulo"){const n=byId(a.id);if(n)selectNode(n);}
+  else if(a.tipo==="agente"){const g=agentById(a.id);if(g)selectAgent(g);}
+}
+function selectRepositorio(r){navigateTo({type:"repositorio",repositorio:r});}
+function repoLinha(r,host,compacto){
+  const row=el("button","row repo-row"+(podeAcederRepo(r)?"":" restrito"));row.type="button";
+  const tg=el("span","repo-tipo",REPO_TIPOS[r.tipo]);tg.style.color=hex(corRepo(r));row.append(tg);
+  row.append(el("span","row-name",r.nome));
+  row.append(el("span","t-route",(podeAcederRepo(r)?r.formato+" · "+r.data:"restrito · credencial "+CRED_ROT[r.cred])+(compacto?"":" · "+r.assoc.length+" associação"+(r.assoc.length===1?"":"ões"))));
+  row.title=podeAcederRepo(r)?"Abrir a ficha do repositório":"A sua credencial não permite abrir este repositório";
+  row.onclick=()=>selectRepositorio(r);host.append(row);
+}
+function corRepo(r){return {documento:0x6A9BE0,multimedia:0xE06AAE,ata:0xC8B45A,minuta:0x5AC8A0}[r.tipo]||GOLD3D;}
+function renderRepositorios(){
+  const host=document.getElementById("repoList");if(!host)return;host.innerHTML="";
+  const topo=el("div","setup-btns");
+  if(credAtual()>=2){Object.keys(REPO_TIPOS).forEach(k=>{const b=el("button","btn tiny","+ "+REPO_TIPOS[k]);b.onclick=()=>{const r=criaRepositorio(k);renderRepositorios();selectRepositorio(r);};topo.append(b);});}
+  host.append(topo);
+  const busca=el("input","search-input");busca.placeholder="Procurar por nome, formato ou associação…";busca.value=repoQuery;busca.setAttribute("aria-label","Procurar repositórios");
+  busca.addEventListener("input",()=>{repoQuery=busca.value;renderRepositorios();setTimeout(()=>{const b=host.querySelector(".search-input");if(b&&document.activeElement!==b){b.focus();b.setSelectionRange(b.value.length,b.value.length);}},0);});
+  host.append(busca);
+  const chips=el("div","chips");
+  [["todos","Todos"]].concat(Object.entries(REPO_TIPOS).map(([k,v])=>[k,v+"s"])).forEach(([k,r])=>{const c=el("button","chip"+(repoFiltro===k?" on":""),k==="ata"?"Atas":(k==="documento"?"Documentos":(k==="multimedia"?"Multimédia":(k==="minuta"?"Minutas":r))));c.type="button";c.onclick=()=>{repoFiltro=k;renderRepositorios();};chips.append(c);});
+  host.append(chips);
+  const q=normaliza(repoQuery);
+  const lista=repositorios.filter(r=>repoFiltro==="todos"||r.tipo===repoFiltro).filter(r=>!q||normaliza(r.nome+" "+r.formato+" "+r.assoc.map(nomeAssoc).join(" ")).includes(q)).sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:0));
+  if(!lista.length)host.append(el("div","empty-note",repositorios.length?"Nada com este filtro.":"Ainda não há repositórios."));
+  lista.forEach(r=>repoLinha(r,host,false));
+  host.append(el("div","foot-note",repositorios.length+" repositório"+(repositorios.length===1?"":"s")+" · credencial atual: "+(ehAdmin()?"Systems Admin":CRED_ROT[credAtual()])+"."));
+}
+function renderRepositorioDetail(head,closeBtn){
+  const r=selected.repositorio,acesso=podeAcederRepo(r),edit=podeEditarRepo(r);
+  const titleIn=el("input","d-title-input");titleIn.value=r.nome;titleIn.maxLength=80;titleIn.disabled=!edit;titleIn.setAttribute("aria-label","Nome do repositório");
+  titleIn.addEventListener("change",()=>{const v=titleIn.value.trim();if(!v){titleIn.value=r.nome;return;}r.nome=v;anotaHistorico("renomear o repositório");markDirty();renderRepositorios();});
+  titleIn.addEventListener("keydown",e=>{if(e.key==="Enter")titleIn.blur();});
+  head.append(titleIn,closeBtn);detail.append(head);
+  detail.append(el("div","d-sub",REPO_TIPOS[r.tipo]+" #"+r.num+" · "+r.formato+" · "+r.data));
+  if(!acesso){detail.append(el("div","empty-note","Repositório restrito: pede credencial "+CRED_ROT[r.cred]+" (a sua é "+CRED_ROT[credAtual()]+")."));return;}
+  if(!edit)detail.append(el("div","foot-note","Só consulta: editar pede credencial Operacional."));
+  const g=el("div","field-grid");
+  g.append(el("label",null,"Tipo"));const ts=mkSelect(Object.entries(REPO_TIPOS).map(([k,v])=>({label:v,value:k})),r.tipo,v=>{r.tipo=v;if(!REPO_FORMATOS[v].includes(r.formato))r.formato=REPO_FORMATOS[v][0];markDirty();renderDetail();renderRepositorios();});ts.disabled=!edit;g.append(ts);
+  g.append(el("label",null,"Formato"));const fs=mkSelect(REPO_FORMATOS[r.tipo].map(f=>({label:f,value:f})),REPO_FORMATOS[r.tipo].includes(r.formato)?r.formato:"outro",v=>{r.formato=v;markDirty();renderRepositorios();});fs.disabled=!edit;g.append(fs);
+  g.append(el("label",null,"Ligação"));const li=el("input");li.type="text";li.maxLength=500;li.value=r.ligacao;li.placeholder="https://… ou \\\\servidor\\pasta\\ficheiro";li.disabled=!edit;li.setAttribute("aria-label","Ligação do repositório");li.addEventListener("change",()=>{r.ligacao=li.value.trim();markDirty();renderDetail();});g.append(li);
+  if(urlSegura(r.ligacao)){const a=el("a","btn tiny","Abrir ligação");a.href=r.ligacao;a.target="_blank";a.rel="noopener";g.append(el("label",null,""),a);}
+  else if(r.ligacao){const cp=el("button","btn tiny","Copiar caminho");cp.onclick=()=>{try{navigator.clipboard.writeText(r.ligacao);flash("Caminho copiado.",{key:"repo"});}catch(e){}};g.append(el("label",null,""),cp);}
+  g.append(el("label",null,"Data"));const di=el("input");di.type="date";di.value=r.data;di.disabled=!edit;di.setAttribute("aria-label","Data do repositório");di.addEventListener("change",()=>{if(DATA_ISO.test(di.value)){r.data=di.value;markDirty();renderRepositorios();}});g.append(di);
+  if(ehAdmin()||ehPresidente()){g.append(el("label",null,"Credencial mínima"));g.append(mkSelect([1,2,3,4,5].map(v=>({label:v+" — "+CRED_ROT[v],value:String(v)})),String(r.cred),v=>{r.cred=credValida(v);markDirty();renderRepositorios();}));}
+  else{g.append(el("label",null,"Credencial mínima"));g.append(el("div","d-meta",CRED_ROT[r.cred]));}
+  detail.append(g);
+  detail.append(el("h4",null,"Associações"));
+  const ac=el("div","chips");
+  r.assoc.forEach((a,i)=>{const nm=nomeAssoc(a);const c=el("button","chip on",(nm||"?")+(edit?" ✕":""));c.type="button";c.title=edit?"Clique para retirar · Shift+clique para abrir":"Abrir";c.onclick=e=>{if(edit&&!e.shiftKey){r.assoc.splice(i,1);markDirty();renderDetail();return;}abreAssoc(a);};ac.append(c);});
+  if(edit){
+    const ops=[{label:"+ associar…",value:""}];
+    processes.forEach(p=>ops.push({label:"Procedimento "+p.name,value:"procedimento:"+p.id}));
+    processes.forEach(p=>p.tasks.forEach(t=>{const A=byId(t.a),B=byId(t.b);ops.push({label:"Tarefa "+(t.nome||((A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")))+" · "+p.name,value:"tarefa:"+t.id});}));
+    nodes.forEach(n=>ops.push({label:"Nódulo "+n.name,value:"nodulo:"+n.id}));
+    agents.forEach(a=>ops.push({label:"Pessoa "+a.name,value:"agente:"+a.id}));
+    const sel=mkSelect(ops,"",v=>{if(!v)return;const i=v.indexOf(":");const a={tipo:v.slice(0,i),id:v.slice(i+1)};if(!r.assoc.some(x=>x.tipo===a.tipo&&x.id===a.id))r.assoc.push(a);markDirty();renderDetail();});
+    ac.append(sel);
+  }
+  detail.append(ac);
+  detail.append(el("h4",null,"Observações"));
+  const box=el("textarea","desc-box");box.value=r.obs||"";box.maxLength=1000;box.disabled=!edit;box.setAttribute("aria-label","Observações sobre o repositório");box.addEventListener("change",()=>{r.obs=box.value;markDirty();});detail.append(box);
+  if(edit){
+    const acts=el("div","setup-btns");acts.style.marginTop="12px";
+    const del=el("button","btn tiny danger-btn","Eliminar");
+    del.onclick=async()=>{if(!await askConfirm("Eliminar o repositório “"+r.nome+"”?"))return;repositorios.splice(repositorios.indexOf(r),1);anotaHistorico("eliminar o repositório");markDirty();clearSelection();renderRepositorios();};
+    acts.append(del);detail.append(acts);
+  }
+}
+/* a secção "Repositórios" nos painéis de nódulo, pessoa e tarefa */
+function renderReposDe(tipo,id){
+  detail.append(el("h4",null,"Repositórios"));
+  const lista=reposDe(tipo,id);
+  if(!lista.length)detail.append(el("div","empty-note","Nenhum repositório ligado."));
+  lista.forEach(r=>repoLinha(r,detail,true));
+  if(credAtual()>=2){
+    const row=el("div","setup-btns");
+    const ops=[{label:"+ ligar repositório existente…",value:""}].concat(repositorios.filter(r=>podeAcederRepo(r)&&!lista.includes(r)).map(r=>({label:REPO_TIPOS[r.tipo]+" · "+r.nome,value:r.id})));
+    const sel=mkSelect(ops,"",v=>{const r=repoById(v);if(!r)return;r.assoc.push({tipo,id});markDirty();renderDetail();});
+    const nb=el("button","btn tiny","+ Novo documento ligado a isto");nb.onclick=()=>{const r=criaRepositorio("documento",[{tipo,id}]);renderRepositorios();selectRepositorio(r);};
+    row.append(sel,nb);detail.append(row);
+  }
+}
+/* chips de repositórios no cabeçalho do fluxograma */
+function reposChips(tipo,id){
+  const wrap=el("div","chips");wrap.style.margin="4px 0 0";
+  const lista=reposDe(tipo,id);
+  lista.forEach(r=>{const c=el("button","chip"+(podeAcederRepo(r)?" on":""),(podeAcederRepo(r)?"":"🔒 ")+REPO_TIPOS[r.tipo]+" · "+r.nome);c.type="button";c.title=podeAcederRepo(r)?"Abrir a ficha":"Restrito";c.onclick=()=>selectRepositorio(r);wrap.append(c);});
+  if(credAtual()>=2){const nb=el("button","chip acao","+ repositório");nb.type="button";nb.onclick=()=>{const r=criaRepositorio("documento",[{tipo,id}]);renderRepositorios();selectRepositorio(r);};wrap.append(nb);}
+  return wrap;
 }
 
 /* ============================================================
@@ -17835,6 +18275,14 @@ function idleComeca(primeira){
     const fundo=!!ground&&o.height<ground.position.y-0.5;   // um anel por baixo do chão vê-se de baixo, de lado
     idleCamara(new THREE.Vector3(0,o.height,0),fundo?Math.max(11,rGuide()*1.5+4):Math.max(11,rGuide()*2.0+6));
     rig.goal.phi=fundo?1.45:0.98;
+  }else if(foco.tipo==="objeto"){
+    /* o palco troca a organização pelo mapa de objetos enquanto se edita um */
+    objMapaMostra(true);
+    const c=objCubo(o);
+    if(!c){idleObjs=null;return;}
+    objs.cor=c.cor;
+    idleCamara(c.mesh.position.clone().setY(c.mesh.position.y+0.4),Math.max(5,c.lado*9));
+    rig.goal.phi=1.05;
   }else if(foco.tipo==="novo"){
     /* um procedimento que ainda não existe: um anel fantasma à altura que lhe cabe */
     const hs=processes.map(p2=>p2.height).filter(Number.isFinite);
@@ -17892,6 +18340,13 @@ function stepIdle(dt){
     if(B)B._idle=0.15+0.35*Math.max(0,-Math.cos(u*Math.PI));   // o destino ao chegar
     if(u<idleObjs.uAnt&&B&&!reduceMotion)B._ripple={t:0,dur:1.0};
     idleObjs.uAnt=u;
+  }else if(foco.tipo==="objeto"){
+    const c=objCubo(o);
+    if(c){
+      c.mesh.rotation.y+=dt*0.45;
+      c.abreAlvo=0.18+0.1*pulso;   // a tampa respira, entreaberta
+      c.brilho=0.35+0.3*pulso;
+    }
   }else if(foco.tipo==="procedimento"){
     const N=o.tasks.length;
     if(N){
@@ -17914,6 +18369,7 @@ function stepIdle(dt){
 }
 function idleTermina(){
   holoTermina();obraTermina();procuraTermina();
+  if(foco&&foco.tipo==="objeto"){const c=objCubo(nascAcha(foco));if(c){c.abreAlvo=0;c.brilho=0;c.mesh.rotation.y=0;}if(ehPalco)objMapaMostra(false);}
   nodes.forEach(n=>{if(n._idle!==undefined)delete n._idle;});
   idleHalo.visible=false;idleHalo.material.opacity=0;
   if(idleFaisca){idleFaisca.visible=false;idleFaisca.material.opacity=0;}
@@ -17984,6 +18440,10 @@ function holoLinhas(){
     const A=byId(o.a),B=byId(o.b),ag=o.agent?agentById(o.agent):null;
     L.push(["tarefa",o.nome||o.desc||"sem nome"],["de",A?A.name:"?"],["para",B?B.name:"?"],
       ["dura",o.duration||"sem duração"],["quem",ag?ag.name:"ninguém"],["estado",rotuloEstado(o.estado)]);
+  }else if(foco.tipo==="objeto"){
+    const onde=o.loc.tipo==="objeto"&&objetoById(o.loc.objId)?"dentro de #"+objetoById(o.loc.objId).num+" "+objetoById(o.loc.objId).name:(o.loc.tipo==="geo"?"geolocalizado":(o.loc.tipo==="texto"&&o.loc.texto?o.loc.texto:"sem localização"));
+    L.push(["objeto #"+o.num,o.name],["categoria",o.categoria||"sem categoria"],["atributos",o.atributos.length?o.atributos.slice(0,3).join(", ")+(o.atributos.length>3?"…":""):"nenhum"],
+      ["contém",objetosDentro(o).length+" objeto"+(objetosDentro(o).length===1?"":"s")],["onde",onde],["estado",o.arquivado?"arquivado":(o.inventario?"ativo · inventário":"ativo")]);
   }else if(foco.tipo==="procedimento"){
     const st=procStats(o),unid=new Set();
     o.tasks.forEach(t=>{unid.add(t.a);unid.add(t.b);});
@@ -18019,6 +18479,7 @@ function holoAncora(o){
   if(foco.tipo==="tarefa")return (idleObjs&&idleObjs.curva)?{base:idleObjs.curva.getPoint(0.5),sobe:1.3,k:1.25}:null;
   /* a câmara do procedimento vê o anel inteiro, de longe: o painel cresce com ele */
   if(foco.tipo==="procedimento")return {base:new THREE.Vector3(0,o.height,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)};
+  if(foco.tipo==="objeto"){const c=objCubo(o);return c?{base:c.mesh.position.clone(),sobe:c.lado/2+1.25,k:0.85}:null;}
   if(foco.tipo==="novo")return idleObjs?{base:new THREE.Vector3(0,idleObjs.altura,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)}:null;
   if(foco.tipo==="procura"){
     const org=foco.origem?byId(foco.origem):null;
