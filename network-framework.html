@@ -17357,7 +17357,7 @@ function corPelouro(pl){const i=Math.max(0,pelouros.indexOf(pl));return LAYER_CO
 function corLegivel(c){
   if(!THEME_LIGHT)return hex(c);
   const col=new THREE.Color(c),hsl={};col.getHSL(hsl);
-  col.setHSL(hsl.h,Math.min(1,hsl.s*1.1),Math.min(hsl.l,0.3));
+  col.setHSL(hsl.h,Math.min(1,hsl.s*1.1),Math.min(hsl.l,0.24));
   return "#"+col.getHexString();
 }
 function podeEditarPelouros(){return ehAdmin()||ehPresidente();}
