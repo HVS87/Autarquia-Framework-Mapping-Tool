@@ -25,6 +25,13 @@ Cada tema retinge toda a interface, aurora do céu, tesserae do chão, e as pale
 - **Fluxogramas 2D**: Cada procedimento desdobra-se num fluxograma editável com visualização de cadeias
 - **Grupos de procedimentos**: Agrupar tarefas relacionadas em "Grupos de Procedimentos" para melhor navegação
 
+### Governação
+- **Pelouros**: o Presidente (ou o Systems Admin) cria, edita e elimina Pelouros; cada um junta nódulos raiz e tudo o que está hierarquicamente abaixo, com um responsável do Executivo. Um nódulo pode ser destacado para outro Pelouro. Os procedimentos pertencem ao Pelouro onde têm origem. O organograma mostra o Pelouro de cada braço.
+- **Credenciais de segurança** (Consulta · Operacional · Chefia · Direção · Executivo): o Systems Admin define-as; o Presidente altera todas; os membros do Executivo alteram as dos seus Pelouros; uma chefia altera as dos subordinados diretos ou dos nódulos abaixo se tiver essa permissão, e nunca acima da sua.
+- **Objetos**: número, nome, categoria e atributos com texto preditivo, alertas (recorrentes, por procedimento ou por alteração noutro objeto), localização (geográfica, morada ou dentro de outro objeto), associações a objetos e procedimentos, valores com histórico (cobranças, despesas, valor patrimonial), observações, "conta para o inventário", arquivar e eliminar. O que se vê e edita depende da credencial.
+- **Validação e prazos de tarefas**: uma tarefa só fica concluída quando o responsável a valida, e só então o procedimento prossegue. Cada tarefa tem um prazo em dias (editável pela chefia com credencial): aviso amarelo "Prazo a vencer" ao aproximar-se, alerta vermelho "Em atraso" ao responsável e à chefia direta quando passa, e de semana em semana o alerta sobe um nível na hierarquia até ao responsável do Pelouro e ao Presidente. Os prazos dos alertas afinam-se em Definições.
+- **Perfil ativo** (Definições): escolhe-se quem está a usar a aplicação — o Systems Admin ou um dos agentes — e tudo o resto respeita a credencial dessa pessoa.
+
 ### Experiência do Utilizador
 - **Tour guiado**: Reprodução automática (com ritmo adaptativo) ou navegação manual (←/→ ou clique)
 - **Pesquisa em tempo real**: Filtro rápido em todos os separadores (Procedimentos, Nódulos, Agentes, Grupos)

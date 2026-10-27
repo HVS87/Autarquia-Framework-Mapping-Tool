@@ -951,11 +951,13 @@
   }
   .field-grid label{color:var(--ink-dim);overflow-wrap:anywhere}
   .field-grid select,.field-grid input,.field-grid textarea{max-width:100%;min-width:0}
-  .field-grid input[type=text]{
+  .field-grid input[type=text],.field-grid input[type=number],.field-grid input[type=date]{
     background:rgba(255,255,255,0.04);border:1px solid var(--hairline);border-radius:6px;
     color:var(--ink);font:inherit;font-size:.74rem;padding:4px 7px;width:100%;
   }
-  .field-grid input[type=text]:focus{outline:none;border-color:var(--steel)}
+  .field-grid input[type=text]:focus,.field-grid input[type=number]:focus,.field-grid input[type=date]:focus{outline:none;border-color:var(--steel)}
+  .field-grid input[type=date]{color-scheme:dark}
+  body.theme-light .field-grid input[type=date]{color-scheme:light}
 
   .search-wrap{position:relative;margin-top:4px}
   .search-input{
@@ -1363,6 +1365,33 @@
     max-height:calc(100vh - var(--hdr-h,60px) - 46vh - 30px);
   }
   body.vp-tablet.vp-portrait #modalCard{width:min(720px,100%)}
+
+  /* ---- Governação: alertas, pelouros, objetos ---- */
+  .alerta-pill{display:inline-block;font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:999px;margin-left:6px;border:1px solid transparent;flex:none;white-space:nowrap}
+  .alerta-pill.amarelo{background:rgba(240,196,66,.22);color:#F4C542;border-color:rgba(240,196,66,.6)}
+  .alerta-pill.vermelho{background:rgba(224,75,74,.2);color:#FF8A8A;border-color:rgba(224,75,74,.6)}
+  .alerta-pill.neutro{color:var(--ink-dim);border-color:var(--hairline)}
+  body.theme-light .alerta-pill.amarelo{color:#6E4F0A}
+  body.theme-light .alerta-pill.vermelho{color:#9E1F1F}
+  .pelouro-tag{display:inline-block;margin-top:4px;font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border:1px solid currentColor;border-radius:999px;opacity:.85}
+  .pelouro-tag.raiz{opacity:1;box-shadow:0 0 0 1px currentColor inset}
+  .pel-card{border:1px solid var(--hairline);border-left-width:4px;border-radius:10px;padding:10px 12px;margin:8px 0}
+  .pel-head{display:flex;align-items:center;gap:8px}
+  .pel-head .d-title-input{flex:1;min-width:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}
+  .sug-wrap{position:relative;flex:1;min-width:160px}
+  .sug-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .sug{font:inherit;font-size:.68rem;padding:3px 9px;border-radius:999px;border:1px dashed var(--gold);background:transparent;color:var(--gold);cursor:pointer}
+  .obj-row .obj-num{font-weight:700;color:var(--gold);margin-right:8px;flex:none}
+  .obj-row.arquivado .row-name{opacity:.6;text-decoration:line-through}
+  .valor-tab{width:100%;border-collapse:collapse;font-size:.74rem;margin:6px 0}
+  .valor-tab th,.valor-tab td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--hairline);color:var(--ink)}
+  .valor-tab th{color:var(--ink-dim);font-weight:600;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+  .valor-tab td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .alerta-row{padding:6px 0;border-bottom:1px solid var(--hairline);font-size:.78rem;color:var(--ink)}
+  .cred-perm{display:block;margin:6px 0;font-size:.78rem;color:var(--ink)}
+  .pel-legenda{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+  .pel-legenda .chip{cursor:default}
 
   /* ---- Alvos de toque maiores em qualquer aparelho tátil ---- */
   body.vp-touch .btn.tiny{padding:6px 11px}
@@ -2325,6 +2354,8 @@
     <button class="tab" role="tab" data-tab="procedimentos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="12" r="2.5"/><circle cx="5" cy="18" r="2.5"/><path d="M7.5 6.8 16.5 11M7.5 17.2 16.5 13"/></svg></span>Procedimentos</button>
     <button class="tab" role="tab" data-tab="agentes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c1-3.6 3.6-5.4 6.5-5.4S14.5 16.4 15.5 20"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.6c2.6.2 4.3 1.8 5 5.4"/></svg></span>Pessoas</button>
     <button class="tab" role="tab" data-tab="tarefas" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 6 8.5 9.5 5M4 13.5 6 15.5 9.5 12M4 20.3 6 22.3 9.5 19"/><path d="M13 7h8M13 14h8M13 21h8"/></svg></span>Tarefas</button>
+    <button class="tab" role="tab" data-tab="objetos" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5v9L12 21l9-4.5v-9z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg></span>Objetos</button>
+    <button class="tab" role="tab" data-tab="pelouros" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 7.6 8 9 4.6-1.4 8-4.5 8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Pelouros</button>
     <button class="tab" role="tab" data-tab="dados" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Dados</button>
     <button class="tab" role="tab" data-tab="definicoes" aria-selected="false"><span class="tab-ic" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span>Definições</button>
   </nav>
@@ -2465,6 +2496,22 @@
     </div>
   </details>
 
+  <details id="secPelouros">
+    <summary>Pelouros</summary>
+    <div class="sec-body">
+      <div id="pelouroList"></div>
+      <div class="foot-note">Um Pelouro junta nódulos (e tudo o que está hierarquicamente abaixo deles) sob um responsável do Executivo. Os procedimentos pertencem ao Pelouro onde têm origem. Um nódulo pode ser destacado para outro Pelouro no painel do nódulo.</div>
+    </div>
+  </details>
+
+  <details id="secObjetos">
+    <summary>Objetos</summary>
+    <div class="sec-body">
+      <div id="objetoList"></div>
+      <div class="foot-note">Património, equipamentos, viaturas, chaves, contratos: cada objeto tem número, categoria, atributos, alertas, localização, associações, valores e observações. O que se vê e edita depende da credencial de segurança de quem consulta.</div>
+    </div>
+  </details>
+
   <details id="secTarefas" open>
     <summary>Tarefas</summary>
     <div class="sec-body">
@@ -2476,6 +2523,10 @@
   <details id="secDefinicoes">
     <summary>Definições</summary>
     <div class="sec-body">
+      <div class="mini-title">Perfil ativo</div>
+      <div id="perfilRow"></div>
+      <div class="mini-title">Alertas de tarefas</div>
+      <div id="alertasRow"></div>
       <div class="mini-title">Tema</div>
       <div id="themeRow">
         <button class="theme-btn" data-theme="nocturno" title="Navy profundo com dourado"><span class="tdot" style="background:linear-gradient(135deg,#0A1424,#E8B44C)"></span>Noturno</button>
@@ -2946,7 +2997,7 @@ function palcoAnuncia(tipo,obj){
   palcoEnvia(m);
 }
 function addAgent(nodeId, primary, category, name){
-  const a={id:"a"+(++agentCounter), name:name||nextName(),
+  const a={id:"a"+(++agentCounter), name:name||nextName(),cred:1,podeCredSub:false,podeCredArvore:false,
     category:category||PRIMARY_CAT_BY_TIER[Math.min(byId(nodeId).tier,PRIMARY_CAT_BY_TIER.length-1)], nodeId, primary:!!primary};
   // "Um responsável por unidade" tem de valer por construção, não por convenção:
   // chamar isto com primary=true numa unidade que já tem titular passa a
@@ -2962,6 +3013,14 @@ function addAgent(nodeId, primary, category, name){
 }
 const agentsOf = nodeId => agents.filter(a=>a.nodeId===nodeId);
 const primaryOf = nodeId => agents.find(a=>a.nodeId===nodeId&&a.primary)||null;
+/* governação (ver o bloco GOVERNAÇÃO mais abaixo) */
+const CRED_ROT=["","Consulta","Operacional","Chefia","Direção","Executivo"];
+const PERFIL_KEY="of.perfil.v1";
+const pelouros=[],objetos=[];
+let pelouroCounter=0,objetoCounter=0;
+const ALERTAS={avisoDias:2,escalaDias:7};
+let perfil={tipo:"admin",id:null};
+try{const pf=JSON.parse(localStorage.getItem(PERFIL_KEY)||"null");if(pf&&(pf.tipo==="admin"||pf.tipo==="agente"))perfil=pf;}catch(e){}
 const agentById = id => agents.find(a=>a.id===id)||null;
 
 // Nested seed: cat = primary's category, sec = [[category,count],…]
@@ -3100,6 +3159,7 @@ function makeTaskData(p,a,b,desc,agentId,duration){
     link:"",                      // referência: minuta, legislação, plataforma
     nota:"",                      // nota de levantamento: o que não cabe na descrição
     agent:agentId||null, duration:duration||"1 dia",
+    prazoDias:null,ativaDesde:null,validadoPor:null,validadoEm:null,   // validação e prazo (governação)
     proc:processes.indexOf(p), custom:false};
   p.tasks.push(t);
   return t;
@@ -5237,6 +5297,8 @@ function setTab(id){
   }else{
     document.body.dataset.tab=id;
     if(id==="tarefas")renderTaskListAll();
+    if(id==="pelouros")renderPelouros();
+    if(id==="objetos")renderObjetos();
     if(id==="dados"){renderQualidade();renderDiario();}
     showPage(id);
   }
@@ -5278,7 +5340,7 @@ function devolveSeccoes(){
 }
 function showPage(tab){
   devolveSeccoes();
-  const mapa={nodulos:["secUnidades"],agentes:["secPessoas"],tarefas:["secTarefas"],
+  const mapa={nodulos:["secUnidades"],agentes:["secPessoas"],tarefas:["secTarefas"],pelouros:["secPelouros"],objetos:["secObjetos"],
     dados:["secDados"],definicoes:["secDefinicoes"],procedimentos:["secProc"]};
   (mapa[tab]||[]).forEach(levaParaPagina);
   if(tab==="procedimentos")renderPageProcs();
@@ -6925,6 +6987,7 @@ function viewsEqual(a,b){
   if(a.type==="flowchart")return a.layer===b.layer;
   if(a.type==="feynman")return a.layer===b.layer;
   if(a.type==="group")return a.group===b.group;
+  if(a.type==="objeto")return a.objeto===b.objeto;
   if(a.type==="orgchart")return true;
   if(a.type==="flowindex")return true;
   if(a.type==="health")return true;
@@ -6943,6 +7006,7 @@ function viewValid(v){
   if(v.type==="flowchart")return processes.includes(v.layer);
   if(v.type==="feynman")return processes.includes(v.layer);
   if(v.type==="group")return groups.includes(v.group);
+  if(v.type==="objeto")return objetos.includes(v.objeto);
   if(v.type==="orgchart")return true;
   if(v.type==="flowindex")return true;
   if(v.type==="health")return true;
@@ -6968,7 +7032,8 @@ function applySelection(sel){
   if(sel&&((sel.type==="node"&&(!sel.node||!sel.node.pos))||
            (sel.type==="task"&&!sel.task)||
            (sel.type==="agent"&&!sel.agent)||
-           (sel.type==="group"&&!sel.group)))sel=null;
+           (sel.type==="group"&&!sel.group)||
+           (sel.type==="objeto"&&!sel.objeto)))sel=null;
   selected=sel;
   selKin=computeSelKin(sel);
   if(booted)palcoEnviaSelecao(sel);
@@ -7565,6 +7630,7 @@ function renderDetail(){
   if(selected.type==="node"&&!nodes.includes(selected.node)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="agent"&&!agents.includes(selected.agent)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="group"&&!groups.includes(selected.group)){selected=null;releaseFocus();detail.classList.remove("open");return;}
+  if(selected.type==="objeto"&&!objetos.includes(selected.objeto)){selected=null;releaseFocus();detail.classList.remove("open");return;}
   if(selected.type==="task"&&!(processes[selected.task.proc]&&processes[selected.task.proc].tasks.includes(selected.task))){selected=null;releaseFocus();detail.classList.remove("open");return;}
   detail.classList.add("open");
 
@@ -7592,6 +7658,7 @@ function renderDetail(){
   if(selected.type==="node")renderNodeDetail(head,closeBtn);
   else if(selected.type==="agent")renderAgentDetail(head,closeBtn);
   else if(selected.type==="group")renderGroupDetail(head,closeBtn);
+  else if(selected.type==="objeto")renderObjetoDetail(head,closeBtn);
   else renderTaskDetail(head,closeBtn);
   labelFields(detail);
 }
@@ -7657,6 +7724,7 @@ function renderNodeDetail(head,closeBtn){
   meta.innerHTML=(parent?`Reporta a <b>${esc(parent.name)}</b>`:"Topo da hierarquia")+
     (reports.length?`<br>Supervisiona <b>${reports.length}</b>: ${reports.map(r=>esc(r.name)).join(", ")}`:"");
   detail.append(meta);
+  renderPelouroDoNodulo(n);
 
   // Agents
   detail.append(el("h4",null,"Equipa"));
@@ -7953,6 +8021,8 @@ function renderAgentDetail(head,closeBtn){
   cat.style.width="100%";
   detail.append(cat);
 
+  renderCredencial(a);
+
   detail.append(el("h4",null,"Nódulo onde está"));
   if(n){
     const row=el("button","conn-row");
@@ -8181,6 +8251,7 @@ function renderTaskDetail(head,closeBtn){
   grid.append(dur);
 
   detail.append(grid);
+  renderValidacaoTarefa(t,p);
 
   detail.append(el("h4",null,"Descrição"));
   const box=el("textarea","desc-box");
@@ -11384,11 +11455,16 @@ document.getElementById("teDesc").addEventListener("change",function(){
 });
 document.getElementById("teEstado").onclick=()=>{
   if(!teState)return;
-  const ordem=["","validado","aprovado"];
   const t2=teState.t;
-  t2.estado=ordem[(ordem.indexOf(t2.estado||"")+1)%ordem.length];
-  anotaHistorico("mudar o estado da tarefa para “"+rotuloEstado(t2.estado)+"”");
-  markDirty();refreshTaskEditRows();
+  if(!t2.estado){if(!validarTarefa(teState.p,t2))return;}
+  else if(t2.estado==="validado"){
+    if(!(ehAdmin()||ehPresidente()||credAtual()>=3)){flash("Aprovar pede credencial Chefia ou superior.",{type:"err",key:"val"});return;}
+    t2.estado="aprovado";anotaHistorico("aprovar a tarefa");markDirty();
+  }else{
+    if(!podeValidar(t2)){flash("Só o responsável pela tarefa a pode reabrir.",{type:"err",key:"val"});return;}
+    t2.estado="";t2.validadoPor=null;t2.validadoEm=null;anotaHistorico("reabrir a tarefa");markDirty();atualizaAtivas();
+  }
+  refreshTaskEditRows();refreshTaskTab();
   if(modalView&&modalView.type==="feynman")renderFeynman(teState.p);
 };
 document.getElementById("teNota").addEventListener("change",function(){
@@ -11710,6 +11786,9 @@ function tarefaPassaFiltro(t,p,excedidos){
   switch(filtroTarefas.k){
     case "semresp":return !t.agent;
     case "porconfirmar":return !(t.estado==="validado"||t.estado==="aprovado");
+    case "avencer":{const a=alertaTarefa(p,t);return !!a&&a.nivel==="amarelo";}
+    case "atraso":{const a=alertaTarefa(p,t);return !!a&&a.nivel==="vermelho";}
+    case "minhas":{const a=alertaTarefa(p,t);const eu=perfilAgente();return !!a&&(!eu||a.dest.includes(eu.id));}
     case "validado":return t.estado==="validado";
     case "aprovado":return t.estado==="aprovado";
     case "excedido":return excedidos.has(p.id);
@@ -11735,7 +11814,7 @@ function renderTaskListAll(){
     processes.forEach(p=>p.tasks.forEach(t=>{if(tarefaPassaFiltro(t,p,excedidos))n++;}));
     filtroTarefas=guarda;return n;
   };
-  [["tudo","Tudo"],["semresp","Sem responsável"],["porconfirmar","Por confirmar"],
+  [["tudo","Tudo"],["semresp","Sem responsável"],["porconfirmar","Por confirmar"],["avencer","Prazo a vencer"],["atraso","Em atraso"],["minhas","Os meus alertas"],
    ["validado","Validado"],["aprovado","Aprovado"],["excedido","Prazo excedido"]]
   .forEach(([k,rot])=>{
     const n=conta(k);
@@ -11805,6 +11884,8 @@ function renderTaskListAll(){
       const pontoE=el("span","estado-ponto"+(t.estado?" e-"+t.estado:""));
       pontoE.title=rotuloEstado(t.estado);
       row.append(pontoE,el("span","t-desc",t.nome||t.desc||"(sem descrição)"));
+      const alT=alertaTarefa(p,t);
+      if(alT)row.append(el("span","alerta-pill "+alT.nivel,alT.rotulo));
       row.append(el("span","t-route",
         (A?abbrev(A.name):"?")+" → "+(B?abbrev(B.name):"?")
         +(ag?(" · "+ag.name):"")
@@ -11853,6 +11934,15 @@ function renderOrgChart(){
     tog.append(b);
   });
   modalBody.append(tog);
+  if(pelouros.length){
+    const leg=el("div","pel-legenda");
+    pelouros.forEach(pl=>{
+      const c=el("span","chip on",pl.name+(pl.resp&&agentById(pl.resp)?" · "+agentById(pl.resp).name:""));
+      c.style.color=hex(corPelouro(pl));c.style.borderColor=hex(corPelouro(pl));
+      leg.append(c);
+    });
+    modalBody.append(leg);
+  }
 
   // --- Tier management ---
   const tTitle=el("div","fc-chain-title","Níveis — renomear ou criar");
@@ -11961,6 +12051,13 @@ function renderOrgChart(){
     nameRow.append(document.createTextNode(n.name+(n._orgCollapsed&&kids.length?"  (+"+kids.length+")":"")));
     card.append(nameRow);
     card.append(el("div","t","Nível "+n.tier+" · "+TIER[n.tier].label));
+    const pel=pelouroDe(n.id);
+    if(pel){
+      const tg=el("div","pelouro-tag"+(pel.nodes.includes(n.id)?" raiz":""),pel.name);
+      tg.style.color=hex(corPelouro(pel));
+      tg.title=(pel.nodes.includes(n.id)?"Raiz do pelouro":"Pelouro herdado do nódulo acima")+(pel.resp&&agentById(pel.resp)?" · responsável: "+agentById(pel.resp).name:"");
+      card.append(tg);
+    }
 
     const prim=primaryOf(n.id);
     const pLine=el("div","p");
@@ -12441,15 +12538,15 @@ function datasetJSON(){
     orgName,
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
-    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
-      primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
+    agents:agents.map(agenteParaEstado),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
       gatilho:p.gatilho||"",produto:p.produto||"",
       fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      tasks:p.tasks.map(tarefaParaEstado)})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:[...g.layers]})),
-    theme:themeId
+    theme:themeId,
+    extras:extrasParaEstado()
   };
   return JSON.stringify(cfg,null,2);
 }
@@ -12633,6 +12730,7 @@ importFile.onchange=()=>{
       // Os ids vieram do ficheiro; sem isto os geradores voltariam a emitir
       // ids já em uso e duas entidades diferentes passariam a partilhar um.
       bumpCounters();
+      extrasDoEstado(cfg);
       isolateProc=null;
       relayoutLayers();
       updateLayerCounts();
@@ -12675,6 +12773,7 @@ importFile.onchange=()=>{
 /* New Dataset — wipe everything and start fresh with only the Executivo apex node. */
 function newDataset(){
   clearSelection();                              // close modal/detail, clear nav history
+  pelouros.length=0;objetos.length=0;
   // Dispose & clear procedures (with their tasks) and their sidebar rows
   processes.slice().forEach(p=>{
     p.tasks.slice().forEach(disposeTaskVisual);
@@ -16026,6 +16125,10 @@ function paletteActions(){
     {kind:"Ação",label:"Organograma 2D",run:showOrgChart},
     {kind:"Ação",label:"Fluxogramas",run:showFlowIndex},
     {kind:"Ação",label:"Estado da rede",run:showHealth},
+    {kind:"Ação",label:"Pelouros — quem responde por cada braço",run:()=>setTab("pelouros")},
+    {kind:"Ação",label:"Objetos — património e inventário",run:()=>setTab("objetos")},
+    {kind:"Ação",label:"Tarefas em atraso",run:()=>{filtroTarefas={k:"atraso",pessoa:null};setTab("tarefas");}},
+    {kind:"Ação",label:"Os meus alertas",run:()=>{filtroTarefas={k:"minhas",pessoa:null};setTab("tarefas");}},
     {kind:"Ação",label:"Guardar como app (instalar)",run:askToInstall},
     {kind:"Ação",label:"Vistas — galeria",run:showViewGallery},
     {kind:"Ação",label:"Vista: Matriz Nó × Procedimento",run:()=>showView("matrix")},
@@ -16271,15 +16374,15 @@ function snapshotState(){
     orgName,
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
-    agents:agents.map(a=>({id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,
-      primary:!!a.primary,absent:!!a.absent,subst:a.subst||null})),
+    agents:agents.map(agenteParaEstado),
     layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
       gatilho:p.gatilho||"",produto:p.produto||"",
       fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
-      tasks:p.tasks.map(t=>({id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom}))})),
+      tasks:p.tasks.map(tarefaParaEstado)})),
     groups:groups.map(g=>({id:g.id,name:g.name,layers:g.layers.slice()})),
-    theme:themeId
+    theme:themeId,
+    extras:extrasParaEstado()
   });
 }
 // Ids are preserved on restore, so the generators must not hand out a colliding one later.
@@ -16391,6 +16494,7 @@ function restoreState(json){
         layers:(g.layers||[]).filter(id=>layerById(id))});
     });
     bumpCounters();
+    extrasDoEstado(s);
     computeColors();applyColorMode();
     nodes.forEach(buildNodeVisual);
     nodes.forEach(applyNodeColor);
@@ -17078,6 +17182,583 @@ function palcoEnviaFoco(forcar){
 if(!ehPalco)setInterval(()=>palcoEnviaFoco(false),300);
 
 /* ============================================================
+   GOVERNAÇÃO
+   Pelouros (quem responde por que braço da estrutura), credenciais de
+   segurança (quem pode ver e mudar o quê), objetos (o património e o que
+   lhe está associado) e a validação das tarefas com prazos e alertas que
+   sobem a hierarquia. O "perfil ativo" (Definições) diz quem está a usar
+   a aplicação: o Systems Admin, ou um dos agentes com a sua credencial.
+============================================================ */
+function credValida(v){v=parseInt(v,10);return (v>=1&&v<=5)?v:1;}
+function credDe(a){return credValida(a&&a.cred);}
+function perfilAgente(){return (perfil.tipo==="agente"&&agentById(perfil.id))||null;}
+function ehAdmin(){return !perfilAgente();}
+function ehPresidente(a){
+  if(a===undefined)a=perfilAgente();
+  if(!a)return false;
+  const n=byId(a.nodeId);
+  return a.category==="Presidente"||(!!n&&isApexNode(n)&&!!a.primary);
+}
+function ehExecutivo(a){if(a===undefined)a=perfilAgente();if(!a)return false;const n=byId(a.nodeId);return !!n&&isApexNode(n);}
+function membrosExecutivo(){return agents.filter(a=>ehExecutivo(a));}
+function presidente(){return agents.find(a=>ehPresidente(a))||null;}
+function credAtual(){return ehAdmin()?6:credDe(perfilAgente());}
+function descendeDe(nodeId,ancId){let n=byId(nodeId),g=0;while(n&&g++<64){if(n.id===ancId)return true;n=n.parent?byId(n.parent):null;}return false;}
+/* a chefia direta: o responsável do próprio nódulo, ou, sendo ele o
+   responsável, o do nódulo acima (ou o primeiro acima que tenha um) */
+function chefiaDe(a){
+  if(!a)return null;
+  const n=byId(a.nodeId);if(!n)return null;
+  if(!a.primary){const c=primaryOf(n.id);if(c&&c!==a)return c;}
+  let p=n.parent?byId(n.parent):null,g=0;
+  while(p&&g++<64){const c=primaryOf(p.id);if(c&&c!==a)return c;p=p.parent?byId(p.parent):null;}
+  return null;
+}
+function cadeiaDeChefias(nodeId){
+  const out=[];let p=byId(nodeId);p=p&&p.parent?byId(p.parent):null;let g=0;
+  while(p&&g++<64){const c=primaryOf(p.id);if(c)out.push(c);p=p.parent?byId(p.parent):null;}
+  return out;
+}
+/* ---- Pelouros ---- */
+function pelouroDe(nodeId){let n=byId(nodeId),g=0;while(n&&g++<64){const pl=pelouros.find(x=>x.nodes.includes(n.id));if(pl)return pl;n=n.parent?byId(n.parent):null;}return null;}
+function nodulosDoPelouro(pl){return nodes.filter(n=>pelouroDe(n.id)===pl);}
+function pelouroDoProc(p){const t=p.tasks[0];return t?pelouroDe(t.a):null;}
+function procsDoPelouro(pl){return processes.filter(q=>pelouroDoProc(q)===pl);}
+function pelourosDe(a){return a?pelouros.filter(pl=>pl.resp===a.id):[];}
+function corPelouro(pl){const i=Math.max(0,pelouros.indexOf(pl));return LAYER_COLORS[(i*5+3)%LAYER_COLORS.length];}
+function podeEditarPelouros(){return ehAdmin()||ehPresidente();}
+function criaPelouro(nome,resp){const pl={id:"P"+(++pelouroCounter),name:nome||("Pelouro "+(pelouros.length+1)),resp:resp||null,nodes:[]};pelouros.push(pl);anotaHistorico("criar o pelouro");markDirty();return pl;}
+function apagaPelouro(pl){const i=pelouros.indexOf(pl);if(i>=0){pelouros.splice(i,1);anotaHistorico("eliminar o pelouro");markDirty();}}
+function destacaNodulo(n,pl){pelouros.forEach(x=>{const i=x.nodes.indexOf(n.id);if(i>=0)x.nodes.splice(i,1);});if(pl)pl.nodes.push(n.id);anotaHistorico("mudar o pelouro de "+n.name);markDirty();}
+/* ---- Credenciais ---- */
+function podeAlterarCred(alvo){
+  if(!alvo)return false;
+  if(ehAdmin())return true;
+  const eu=perfilAgente();if(!eu)return false;
+  if(ehPresidente(eu))return true;
+  if(eu===alvo)return false;
+  if(ehExecutivo(eu)&&pelourosDe(eu).some(pl=>pelouroDe(alvo.nodeId)===pl))return true;
+  if(eu.primary&&eu.podeCredSub&&alvo.nodeId===eu.nodeId)return true;
+  if(eu.primary&&eu.podeCredArvore&&alvo.nodeId!==eu.nodeId&&descendeDe(alvo.nodeId,eu.nodeId))return true;
+  return false;
+}
+function credMaxAtribuivel(){if(ehAdmin())return 5;const eu=perfilAgente();if(!eu)return 0;if(ehPresidente(eu))return 5;return credDe(eu);}
+function podeDarPermissoesCred(){return ehAdmin()||ehPresidente();}
+function renderCredencial(a){
+  detail.append(el("h4",null,"Credencial de segurança"));
+  const pode=podeAlterarCred(a),max=credMaxAtribuivel();
+  const sel=mkSelect([1,2,3,4,5].map(v=>({label:v+" — "+CRED_ROT[v],value:String(v)})),String(credDe(a)),v=>{
+    const nv=credValida(v);
+    if(nv>max){flash("Não pode atribuir uma credencial acima da sua ("+CRED_ROT[max]+").",{type:"err",key:"cred"});renderDetail();return;}
+    a.cred=nv;anotaHistorico("mudar a credencial de "+a.name);markDirty();renderAgentsTab();renderDetail();
+  });
+  sel.disabled=!pode;sel.style.width="100%";detail.append(sel);
+  detail.append(el("div","foot-note",pode?("Pode atribuir até "+CRED_ROT[max]+"."):"Só o Systems Admin, o Presidente, o responsável do Pelouro ou uma chefia com permissão (e nunca acima da sua) alteram esta credencial."));
+  if(a.primary){
+    [["podeCredSub","Pode alterar as credenciais dos subordinados diretos (no mesmo nódulo)"],
+     ["podeCredArvore","Pode alterar as credenciais nos nódulos hierarquicamente subordinados"]].forEach(([k,rot])=>{
+      const lb=el("label","cred-perm");const ck=el("input");ck.type="checkbox";ck.checked=!!a[k];ck.disabled=!podeDarPermissoesCred();
+      ck.onchange=()=>{a[k]=ck.checked;anotaHistorico("mudar as permissões de "+a.name);markDirty();};
+      lb.append(ck," "+rot);detail.append(lb);
+    });
+    if(!podeDarPermissoesCred())detail.append(el("div","foot-note","As permissões das chefias são dadas pelo Systems Admin ou pelo Presidente."));
+  }
+}
+function renderPelouroDoNodulo(n){
+  detail.append(el("h4",null,"Pelouro"));
+  const pl=pelouroDe(n.id),raiz=!!pl&&pl.nodes.includes(n.id);
+  const linha=el("div","d-meta");
+  linha.innerHTML=pl?("<b>"+esc(pl.name)+"</b>"+(raiz?" · raiz do pelouro":" · herdado")+(pl.resp&&agentById(pl.resp)?" · "+esc(agentById(pl.resp).name):"")):"Sem pelouro";
+  detail.append(linha);
+  if(podeEditarPelouros()&&pelouros.length){
+    const sel=mkSelect([{label:raiz?"— passar a herdar do nódulo acima —":"— herdado (sem destacar) —",value:""}].concat(pelouros.map(x=>({label:"Destacar para "+x.name,value:x.id}))),raiz?pl.id:"",v=>{
+      destacaNodulo(n,v?pelouros.find(x=>x.id===v):null);renderDetail();renderNodeList();
+    });
+    sel.style.width="100%";sel.style.marginTop="6px";detail.append(sel);
+  }
+}
+function renderPelouros(){
+  const host=document.getElementById("pelouroList");if(!host)return;host.innerHTML="";
+  const pode=podeEditarPelouros(),exec=membrosExecutivo();
+  const topo=el("div","setup-btns");
+  if(pode){
+    const nb=el("button","btn primary","+ Novo Pelouro");
+    nb.onclick=()=>{criaPelouro("",(presidente()||{}).id||null);renderPelouros();};
+    topo.append(nb);
+    if(!pelouros.length){
+      const sb=el("button","btn tiny","Sugerir pelouros a partir do nível 1");
+      sb.onclick=()=>{const pr=presidente();nodes.filter(n=>n.tier===1).forEach(n=>{const pl=criaPelouro("Pelouro de "+abbrev(n.name),pr?pr.id:null);pl.nodes.push(n.id);});renderPelouros();renderNodeList();};
+      topo.append(sb);
+    }
+  }
+  host.append(topo);
+  if(!pode)host.append(el("div","foot-note","Só o Presidente (ou o Systems Admin) cria, edita ou elimina Pelouros."));
+  if(!pelouros.length)host.append(el("div","empty-note","Ainda não há Pelouros."));
+  pelouros.forEach(pl=>{
+    const card=el("div","pel-card");card.style.borderLeftColor=hex(corPelouro(pl));
+    const head=el("div","pel-head");
+    const nome=el("input","d-title-input");nome.value=pl.name;nome.maxLength=40;nome.disabled=!pode;
+    nome.setAttribute("aria-label","Nome do pelouro");
+    nome.addEventListener("change",()=>{const v=nome.value.trim();if(!v){nome.value=pl.name;return;}pl.name=v;anotaHistorico("renomear o pelouro");markDirty();renderNodeList();});
+    nome.addEventListener("keydown",e=>{if(e.key==="Enter")nome.blur();});
+    head.append(nome);
+    if(pode){
+      const del=el("button","icon-btn","✕");del.title="Eliminar pelouro";del.setAttribute("aria-label","Eliminar o pelouro "+pl.name);
+      del.onclick=async()=>{if(await askConfirm("Eliminar o pelouro “"+pl.name+"”? Os seus nódulos ficam sem pelouro.")){apagaPelouro(pl);renderPelouros();renderNodeList();}};
+      head.append(del);
+    }
+    card.append(head);
+    const g=el("div","field-grid");
+    g.append(el("label",null,"Responsável"));
+    const sel=mkSelect([{label:"— por definir —",value:""}].concat(exec.map(a=>({label:a.name+" ("+a.category+")",value:a.id}))),pl.resp||"",v=>{pl.resp=v||null;anotaHistorico("mudar o responsável do pelouro");markDirty();});
+    sel.disabled=!pode;g.append(sel);card.append(g);
+    if(!exec.length)card.append(el("div","foot-note","O responsável tem de ser membro do Executivo (uma pessoa do nódulo de topo)."));
+    card.append(el("div","mini-title","Nódulos raiz"));
+    const chips=el("div","chips");
+    pl.nodes.filter(id=>byId(id)).forEach(id=>{
+      const n=byId(id);const c=el("button","chip on",n.name+(pode?" ✕":""));c.type="button";
+      c.title=pode?"Retirar do pelouro":"Abrir o nódulo";
+      c.onclick=()=>{if(!pode){selectNode(n);return;}destacaNodulo(n,null);renderPelouros();renderNodeList();};
+      chips.append(c);
+    });
+    if(pode){
+      const add=el("input","search-input");add.placeholder="Adicionar nódulo…";add.setAttribute("aria-label","Adicionar um nódulo ao pelouro "+pl.name);
+      const sug=el("div","sug-list");
+      add.addEventListener("input",()=>{
+        sug.innerHTML="";const q=normaliza(add.value);if(!q)return;
+        nodes.filter(n=>!pl.nodes.includes(n.id)&&normaliza(n.name).includes(q)).slice(0,6).forEach(n=>{
+          const b=el("button","sug",n.name+" · N"+n.tier);b.type="button";
+          b.onclick=()=>{destacaNodulo(n,pl);renderPelouros();renderNodeList();};sug.append(b);
+        });
+      });
+      chips.append(add,sug);
+    }
+    card.append(chips);
+    const todos=nodulosDoPelouro(pl),procs=procsDoPelouro(pl);
+    card.append(el("div","foot-note","Engloba "+todos.length+" nódulo"+(todos.length===1?"":"s")+" (com os hierarquicamente abaixo) · "+procs.length+" procedimento"+(procs.length===1?"":"s")+" com origem aqui"+(procs.length?": "+procs.map(q=>q.name).join(", "):"")+"."));
+    host.append(card);
+  });
+  const sem=nodes.filter(n=>!pelouroDe(n.id));
+  if(pelouros.length&&sem.length)host.append(el("div","foot-note","Sem pelouro: "+sem.map(n=>n.name).join(", ")+"."));
+}
+/* ---- Objetos ---- */
+function criaObjeto(nome){
+  const o={id:"O"+(++objetoCounter),num:objetoCounter,name:nome||("Objeto "+objetoCounter),categoria:"",atributos:[],alertas:[],
+    loc:{tipo:"",lat:null,lng:null,texto:"",objId:null},assoc:[],valores:[],obs:"",inventario:true,arquivado:false,
+    cred:{ver:1,editar:2,valores:3},criado:hojeISO(),alterado:null};
+  objetos.push(o);anotaHistorico("criar o objeto");markDirty();return o;
+}
+function objetoById(id){return objetos.find(o=>o.id===id)||null;}
+function podeVerObjeto(o){return credAtual()>=(o.cred.ver||1);}
+function podeEditarObjeto(o){return credAtual()>=(o.cred.editar||2)&&!o.arquivado;}
+function podeVerValores(o){return credAtual()>=(o.cred.valores||3);}
+function podeGerirObjetos(){return credAtual()>=2;}
+function objetosDentro(o){return objetos.filter(x=>x.loc&&x.loc.tipo==="objeto"&&x.loc.objId===o.id);}
+function descendeObjeto(x,o){let g=0;while(x&&g++<64){if(x===o)return true;x=(x.loc&&x.loc.tipo==="objeto"&&x.loc.objId)?objetoById(x.loc.objId):null;}return false;}
+function categoriasExistentes(){return [...new Set(objetos.map(o=>o.categoria).filter(Boolean))].sort((a,b)=>a.localeCompare(b));}
+function atributosExistentes(){return [...new Set(objetos.flatMap(o=>o.atributos||[]))].sort((a,b)=>a.localeCompare(b));}
+function normaliza(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();}
+function distLev(a,b){
+  const m=a.length,n=b.length;if(!m)return n;if(!n)return m;
+  let prev=Array.from({length:n+1},(_,i)=>i);
+  for(let i=1;i<=m;i++){const cur=[i];for(let j=1;j<=n;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=cur;}
+  return prev[n];
+}
+/* texto preditivo: o que começa igual primeiro, depois o que contém, depois
+   o que está a uma ou duas letras de distância (gralhas, plural, acentos) */
+function parecidos(q,lista){
+  const n=normaliza(q);if(!n)return lista.slice(0,8);
+  const pont=s=>{const m=normaliza(s);if(m===n)return 0;if(m.startsWith(n))return 1;if(m.includes(n))return 2;const d=distLev(n,m.slice(0,n.length+1));return d<=2?3+d:99;};
+  return lista.map(s=>[pont(s),s]).filter(x=>x[0]<99).sort((a,b)=>a[0]-b[0]||a[1].localeCompare(b[1])).slice(0,8).map(x=>x[1]);
+}
+function campoSug(valor,lista,placeholder,onCommit,rotulo){
+  const wrap=el("div","sug-wrap");
+  const inp=el("input","search-input");inp.type="text";inp.value=valor||"";inp.placeholder=placeholder;inp.maxLength=40;
+  if(rotulo)inp.setAttribute("aria-label",rotulo);
+  const sug=el("div","sug-list");
+  const mostra=()=>{
+    sug.innerHTML="";const q=inp.value;if(!q.trim())return;
+    parecidos(q,lista).filter(s=>normaliza(s)!==normaliza(q)).forEach(s=>{
+      const b=el("button","sug",s);b.type="button";b.title="Usar “"+s+"”";
+      b.addEventListener("pointerdown",e=>{e.preventDefault();inp.value=s;sug.innerHTML="";onCommit(s);});
+      sug.append(b);
+    });
+  };
+  inp.addEventListener("input",mostra);inp.addEventListener("focus",mostra);
+  inp.addEventListener("blur",()=>setTimeout(()=>{sug.innerHTML="";},200));
+  inp.addEventListener("change",()=>onCommit(inp.value.trim()));
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")inp.blur();});
+  wrap.append(inp,sug);return wrap;
+}
+function valorPatrimonial(o){const v=(o.valores||[]).filter(x=>x.tipo==="patrimonio").sort((a,b)=>a.data<b.data?1:-1)[0];return v?v.valor:null;}
+function somaValores(o,tipo){return (o.valores||[]).filter(x=>x.tipo===tipo).reduce((s,x)=>s+(+x.valor||0),0);}
+function fmtEuro(v){return (Math.round(v*100)/100).toLocaleString("pt-PT",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";}
+function tocaObjeto(o){o.alterado=hojeISO();markDirty();}
+function alertaObjetoAtivo(o,a){
+  if(o.arquivado)return false;
+  if(a.tipo==="recorrente")return !!a.proximo&&diasEntre(hojeISO(),a.proximo)<=ALERTAS.avisoDias;
+  if(a.tipo==="procedimento"){const pr=layerById(a.procId);return !!pr&&!pr.done;}
+  if(a.tipo==="objeto"){const x=objetoById(a.objId);return !!x&&!!x.alterado&&(!a.visto||x.alterado>a.visto);}
+  return false;
+}
+let objQuery="",objFiltro="ativos";
+const objAlertaNovo={};
+function selectObjeto(o){navigateTo({type:"objeto",objeto:o});}
+function renderObjetos(){
+  const host=document.getElementById("objetoList");if(!host)return;host.innerHTML="";
+  const topo=el("div","setup-btns");
+  if(podeGerirObjetos()){const nb=el("button","btn primary","+ Novo objeto");nb.onclick=()=>{const o=criaObjeto();renderObjetos();selectObjeto(o);};topo.append(nb);}
+  host.append(topo);
+  const busca=el("input","search-input");busca.placeholder="Procurar por número, nome, categoria ou atributo…";busca.value=objQuery;
+  busca.setAttribute("aria-label","Procurar objetos");
+  busca.addEventListener("input",()=>{objQuery=busca.value;renderObjetos();if(objQuery)setTimeout(()=>{const b=host.querySelector(".search-input");if(b&&document.activeElement!==b){b.focus();b.setSelectionRange(b.value.length,b.value.length);}},0);});
+  host.append(busca);
+  const chips=el("div","chips");
+  [["ativos","Ativos"],["inventario","Inventário"],["arquivados","Arquivados"],["todos","Todos"]].forEach(([k,r])=>{const c=el("button","chip"+(objFiltro===k?" on":""),r);c.type="button";c.onclick=()=>{objFiltro=k;renderObjetos();};chips.append(c);});
+  host.append(chips);
+  const q=normaliza(objQuery);
+  const lista=objetos.filter(o=>podeVerObjeto(o))
+    .filter(o=>objFiltro==="todos"||(objFiltro==="arquivados"?o.arquivado:(objFiltro==="inventario"?(o.inventario&&!o.arquivado):!o.arquivado)))
+    .filter(o=>!q||normaliza("#"+o.num+" "+o.name+" "+o.categoria+" "+(o.atributos||[]).join(" ")).includes(q));
+  if(!lista.length)host.append(el("div","empty-note",objetos.length?"Nada com este filtro.":"Ainda não há objetos."));
+  lista.forEach(o=>{
+    const row=el("button","row obj-row"+(o.arquivado?" arquivado":""));row.type="button";row.title="Abrir a ficha do objeto";
+    row.append(el("span","obj-num","#"+o.num),el("span","row-name",o.name));
+    row.append(el("span","t-route",(o.categoria||"sem categoria")+(o.inventario?" · inventário":"")+(o.arquivado?" · arquivado":"")+(objetosDentro(o).length?" · contém "+objetosDentro(o).length:"")));
+    const al=(o.alertas||[]).filter(a=>alertaObjetoAtivo(o,a)).length;
+    if(al)row.append(el("span","alerta-pill amarelo",al+" alerta"+(al===1?"":"s")));
+    row.onclick=()=>selectObjeto(o);host.append(row);
+  });
+  const inv=objetos.filter(o=>o.inventario&&!o.arquivado);
+  host.append(el("div","foot-note",objetos.length+" objeto"+(objetos.length===1?"":"s")+" · "+inv.length+" no inventário · credencial atual: "+(ehAdmin()?"Systems Admin":CRED_ROT[credAtual()])+"."));
+}
+function renderObjetoDetail(head,closeBtn){
+  const o=selected.objeto;const ver=podeVerObjeto(o),edit=podeEditarObjeto(o),vals=podeVerValores(o);
+  const titleIn=el("input","d-title-input");titleIn.value=o.name;titleIn.maxLength=60;titleIn.disabled=!edit;
+  titleIn.setAttribute("aria-label","Nome do objeto");
+  titleIn.addEventListener("change",()=>{const v=titleIn.value.trim();if(!v){titleIn.value=o.name;return;}o.name=v;anotaHistorico("renomear o objeto");tocaObjeto(o);renderObjetos();});
+  titleIn.addEventListener("keydown",e=>{if(e.key==="Enter")titleIn.blur();});
+  head.append(titleIn,closeBtn);detail.append(head);
+  detail.append(el("div","d-sub","Objeto #"+o.num+(o.categoria?" · "+o.categoria:"")+(o.arquivado?" · arquivado":"")+" · criado a "+o.criado));
+  if(!ver){detail.append(el("div","empty-note","A sua credencial ("+CRED_ROT[credAtual()]+") não permite consultar esta ficha (pede "+CRED_ROT[o.cred.ver]+")."));return;}
+  if(!edit)detail.append(el("div","foot-note",o.arquivado?"Objeto arquivado: só consulta. Reative-o para editar.":"Só consulta: editar pede credencial "+CRED_ROT[o.cred.editar]+"."));
+  detail.append(el("h4",null,"Categoria"));
+  const catW=campoSug(o.categoria,categoriasExistentes(),"Escrever ou escolher uma categoria…",v=>{if(v===o.categoria)return;o.categoria=v;anotaHistorico("mudar a categoria do objeto");tocaObjeto(o);renderObjetos();renderDetail();},"Categoria do objeto");
+  catW.querySelector("input").disabled=!edit;detail.append(catW);
+  detail.append(el("h4",null,"Atributos"));
+  const chips=el("div","chips");
+  (o.atributos||[]).forEach((at,i)=>{const c=el("button","chip on",at+(edit?" ✕":""));c.type="button";c.disabled=!edit;c.title=edit?"Retirar atributo":at;c.onclick=()=>{o.atributos.splice(i,1);tocaObjeto(o);renderDetail();};chips.append(c);});
+  if(edit)chips.append(campoSug("",atributosExistentes().filter(x=>!o.atributos.includes(x)),"Adicionar atributo…",v=>{if(v&&!o.atributos.includes(v)){o.atributos.push(v);tocaObjeto(o);renderDetail();}},"Adicionar um atributo"));
+  detail.append(chips);
+  detail.append(el("h4",null,"Localização"));
+  const lg=el("div","field-grid");lg.append(el("label",null,"Tipo"));
+  const ls=mkSelect([{label:"— nenhuma —",value:""},{label:"Geolocalização",value:"geo"},{label:"Dentro de outro objeto",value:"objeto"},{label:"Morada ou descrição",value:"texto"}],o.loc.tipo||"",v=>{o.loc.tipo=v;tocaObjeto(o);renderDetail();});
+  ls.disabled=!edit;lg.append(ls);
+  if(o.loc.tipo==="geo"){
+    [["lat","Latitude"],["lng","Longitude"]].forEach(([k,r])=>{lg.append(el("label",null,r));const i=el("input");i.type="number";i.step="0.000001";i.value=(o.loc[k]===null||o.loc[k]===undefined)?"":o.loc[k];i.disabled=!edit;i.addEventListener("change",()=>{const v=parseFloat(i.value);o.loc[k]=Number.isFinite(v)?v:null;tocaObjeto(o);renderDetail();});lg.append(i);});
+    if(Number.isFinite(o.loc.lat)&&Number.isFinite(o.loc.lng)){const a=el("a","btn tiny","Abrir no mapa");a.href="https://www.openstreetmap.org/?mlat="+o.loc.lat+"&mlon="+o.loc.lng+"#map=17/"+o.loc.lat+"/"+o.loc.lng;a.target="_blank";a.rel="noopener";lg.append(el("label",null,""),a);}
+  }else if(o.loc.tipo==="objeto"){
+    lg.append(el("label",null,"Objeto"));
+    const os=mkSelect([{label:"— escolher —",value:""}].concat(objetos.filter(x=>x!==o&&!descendeObjeto(x,o)).map(x=>({label:"#"+x.num+" "+x.name,value:x.id}))),o.loc.objId||"",v=>{o.loc.objId=v||null;tocaObjeto(o);renderDetail();});
+    os.disabled=!edit;lg.append(os);
+    const pai=o.loc.objId?objetoById(o.loc.objId):null;
+    if(pai){const b=el("button","btn tiny","Abrir #"+pai.num+" "+pai.name);b.onclick=()=>selectObjeto(pai);lg.append(el("label",null,""),b);}
+  }else if(o.loc.tipo==="texto"){
+    lg.append(el("label",null,"Onde"));const i=el("input");i.type="text";i.maxLength=120;i.value=o.loc.texto||"";i.disabled=!edit;i.addEventListener("change",()=>{o.loc.texto=i.value.trim();tocaObjeto(o);});lg.append(i);
+  }
+  detail.append(lg);
+  const dentro=objetosDentro(o);
+  detail.append(el("h4",null,"Contém"));
+  if(!dentro.length)detail.append(el("div","empty-note","Nenhum objeto localizado dentro deste."));
+  dentro.forEach(x=>{const b=el("button","conn-row","#"+x.num+" "+x.name+(x.arquivado?" (arquivado)":""));b.style.width="100%";b.style.textAlign="left";b.style.cursor="pointer";b.onclick=()=>selectObjeto(x);detail.append(b);});
+  detail.append(el("h4",null,"Associações"));
+  const ac=el("div","chips");
+  (o.assoc||[]).forEach((as,i)=>{
+    const alvo=as.tipo==="objeto"?objetoById(as.id):layerById(as.id);
+    const c=el("button","chip on",(as.tipo==="objeto"?"#"+(alvo?alvo.num+" "+alvo.name:"?"):"⟳ "+(alvo?alvo.name:"?"))+(edit?" ✕":""));c.type="button";
+    c.title=edit?"Clique para retirar · Shift+clique para abrir":"Abrir";
+    c.onclick=e=>{if(edit&&!e.shiftKey){o.assoc.splice(i,1);tocaObjeto(o);renderDetail();return;}if(!alvo)return;if(as.tipo==="objeto")selectObjeto(alvo);else showFlowchart(alvo);};
+    ac.append(c);
+  });
+  if(edit){
+    const sel=mkSelect([{label:"+ associar…",value:""}].concat(objetos.filter(x=>x!==o).map(x=>({label:"Objeto #"+x.num+" "+x.name,value:"o:"+x.id}))).concat(processes.map(pr=>({label:"Procedimento "+pr.name,value:"p:"+pr.id}))),"",v=>{
+      if(!v)return;const k=v.slice(0,1),id=v.slice(2);
+      if(!o.assoc.some(a=>a.id===id))o.assoc.push({tipo:k==="o"?"objeto":"procedimento",id});
+      tocaObjeto(o);renderDetail();
+    });
+    ac.append(sel);
+  }
+  detail.append(ac);
+  detail.append(el("h4",null,"Alertas"));
+  (o.alertas||[]).forEach((a,i)=>{
+    const ativo=alertaObjetoAtivo(o,a);const row=el("div","alerta-row");
+    let desc=a.texto||"";
+    if(a.tipo==="recorrente")desc+=" · de "+a.cadaDias+" em "+a.cadaDias+" dias · próximo a "+(a.proximo||"—");
+    else if(a.tipo==="procedimento"){const pr=layerById(a.procId);desc+=" · enquanto corre “"+(pr?pr.name:"?")+"”";}
+    else if(a.tipo==="objeto"){const x=objetoById(a.objId);desc+=" · quando #"+(x?x.num+" "+x.name:"?")+" muda";}
+    row.append(el("span","alerta-pill "+(ativo?"amarelo":"neutro"),ativo?"ativo":"em espera"),document.createTextNode(" "+desc));
+    if(edit){
+      const b=el("div","setup-btns");
+      if(a.tipo==="recorrente"&&ativo){const ok=el("button","btn tiny","Feito — próximo daqui a "+a.cadaDias+" dias");ok.onclick=()=>{a.proximo=somaDias(hojeISO(),a.cadaDias);tocaObjeto(o);renderDetail();};b.append(ok);}
+      if(a.tipo==="objeto"&&ativo){const ok=el("button","btn tiny","Marcar como visto");ok.onclick=()=>{a.visto=hojeISO();tocaObjeto(o);renderDetail();};b.append(ok);}
+      const del=el("button","btn tiny","Remover");del.onclick=()=>{o.alertas.splice(i,1);tocaObjeto(o);renderDetail();};b.append(del);
+      row.append(b);
+    }
+    detail.append(row);
+  });
+  if(edit){
+    const novo=objAlertaNovo[o.id]||(objAlertaNovo[o.id]={tipo:"recorrente",texto:"",cadaDias:30,procId:"",objId:""});
+    const f=el("div","field-grid");
+    f.append(el("label",null,"Novo alerta"));
+    f.append(mkSelect([{label:"Recorrente no tempo",value:"recorrente"},{label:"Despoletado por um procedimento",value:"procedimento"},{label:"Por alteração noutro objeto",value:"objeto"}],novo.tipo,v=>{novo.tipo=v;renderDetail();}));
+    f.append(el("label",null,"Texto"));const tx=el("input");tx.type="text";tx.maxLength=80;tx.placeholder="ex.: Inspeção periódica";tx.value=novo.texto;tx.addEventListener("input",()=>{novo.texto=tx.value;});f.append(tx);
+    if(novo.tipo==="recorrente"){f.append(el("label",null,"De quantos em quantos dias"));const d=el("input");d.type="number";d.min="1";d.value=novo.cadaDias;d.addEventListener("input",()=>{novo.cadaDias=Math.max(1,parseInt(d.value,10)||30);});f.append(d);}
+    else if(novo.tipo==="procedimento"){f.append(el("label",null,"Procedimento"));f.append(mkSelect([{label:"— escolher —",value:""}].concat(processes.map(pr=>({label:pr.name,value:pr.id}))),novo.procId,v=>{novo.procId=v;}));}
+    else{f.append(el("label",null,"Objeto"));f.append(mkSelect([{label:"— escolher —",value:""}].concat(objetos.filter(x=>x!==o).map(x=>({label:"#"+x.num+" "+x.name,value:x.id}))),novo.objId,v=>{novo.objId=v;}));}
+    const add=el("button","btn tiny","+ Criar alerta");
+    add.onclick=()=>{
+      if(!novo.texto.trim()){flash("Dê um texto ao alerta.",{type:"err",key:"obj"});return;}
+      const a={id:"al"+Date.now().toString(36),tipo:novo.tipo,texto:novo.texto.trim()};
+      if(novo.tipo==="recorrente"){a.cadaDias=novo.cadaDias;a.proximo=somaDias(hojeISO(),novo.cadaDias);}
+      else if(novo.tipo==="procedimento"){if(!novo.procId){flash("Escolha o procedimento.",{type:"err",key:"obj"});return;}a.procId=novo.procId;}
+      else{if(!novo.objId){flash("Escolha o objeto.",{type:"err",key:"obj"});return;}a.objId=novo.objId;a.visto=hojeISO();}
+      o.alertas.push(a);delete objAlertaNovo[o.id];anotaHistorico("criar um alerta no objeto");tocaObjeto(o);renderDetail();
+    };
+    f.append(el("label",null,""),add);detail.append(f);
+  }
+  detail.append(el("h4",null,"Valores"));
+  if(!vals)detail.append(el("div","foot-note","Os valores pedem credencial "+CRED_ROT[o.cred.valores]+"."));
+  else{
+    const pat=valorPatrimonial(o),cob=somaValores(o,"cobranca"),des=somaValores(o,"despesa");
+    const res=el("div","d-meta");
+    res.innerHTML="Cobranças <b>"+fmtEuro(cob)+"</b> · Despesas <b>"+fmtEuro(des)+"</b> · Saldo <b>"+fmtEuro(cob-des)+"</b>"+(pat!==null?" · Valor patrimonial <b>"+fmtEuro(pat)+"</b>":"");
+    detail.append(res);
+    if((o.valores||[]).length){
+      const tb=el("table","valor-tab");tb.innerHTML="<thead><tr><th>Data</th><th>Tipo</th><th>Valor</th><th>Nota</th><th></th></tr></thead>";
+      const tbody=el("tbody");
+      [...o.valores].sort((a,b)=>a.data<b.data?1:(a.data>b.data?-1:0)).forEach(v=>{
+        const tr=el("tr");
+        tr.innerHTML="<td>"+esc(v.data)+"</td><td>"+esc({cobranca:"Cobrança",despesa:"Despesa",patrimonio:"Património"}[v.tipo]||v.tipo)+"</td><td class=\"num\">"+esc(fmtEuro(+v.valor||0))+"</td><td>"+esc(v.nota||"")+"</td>";
+        const td=el("td");
+        if(edit){const x=el("button","icon-btn","✕");x.title="Apagar lançamento";x.setAttribute("aria-label","Apagar o lançamento de "+v.data);x.onclick=()=>{o.valores.splice(o.valores.indexOf(v),1);tocaObjeto(o);renderDetail();};td.append(x);}
+        tr.append(td);tbody.append(tr);
+      });
+      tb.append(tbody);detail.append(tb);
+    }
+    if(edit){
+      const f=el("div","field-grid");const nv={tipo:"cobranca",valor:"",data:hojeISO(),nota:""};
+      f.append(el("label",null,"Tipo"));f.append(mkSelect([{label:"Cobrança",value:"cobranca"},{label:"Despesa",value:"despesa"},{label:"Valor patrimonial",value:"patrimonio"}],nv.tipo,v=>{nv.tipo=v;}));
+      f.append(el("label",null,"Valor (€)"));const vi=el("input");vi.type="number";vi.step="0.01";vi.addEventListener("input",()=>{nv.valor=vi.value;});f.append(vi);
+      f.append(el("label",null,"Data"));const di=el("input");di.type="date";di.value=nv.data;di.addEventListener("input",()=>{nv.data=di.value;});f.append(di);
+      f.append(el("label",null,"Nota"));const ni=el("input");ni.type="text";ni.maxLength=80;ni.addEventListener("input",()=>{nv.nota=ni.value;});f.append(ni);
+      const add=el("button","btn tiny","+ Lançar");
+      add.onclick=()=>{const v=parseFloat(nv.valor);if(!Number.isFinite(v)){flash("Indique o valor.",{type:"err",key:"obj"});return;}o.valores.push({id:"v"+Date.now().toString(36),tipo:nv.tipo,valor:v,data:/^\d{4}-\d{2}-\d{2}$/.test(nv.data)?nv.data:hojeISO(),nota:nv.nota.trim()});anotaHistorico("lançar um valor no objeto");tocaObjeto(o);renderDetail();};
+      f.append(el("label",null,""),add);detail.append(f);
+    }
+  }
+  detail.append(el("h4",null,"Observações"));
+  const box=el("textarea","desc-box");box.value=o.obs||"";box.maxLength=1000;box.disabled=!edit;box.setAttribute("aria-label","Observações sobre o objeto");
+  box.addEventListener("change",()=>{o.obs=box.value;tocaObjeto(o);});detail.append(box);
+  const inv=el("label","cred-perm");const ck=el("input");ck.type="checkbox";ck.checked=!!o.inventario;ck.disabled=!edit;
+  ck.onchange=()=>{o.inventario=ck.checked;tocaObjeto(o);renderObjetos();};inv.append(ck," Conta para o inventário");detail.append(inv);
+  if(ehAdmin()){
+    detail.append(el("h4",null,"Credenciais mínimas (Systems Admin)"));
+    const cg=el("div","field-grid");
+    [["ver","Consultar"],["editar","Editar"],["valores","Ver valores"]].forEach(([k,r])=>{cg.append(el("label",null,r));cg.append(mkSelect([1,2,3,4,5].map(v=>({label:v+" — "+CRED_ROT[v],value:String(v)})),String(o.cred[k]||1),v=>{o.cred[k]=credValida(v);markDirty();}));});
+    detail.append(cg);
+  }
+  const acts=el("div","setup-btns");acts.style.marginTop="12px";
+  if(credAtual()>=(o.cred.editar||2)){
+    const arq=el("button","btn tiny",o.arquivado?"Reativar":"Arquivar");
+    arq.title=o.arquivado?"Volta a ativo":"Marca como inativo — continua pesquisável e conta para o histórico e a estatística";
+    arq.onclick=()=>{o.arquivado=!o.arquivado;anotaHistorico(o.arquivado?"arquivar o objeto":"reativar o objeto");tocaObjeto(o);renderObjetos();renderDetail();};
+    acts.append(arq);
+    const del=el("button","btn tiny danger-btn","Eliminar");
+    del.onclick=async()=>{
+      if(!await askConfirm("Eliminar o objeto #"+o.num+" “"+o.name+"” da base de dados?"))return;
+      objetos.splice(objetos.indexOf(o),1);
+      objetos.forEach(x=>{if(x.loc&&x.loc.objId===o.id){x.loc.tipo="";x.loc.objId=null;}x.assoc=(x.assoc||[]).filter(a=>a.id!==o.id);x.alertas=(x.alertas||[]).filter(a=>a.objId!==o.id);});
+      anotaHistorico("eliminar o objeto");markDirty();clearSelection();renderObjetos();
+    };
+    acts.append(del);
+  }
+  detail.append(acts);
+}
+/* ---- Datas ---- */
+function hojeISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function diasEntre(a,b){return Math.round((Date.parse(b)-Date.parse(a))/86400000);}
+function somaDias(iso,n){return new Date(Date.parse(iso)+n*86400000).toISOString().slice(0,10);}
+/* ---- Tarefas: validação, prazos e alertas ---- */
+function tarefaConcluida(t){return t.estado==="validado"||t.estado==="aprovado";}
+function predecessoras(p,t){return p.tasks.filter(x=>x!==t&&x.b===t.a);}
+function tarefaAtiva(p,t){if(tarefaConcluida(t))return false;return predecessoras(p,t).every(tarefaConcluida);}
+function atualizaAtivas(){const h=hojeISO();processes.forEach(p=>p.tasks.forEach(t=>{if(tarefaAtiva(p,t)&&!t.ativaDesde)t.ativaDesde=h;}));}
+function prazoDaTarefa(t){if(Number.isFinite(t.prazoDias)&&t.prazoDias>0)return t.prazoDias;const d=parseDuration(t.duration);return (Number.isFinite(d)&&d>0)?Math.ceil(d):1;}
+function podeValidar(t){
+  if(ehAdmin())return true;
+  const eu=perfilAgente();if(!eu)return false;
+  if(ehPresidente(eu))return true;
+  if(t.agent)return t.agent===eu.id;
+  const c=primaryOf(t.a);return !!c&&c.id===eu.id;   // sem responsável, valida a chefia da origem
+}
+function podeEditarPrazo(t){
+  if(ehAdmin())return true;
+  const eu=perfilAgente();if(!eu)return false;
+  if(ehPresidente(eu))return true;
+  if(credDe(eu)<3)return false;
+  const resp=t.agent?agentById(t.agent):null;const nodeId=resp?resp.nodeId:t.a;
+  if(eu.primary&&(eu.nodeId===nodeId||descendeDe(nodeId,eu.nodeId)))return true;
+  const pl=pelouroDe(nodeId);return !!pl&&pl.resp===eu.id;
+}
+function podeEditarAlertas(){if(ehAdmin())return true;const eu=perfilAgente();return !!eu&&credDe(eu)>=3&&(eu.primary||ehPresidente(eu)||pelourosDe(eu).length>0);}
+function validarTarefa(p,t){
+  if(!podeValidar(t)){flash("Só o responsável pela tarefa (ou o Presidente, ou o Systems Admin) a pode validar.",{type:"err",key:"val"});return false;}
+  t.estado="validado";t.validadoPor=ehAdmin()?"admin":perfil.id;t.validadoEm=hojeISO();
+  anotaHistorico("validar a tarefa");markDirty();atualizaAtivas();return true;
+}
+function alertaTarefa(p,t){
+  if(tarefaConcluida(t)||!tarefaAtiva(p,t))return null;
+  const prazo=prazoDaTarefa(t),ini=t.ativaDesde||hojeISO(),fim=somaDias(ini,prazo),rest=diasEntre(hojeISO(),fim);
+  /* o aviso amarelo chega N dias antes — mas nunca antes do último terço do
+     prazo: uma tarefa de um dia avisa no próprio dia, não ao nascer */
+  const limiar=Math.min(ALERTAS.avisoDias,Math.max(0,Math.floor(prazo/3)));
+  if(rest>limiar)return null;
+  const resp=t.agent?agentById(t.agent):null,base=resp?resp.nodeId:t.a;
+  if(rest>=0)return {nivel:"amarelo",rotulo:rest===0?"Prazo a vencer hoje":"Prazo a vencer · "+rest+" dia"+(rest===1?"":"s"),dias:rest,fim,dest:resp?[resp.id]:[],t,p};
+  const atraso=-rest,dest=[];
+  if(resp)dest.push(resp.id);
+  const chefe=resp?chefiaDe(resp):primaryOf(t.a);
+  if(chefe)dest.push(chefe.id);
+  const cadeia=cadeiaDeChefias(base).filter(c=>!chefe||c.id!==chefe.id);
+  const escal=Math.floor(atraso/Math.max(1,ALERTAS.escalaDias));
+  for(let k=0;k<escal&&k<cadeia.length;k++)dest.push(cadeia[k].id);
+  if(escal>cadeia.length){const pl=pelouroDe(base);if(pl&&pl.resp)dest.push(pl.resp);}
+  if(escal>cadeia.length+1){const pr=presidente();if(pr)dest.push(pr.id);}
+  return {nivel:"vermelho",rotulo:"Em atraso · "+atraso+" dia"+(atraso===1?"":"s"),dias:-atraso,fim,dest:[...new Set(dest)],escal,t,p};
+}
+function alertasDe(agentId){const out=[];processes.forEach(p=>p.tasks.forEach(t=>{const a=alertaTarefa(p,t);if(a&&(!agentId||a.dest.includes(agentId)))out.push(a);}));return out;}
+function alertasDoPerfil(){const eu=perfilAgente();return ehAdmin()?alertasDe(null):alertasDe(eu.id);}
+function avisaAlertas(){
+  if(ehPalco)return;
+  const al=alertasDoPerfil();if(!al.length)return;
+  const v=al.filter(a=>a.nivel==="vermelho").length,am=al.length-v;
+  const txt=(v?v+" tarefa"+(v===1?"":"s")+" em atraso":"")+(v&&am?" · ":"")+(am?am+" com prazo a vencer":"");
+  flash(txt+". Veja em Tarefas › Os meus alertas.",{type:v?"err":undefined,key:"alertas"});
+}
+function renderValidacaoTarefa(t,p){
+  detail.append(el("h4",null,"Validação e prazo"));
+  const g=el("div","field-grid");
+  g.append(el("label",null,"Estado"));
+  const est=el("div","d-meta");
+  est.textContent=rotuloEstado(t.estado)+(t.validadoEm?" · "+t.validadoEm+(t.validadoPor?" por "+(t.validadoPor==="admin"?"Systems Admin":((agentById(t.validadoPor)||{}).name||"?")):""):"");
+  g.append(est);
+  g.append(el("label",null,"Prazo (dias)"));
+  const pz=el("input");pz.type="number";pz.min="1";pz.value=prazoDaTarefa(t);pz.disabled=!podeEditarPrazo(t);
+  pz.title=pz.disabled?"Só a chefia (com credencial Chefia ou superior), o responsável do Pelouro ou o Systems Admin alteram o prazo":"Prazo estimado para concluir a tarefa";
+  pz.setAttribute("aria-label","Prazo da tarefa em dias");
+  pz.addEventListener("change",()=>{const v=parseInt(pz.value,10);t.prazoDias=v>0?v:null;anotaHistorico("mudar o prazo da tarefa");markDirty();renderDetail();refreshTaskTab();});
+  g.append(pz);
+  const ativa=tarefaAtiva(p,t),al=alertaTarefa(p,t);
+  g.append(el("label",null,"Situação"));
+  const sit=el("div","d-meta");
+  if(tarefaConcluida(t))sit.textContent="Concluída.";
+  else if(!ativa){const pend=predecessoras(p,t).filter(x=>!tarefaConcluida(x));sit.textContent="À espera de "+pend.length+" tarefa"+(pend.length===1?"":"s")+" anterior"+(pend.length===1?"":"es")+".";}
+  else{sit.textContent="Em curso desde "+(t.ativaDesde||hojeISO())+" · termina a "+somaDias(t.ativaDesde||hojeISO(),prazoDaTarefa(t))+".";if(al)sit.append(" ",el("span","alerta-pill "+al.nivel,al.rotulo));}
+  g.append(sit);detail.append(g);
+  if(al&&al.nivel==="vermelho"){const quem=al.dest.map(id=>(agentById(id)||{}).name).filter(Boolean);detail.append(el("div","foot-note","Alerta vermelho para: "+(quem.join(", ")||"ninguém atribuído")+"."));}
+  const btns=el("div","setup-btns");
+  if(!tarefaConcluida(t)){
+    const v=el("button","btn primary","Validar tarefa");v.disabled=!podeValidar(t)||!ativa;
+    v.title=!ativa?"Só depois das tarefas anteriores":(podeValidar(t)?"Dá a tarefa por concluída; o procedimento prossegue":"Só o responsável pela tarefa a pode validar");
+    v.onclick=()=>{if(validarTarefa(p,t)){renderDetail();refreshTaskTab();flash("Tarefa validada. “"+p.name+"” prossegue.",{key:"val"});}};
+    btns.append(v);
+  }else if(podeValidar(t)){
+    const r=el("button","btn tiny","Reabrir");
+    r.onclick=()=>{t.estado="";t.validadoPor=null;t.validadoEm=null;anotaHistorico("reabrir a tarefa");markDirty();atualizaAtivas();renderDetail();refreshTaskTab();};
+    btns.append(r);
+  }
+  detail.append(btns);
+}
+/* ---- Definições: perfil e alertas ---- */
+function renderPerfilRow(){
+  const host=document.getElementById("perfilRow");if(!host)return;host.innerHTML="";
+  const sel=el("select","dark");sel.setAttribute("aria-label","Perfil ativo");
+  sel.append(new Option("Systems Admin (tudo)","admin"));
+  [...nodes].sort((a,b)=>a.tier-b.tier||a.name.localeCompare(b.name)).forEach(n=>{
+    const g=document.createElement("optgroup");g.label=n.name;
+    agentsOf(n.id).forEach(a=>g.append(new Option((a.primary?"★ ":"")+a.name+" · "+CRED_ROT[credDe(a)],a.id)));
+    if(g.children.length)sel.append(g);
+  });
+  sel.value=perfilAgente()?perfil.id:"admin";sel.style.width="100%";
+  sel.onchange=()=>{
+    perfil=sel.value==="admin"?{tipo:"admin",id:null}:{tipo:"agente",id:sel.value};
+    storageSet(PERFIL_KEY,JSON.stringify(perfil));
+    renderPerfilRow();renderAlertasRow();renderDetail();renderPelouros();renderObjetos();refreshTaskTab();avisaAlertas();
+  };
+  host.append(sel);
+  const eu=perfilAgente();
+  host.append(el("div","foot-note",ehAdmin()
+    ?"O Systems Admin vê e edita tudo, define credenciais e dá às chefias permissão para as alterar."
+    :("Credencial "+CRED_ROT[credDe(eu)]+(ehPresidente(eu)?" · Presidente":(ehExecutivo(eu)?" · membro do Executivo":""))+(pelourosDe(eu).length?" · responsável por "+pelourosDe(eu).map(x=>x.name).join(", "):""))+"."));
+}
+function renderAlertasRow(){
+  const host=document.getElementById("alertasRow");if(!host)return;host.innerHTML="";
+  const pode=podeEditarAlertas();const g=el("div","field-grid");
+  [["avisoDias","Aviso amarelo (dias antes do prazo)",0],["escalaDias","Subir o alerta vermelho de quantos em quantos dias",1]].forEach(([k,r,min])=>{
+    g.append(el("label",null,r));const i=el("input");i.type="number";i.min=String(min);i.value=ALERTAS[k];i.disabled=!pode;i.setAttribute("aria-label",r);
+    i.addEventListener("change",()=>{const v=parseInt(i.value,10);ALERTAS[k]=Number.isFinite(v)?Math.min(365,Math.max(min,v)):ALERTAS[k];i.value=ALERTAS[k];anotaHistorico("mudar os prazos dos alertas");markDirty();refreshTaskTab();});
+    g.append(i);
+  });
+  host.append(g,el("div","foot-note",pode
+    ?"Ao passar o prazo, o responsável e a chefia direta recebem o alerta vermelho; de "+ALERTAS.escalaDias+" em "+ALERTAS.escalaDias+" dias sobe um nível na hierarquia, até ao responsável do Pelouro e ao Presidente."
+    :"Só o Systems Admin, uma chefia com credencial Chefia (ou superior) ou o responsável de um Pelouro alteram estes prazos."));
+}
+/* ---- Estado guardado ---- */
+function agenteParaEstado(a){return {id:a.id,name:a.name,category:a.category,nodeId:a.nodeId,primary:!!a.primary,absent:!!a.absent,subst:a.subst||null,cred:credDe(a),podeCredSub:!!a.podeCredSub,podeCredArvore:!!a.podeCredArvore};}
+function tarefaParaEstado(t){return {id:t.id,a:t.a,b:t.b,desc:t.desc,nome:t.nome||"",estado:t.estado||"",link:t.link||"",nota:t.nota||"",agent:t.agent,duration:t.duration,custom:!!t.custom,prazoDias:Number.isFinite(t.prazoDias)?t.prazoDias:null,ativaDesde:t.ativaDesde||null,validadoPor:t.validadoPor||null,validadoEm:t.validadoEm||null};}
+function extrasParaEstado(){return {pelouros:pelouros.map(pl=>({id:pl.id,name:pl.name,resp:pl.resp||null,nodes:pl.nodes.slice()})),objetos:objetos.map(o=>JSON.parse(JSON.stringify(o))),alertas:{avisoDias:ALERTAS.avisoDias,escalaDias:ALERTAS.escalaDias},objetoCounter,pelouroCounter};}
+const DATA_ISO=/^\d{4}-\d{2}-\d{2}$/;
+function objetoSaneado(o){
+  const s=v=>String(v==null?"":v),lista=v=>Array.isArray(v)?v:[],loc=o.loc||{},cred=o.cred||{};
+  return {id:s(o.id).slice(0,20),num:Math.max(1,o.num|0),name:s(o.name||"Objeto").slice(0,60),categoria:s(o.categoria).slice(0,40),
+    atributos:lista(o.atributos).map(x=>s(x).slice(0,40)).filter(Boolean).slice(0,40),
+    alertas:lista(o.alertas).filter(a=>a&&typeof a==="object").slice(0,40).map(a=>({id:s(a.id||("al"+Date.now().toString(36))).slice(0,24),
+      tipo:["recorrente","procedimento","objeto"].includes(a.tipo)?a.tipo:"recorrente",texto:s(a.texto).slice(0,80),cadaDias:Math.max(1,a.cadaDias|0||30),
+      proximo:DATA_ISO.test(s(a.proximo))?a.proximo:null,procId:s(a.procId)||null,objId:s(a.objId)||null,visto:DATA_ISO.test(s(a.visto))?a.visto:null})),
+    loc:{tipo:["geo","objeto","texto"].includes(loc.tipo)?loc.tipo:"",lat:Number.isFinite(loc.lat)?loc.lat:null,lng:Number.isFinite(loc.lng)?loc.lng:null,texto:s(loc.texto).slice(0,120),objId:s(loc.objId)||null},
+    assoc:lista(o.assoc).filter(a=>a&&a.id).slice(0,80).map(a=>({tipo:a.tipo==="procedimento"?"procedimento":"objeto",id:s(a.id).slice(0,24)})),
+    valores:lista(o.valores).filter(v=>v&&Number.isFinite(+v.valor)).slice(0,2000).map(v=>({id:s(v.id||("v"+Date.now().toString(36))).slice(0,24),tipo:["cobranca","despesa","patrimonio"].includes(v.tipo)?v.tipo:"cobranca",valor:+v.valor,data:DATA_ISO.test(s(v.data))?v.data:hojeISO(),nota:s(v.nota).slice(0,80)})),
+    obs:s(o.obs).slice(0,1000),inventario:o.inventario!==false,arquivado:!!o.arquivado,
+    cred:{ver:credValida(cred.ver||1),editar:credValida(cred.editar||2),valores:credValida(cred.valores||3)},
+    criado:DATA_ISO.test(s(o.criado))?o.criado:hojeISO(),alterado:DATA_ISO.test(s(o.alterado))?o.alterado:null};
+}
+function extrasDoEstado(s){
+  (s.agents||[]).forEach(ca=>{const a=ca&&agentById(ca.id);if(!a)return;a.cred=credValida(ca.cred);a.podeCredSub=!!ca.podeCredSub;a.podeCredArvore=!!ca.podeCredArvore;});
+  (s.layers||[]).forEach(cl=>{if(!cl)return;const p=layerById(cl.id);if(!p)return;(cl.tasks||[]).forEach(ct=>{
+    const t=ct&&p.tasks.find(x=>x.id===ct.id);if(!t)return;
+    t.prazoDias=(Number.isFinite(ct.prazoDias)&&ct.prazoDias>0)?Math.min(3650,ct.prazoDias|0):null;
+    t.ativaDesde=DATA_ISO.test(String(ct.ativaDesde||""))?ct.ativaDesde:null;
+    t.validadoPor=typeof ct.validadoPor==="string"?ct.validadoPor.slice(0,20):null;
+    t.validadoEm=DATA_ISO.test(String(ct.validadoEm||""))?ct.validadoEm:null;
+  });});
+  const x=(s.extras&&typeof s.extras==="object")?s.extras:{};
+  pelouros.length=0;
+  (Array.isArray(x.pelouros)?x.pelouros:[]).slice(0,40).forEach(pl=>{
+    if(!pl||typeof pl!=="object")return;
+    pelouros.push({id:String(pl.id||("P"+(++pelouroCounter))).slice(0,12),name:String(pl.name||"Pelouro").slice(0,40),
+      resp:(typeof pl.resp==="string"&&agentById(pl.resp))?pl.resp:null,nodes:(Array.isArray(pl.nodes)?pl.nodes:[]).filter(id=>byId(id)).slice(0,200)});
+  });
+  objetos.length=0;
+  (Array.isArray(x.objetos)?x.objetos:[]).slice(0,5000).forEach(o=>{if(o&&typeof o==="object"&&o.id)objetos.push(objetoSaneado(o));});
+  if(x.alertas&&typeof x.alertas==="object"){ALERTAS.avisoDias=Math.min(365,Math.max(0,x.alertas.avisoDias|0));ALERTAS.escalaDias=Math.min(365,Math.max(1,(x.alertas.escalaDias|0)||7));}
+  const num=(id,pre)=>{const m=String(id||"").match(new RegExp("^"+pre+"(\\d+)$"));return m?+m[1]:0;};
+  pelouroCounter=Math.max(pelouroCounter,x.pelouroCounter|0,...pelouros.map(pl=>num(pl.id,"P")));
+  objetoCounter=Math.max(objetoCounter,x.objetoCounter|0,...objetos.map(o=>o.num|0));
+  atualizaAtivas();
+  if(booted){renderPelouros();renderObjetos();renderPerfilRow();renderAlertasRow();}
+}
+
+/* ============================================================
    EM ESPERA NO PALCO
    Enquanto no ecrã principal se edita um nódulo, uma pessoa, uma tarefa ou um
    procedimento, o palco põe esse elemento em cena e mantém-no vivo: a câmara
@@ -17291,7 +17972,7 @@ function holoLinhas(){
     L.push(["unidade",o.name],["nível",(TIER[o.tier]&&TIER[o.tier].label)||("N"+(o.tier+1))],
       ["reporta a",pai?pai.name:"ninguém (topo)"],
       ["pessoas",ps.length+(ps.some(a=>a.primary)?" (1 titular)":" (sem titular)")],
-      ["tarefas",tarefasTxt(nT,procs.length)],["estado","a editar"]);
+      ["tarefas",tarefasTxt(nT,procs.length)],["pelouro",(pelouroDe(o.id)||{}).name||"nenhum"],["estado","a editar"]);
   }else if(foco.tipo==="agente"){
     const n=byId(o.nodeId);
     const procs=processes.filter(p=>p.tasks.some(t=>t.agent===o.id));
@@ -18063,6 +18744,8 @@ syncThemeButtons();
 applyScene(0);
 syncPlay();
 booted=true;
+renderPerfilRow();renderAlertasRow();
+setTimeout(avisaAlertas,2500);
 /* O histórico ancora aqui: com o lastSnap semeado no arranque, a PRIMEIRA
    alteração já é anulável, e um rascunho aberto de imediato tem sempre um
    estado de entrada a que o Descartar pode voltar. */
