@@ -7,7 +7,15 @@ Duas formas de a ter no Windows:
 
 Os executáveis não estão assinados digitalmente. Na primeira execução o SmartScreen mostra "Editor desconhecido" — *Mais informações › Executar mesmo assim*.
 
-### Novidades desta versão (1.2.0)
+### Novidades desta versão (1.3.0)
+- **Governação**: Pelouros (nódulos raiz e tudo o que está abaixo, com responsável do Executivo, visíveis no organograma), credenciais de segurança por pessoa (Consulta a Executivo, alteráveis pelo Admin, pelo Presidente, pelos responsáveis de Pelouro e por chefias com permissão), e o perfil ativo nas Definições.
+- **Objetos**: número, categoria e atributos com texto preditivo, alertas, localização (geográfica, morada ou dentro de outro objeto), associações, valores com histórico, observações, inventário, arquivar e eliminar; lista em árvore com arrastar e largar, e mapa 3D em caixas baixas cujas tampas abrem em flor; objeto novo constrói-se em cubinhos no segundo ecrã.
+- **Repositórios**: documentos, multimédia, atas e minutas ligados a procedimentos, tarefas, nódulos e pessoas, com credencial mínima de acesso.
+- **Tarefas**: só fecham validadas pelo responsável; prazo por tarefa, aviso amarelo, alerta vermelho ao responsável e à chefia direta, e escalonamento semanal até ao responsável do Pelouro e ao Presidente.
+- **Visita guiada**: termina-se no cartão (✕) e retoma-se nas Definições.
+- **Desempenho**: o mapa de objetos com um terço das chamadas de desenho; o automático sobe de nível a partir de 48 fps; ecrã duplo verificado de ponta a ponta (a seleção de um nódulo acabado de criar já chega ao palco).
+
+### Novidades da 1.2.0
 - **Em espera no palco**: enquanto no ecrã principal se edita um nódulo, uma pessoa, uma tarefa ou um procedimento, o segundo ecrã põe esse elemento em cena e mantém-no vivo — câmara em órbita lenta, o elemento a respirar, uma faísca a percorrer a tarefa ou o procedimento passo a passo.
 - **Holograma de edição**: sobre o elemento em edição paira uma ficha translúcida, nas tintas do tema, ligada a ele por um feixe com glifos a subir e um anel a pulsar; os dados reais escrevem-se letra a letra e cada campo alterado reescreve-se a partir da letra que mudou.
 - **Obra e radar**: uma unidade, pessoa ou procedimento acabados de criar constroem-se em estaleiro à medida que o nome se escreve (esqueleto, andaime, grua, partículas da peça-mãe); a escolher o destino de uma tarefa nova ou a unidade de uma pessoa nova, um radar varre até ao candidato.
