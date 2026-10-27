@@ -405,9 +405,9 @@
   #nodePick,#agentPick{position:fixed;inset:0;z-index:48;display:none;background:var(--scrim);
     -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:24px}
   #nodePick.open,#agentPick.open{display:grid;place-items:center}
-  /* O tecto tem de ser o ECRÃ, não os 760px: o organograma lá dentro é um SVG
+  /* O teto tem de ser o ECRÃ, não os 760px: o organograma lá dentro é um SVG
      largo dentro de um rolo, e o min-width:auto do flex deixava-o empurrar o
-     cartão até ao tecto — 760px num telemóvel de 360. */
+     cartão até ao teto — 760px num telemóvel de 360. */
   #npCard{width:min(760px,calc(100vw - 48px));max-height:calc(100vh - 64px);display:flex;flex-direction:column;
     padding:20px;border-radius:14px;animation:confirmIn .2s ease}
   #npCard h3,#apCard h3{font-size:.98rem;margin:0 0 3px;font-weight:600}
@@ -1372,7 +1372,7 @@
   .alerta-pill.vermelho{background:rgba(224,75,74,.2);color:#FF8A8A;border-color:rgba(224,75,74,.6)}
   .alerta-pill.neutro{color:var(--ink-dim);border-color:var(--hairline)}
   body.theme-light .alerta-pill.amarelo{color:#6E4F0A}
-  body.theme-light .alerta-pill.vermelho{color:#9E1F1F}
+  body.theme-light .alerta-pill.vermelho{color:#7A1515}
   .pelouro-tag{display:inline-block;margin-top:4px;font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border:1px solid currentColor;border-radius:999px;opacity:.85}
   .pelouro-tag.raiz{opacity:1;box-shadow:0 0 0 1px currentColor inset}
   .pel-card{border:1px solid var(--hairline);border-left-width:4px;border-radius:10px;padding:10px 12px;margin:8px 0}
@@ -1439,6 +1439,10 @@
   body.vp-touch .row-name,body.vp-touch .pp-head .nm{min-height:28px;padding:5px 0}
   body.vp-touch .layer-pick button{min-height:32px;padding:6px 10px}
   body.vp-touch #procExplore [role="button"]{min-width:24px;min-height:24px}
+  body.vp-touch .chip{padding:6px 12px;min-height:28px}
+  body.vp-touch .obj-tree-row .tg{width:24px;min-height:24px;line-height:24px;font-size:.8rem}
+  .obj-tree-row{min-width:0;max-width:100%;box-sizing:border-box}
+  .obj-tree-row .row-name,.obj-tree-row .t-route{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* O nome da autarquia é editável no sítio, mas sendo texto sublinhado não
      tem altura própria: com o cabeçalho comprimido em modo deitado ficava com
      21px e era preciso acertar-lhe na linha. Uma altura mínima e um pouco de
@@ -12013,7 +12017,7 @@ function renderOrgChart(){
     const leg=el("div","pel-legenda");
     pelouros.forEach(pl=>{
       const c=el("span","chip on",pl.name+(pl.resp&&agentById(pl.resp)?" · "+agentById(pl.resp).name:""));
-      c.style.color=hex(corPelouro(pl));c.style.borderColor=hex(corPelouro(pl));
+      c.style.color=corLegivel(corPelouro(pl));c.style.borderColor=corLegivel(corPelouro(pl));
       leg.append(c);
     });
     modalBody.append(leg);
@@ -12129,7 +12133,7 @@ function renderOrgChart(){
     const pel=pelouroDe(n.id);
     if(pel){
       const tg=el("div","pelouro-tag"+(pel.nodes.includes(n.id)?" raiz":""),pel.name);
-      tg.style.color=hex(corPelouro(pel));
+      tg.style.color=corLegivel(corPelouro(pel));
       tg.title=(pel.nodes.includes(n.id)?"Raiz do pelouro":"Pelouro herdado do nódulo acima")+(pel.resp&&agentById(pel.resp)?" · responsável: "+agentById(pel.resp).name:"");
       card.append(tg);
     }
@@ -13785,8 +13789,8 @@ let __auroraFrame=0;
    painéis (é o que mais pesa nas placas integradas), um pixel por pixel,
    sem poeira nem faíscas ambientais — ritmo inteiro. 2 leve: o mesmo, a
    meio ritmo (um frame sim, outro não). Mede-se o tempo real entre frames
-   (média móvel); em "automático", se a média passar de 26 ms durante dois
-   segundos, sobe-se um nível, e volta-se a medir. Fica até ao fim da sessão
+   (média móvel); em "automático", se a média passar de 21 ms (≈48 fps)
+   durante dois segundos, sobe-se um nível, e volta-se a medir. Fica até ao fim da sessão
    ou até a pessoa escolher outra coisa.
 ============================================================ */
 const DESEMP_KEY="of.desempenho.v1";
@@ -13828,11 +13832,13 @@ function mideDesempenho(bruto,passo){
      pelo motor por omissão (28–36 ms certinhos), subir de nível também não
      ganha um frame: fica o aviso do motor gráfico, não a degradação. */
   const dividido=ehDesktop&&(ehPalco||palcoVivo)&&frameEMA>=28&&frameEMA<=36;
-  if(frameEMA>26&&!dividido){
+  /* 21 ms (≈48 fps) sustentados já é uma órbita a arrastar: numa placa integrada
+     o nível Completo fica nos 49 e o Equilibrado nos 60 — vale mais o ritmo */
+  if(frameEMA>21&&!dividido){
     if(!lentoDesde)lentoDesde=clock.elapsedTime;
     if(clock.elapsedTime-lentoDesde>2){
       aplicaNivel(nivel+1);
-      lentoDesde=0;frameEMA=Math.min(frameEMA,22);   // dá tempo ao nível novo antes de subir outra vez
+      lentoDesde=0;frameEMA=Math.min(frameEMA,17);   // dá tempo ao nível novo antes de subir outra vez
       if(avisouNivel<nivel){
         avisouNivel=nivel;
         flash((nivel===1?"Modo equilibrado ligado":"Modo leve ligado")+" — a animação estava a perder frames. Muda-se em Definições › Desempenho.",{key:"leve"});
@@ -17314,6 +17320,13 @@ function pelouroDoProc(p){const t=p.tasks[0];return t?pelouroDe(t.a):null;}
 function procsDoPelouro(pl){return processes.filter(q=>pelouroDoProc(q)===pl);}
 function pelourosDe(a){return a?pelouros.filter(pl=>pl.resp===a.id):[];}
 function corPelouro(pl){const i=Math.max(0,pelouros.indexOf(pl));return LAYER_COLORS[(i*5+3)%LAYER_COLORS.length];}
+/* uma cor de entidade como texto: nos temas claros escurece-se até ler bem */
+function corLegivel(c){
+  if(!THEME_LIGHT)return hex(c);
+  const col=new THREE.Color(c),hsl={};col.getHSL(hsl);
+  col.setHSL(hsl.h,Math.min(1,hsl.s*1.1),Math.min(hsl.l,0.3));
+  return "#"+col.getHexString();
+}
 function podeEditarPelouros(){return ehAdmin()||ehPresidente();}
 function criaPelouro(nome,resp){const pl={id:"P"+(++pelouroCounter),name:nome||("Pelouro "+(pelouros.length+1)),resp:resp||null,nodes:[]};pelouros.push(pl);anotaHistorico("criar o pelouro");markDirty();return pl;}
 function apagaPelouro(pl){const i=pelouros.indexOf(pl);if(i>=0){pelouros.splice(i,1);anotaHistorico("eliminar o pelouro");markDirty();}}
@@ -17550,7 +17563,7 @@ function renderObjetos(){
   const linha=(o,nivel)=>{
     const filhos=filhosDe(o);
     const row=el("button","row obj-row obj-tree-row"+(o.arquivado?" arquivado":""));row.type="button";row.title="Abrir a ficha · arraste para pôr dentro de outro objeto";
-    row.style.marginLeft=(nivel*18)+"px";row.dataset.oid=o.id;
+    row.style.paddingLeft=(10+nivel*18)+"px";row.dataset.oid=o.id;   // recuo por dentro: a linha não cresce para fora do ecrã
     const tg=el("span","tg",filhos.length?(o._recolhido?"▸":"▾"):"");
     if(filhos.length){tg.title=o._recolhido?"Expandir":"Recolher";tg.setAttribute("role","button");tg.onclick=e=>{e.stopPropagation();o._recolhido=!o._recolhido;renderObjetos();};}
     row.append(tg,caixaSVG(),el("span","obj-num","#"+o.num),el("span","row-name",o.name));
@@ -17932,7 +17945,7 @@ function extrasDoEstado(s){
    procedimentos escondem-se. Cada cubo tem uma tampa que abre quando se
    lhe arrasta um objeto para cima — e as faces vestem-se com o tema.
 ============================================================ */
-let objMapaAtivo=false,objMapaPorFazer=true,objGrupo=null,objAberto=null;
+let objMapaAtivo=false,objMapaPorFazer=true,objGrupo=null,objAberto=null,objArestas=null;
 const objCubos=new Map(),objPickables=[],objVoos=[];
 const objTexCache={};
 function corObjeto(o){return o.arquivado?0x8A8A8A:new THREE.Color().setHSL(nameHue(o.categoria||o.name)/360,0.48,THEME_LIGHT?0.42:0.58).getHex();}
@@ -17965,7 +17978,8 @@ function objTextura(){
 function objMapaTema(){
   if(!objGrupo)return;
   const tex=objTextura();
-  objCubos.forEach(c=>{c.mesh.material.map=tex;c.mesh.material.needsUpdate=true;c.tampaMat.map=tex;c.tampaMat.needsUpdate=true;c.arestas.material.color.setHex(objCorAresta());});
+  objCubos.forEach(c=>{c.mesh.material.map=tex;c.mesh.material.needsUpdate=true;c.tampaMat.map=tex;c.tampaMat.needsUpdate=true;});
+  if(objArestas)objArestas.material.color.setHex(objCorAresta());
 }
 function objCorAresta(){const T=THEMES[themeId]||THEMES.nocturno;return new THREE.Color(T.css["--steel"]||"#C9D6E8").getHex();}
 function objMapaSuja(){objMapaPorFazer=true;}
@@ -17974,7 +17988,23 @@ function objCubo(o){return o?objCubos.get(o.id)||null:null;}
    com um pequeno desfasamento entre elas para não parecerem uma peça só */
 function tampaRoda(c){
   if(!c||!c.petalas)return;
-  c.petalas.forEach((p,k)=>{const a=Math.max(0,Math.min(1,c.abre*1.15-k*0.05));p.rotation.x=-a*2.1;});
+  if(Math.abs(c.abre-c.abreDesenhado)<0.002)return;   // só se a abertura mudou
+  c.abreDesenhado=c.abre;
+  const h=c.lado/2,top=c.lado*0.45+0.01,pos=c.petalas.geometry.attributes.position.array;
+  for(let k=0;k<4;k++){
+    const a=Math.max(0,Math.min(1,c.abre*1.15-k*0.05)),ang=a*2.1;
+    /* no referencial da pétala: a aresta vai de (-h,·,-h) a (h,·,-h) e o vértice
+       levanta-se à volta dela; depois roda-se tudo a volta do eixo vertical */
+    const ax=-h,az=-h,bx=h,bz=-h,cy=h*Math.sin(ang),cz=-h+h*Math.cos(ang);
+    const f=k*Math.PI/2,cs=Math.cos(f),sn=Math.sin(f);
+    const r=(x,z)=>[x*cs+z*sn,-x*sn+z*cs];
+    const A=r(ax,az),B=r(bx,bz),C=r(0,cz),o=k*9;
+    pos[o]=A[0];pos[o+1]=top;pos[o+2]=A[1];
+    pos[o+3]=B[0];pos[o+4]=top;pos[o+5]=B[1];
+    pos[o+6]=C[0];pos[o+7]=top+cy;pos[o+8]=C[1];
+  }
+  c.petalas.geometry.attributes.position.needsUpdate=true;
+  c.petalas.geometry.computeVertexNormals();
 }
 function objCuboEm(x,y){
   mouse.x=(x/innerWidth)*2-1;mouse.y=-(y/innerHeight)*2+1;ray.setFromCamera(mouse,camera);
@@ -17999,33 +18029,33 @@ function objMapaConstroi(){
   objMapaDesfaz();
   objGrupo=new THREE.Group();scene.add(objGrupo);
   const tex=objTextura(),aresta=objCorAresta(),lay=objLayout();
-  const linhas=[];
+  const linhas=[],arestasPos=[];
   objetos.forEach(o=>{
     const L=lay.get(o.id);if(!L)return;
     const cor=corObjeto(o);
     const mat=new THREE.MeshPhongMaterial({map:tex,color:cor,emissive:cor,emissiveIntensity:0.12,shininess:40,transparent:true,opacity:o.arquivado?0.45:1});
     const mesh=new THREE.Mesh(new THREE.BoxGeometry(L.lado,L.lado*0.9,L.lado),mat);
     mesh.position.set(L.x,L.y,L.z);mesh.userData.objeto=o;
-    const arestas=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:aresta,transparent:true,opacity:0.9}));
-    mesh.add(arestas);
+    /* as doze arestas de cada cubo vão todas para um só objeto de linhas (uma
+       chamada de desenho para o mapa inteiro, em vez de uma por cubo) */
+    const h=L.lado/2,hy=L.lado*0.45;
+    const cant=[[-h,-hy,-h],[h,-hy,-h],[h,-hy,h],[-h,-hy,h],[-h,hy,-h],[h,hy,-h],[h,hy,h],[-h,hy,h]];
+    [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]].forEach(([a,b])=>{
+      arestasPos.push(L.x+cant[a][0],L.y+cant[a][1],L.z+cant[a][2],L.x+cant[b][0],L.y+cant[b][1],L.z+cant[b][2]);
+    });
     /* a tampa em flor: quatro pétalas triangulares, cada uma presa pela sua
-       aresta de cima, que rodam para fora e para cima ao abrir */
+       aresta de cima, que rodam para fora e para cima ao abrir — num só mesh
+       por cubo, com os doze vértices recalculados quando a abertura muda */
     const tampaMat=new THREE.MeshPhongMaterial({map:tex,color:cor,emissive:GOLD3D,emissiveIntensity:0,shininess:60,side:THREE.DoubleSide});
-    const petalas=[];
-    for(let k=0;k<4;k++){
-      const eixo=new THREE.Group();eixo.position.set(0,L.lado*0.45+0.01,0);eixo.rotation.y=k*Math.PI/2;
-      const dobra=new THREE.Group();dobra.position.set(0,0,-L.lado/2);   // a aresta, no referencial da pétala
-      const h=L.lado/2,geoP=new THREE.BufferGeometry();
-      geoP.setAttribute("position",new THREE.Float32BufferAttribute([-h,0,0, h,0,0, 0,0,h],3));
-      geoP.setAttribute("uv",new THREE.Float32BufferAttribute([0,0, 1,0, 0.5,1],2));
-      geoP.computeVertexNormals();
-      dobra.add(new THREE.Mesh(geoP,tampaMat));eixo.add(dobra);mesh.add(eixo);
-      petalas.push(dobra);
-    }
+    const geoP=new THREE.BufferGeometry();
+    geoP.setAttribute("position",new THREE.Float32BufferAttribute(new Float32Array(36),3));
+    geoP.setAttribute("normal",new THREE.Float32BufferAttribute(new Float32Array(36),3));
+    geoP.setAttribute("uv",new THREE.Float32BufferAttribute([0,0,1,0,0.5,1, 0,0,1,0,0.5,1, 0,0,1,0,0.5,1, 0,0,1,0,0.5,1],2));
+    const petalas=new THREE.Mesh(geoP,tampaMat);petalas.frustumCulled=false;mesh.add(petalas);
     const rot=textSprite(abbrev(o.name),"#"+o.num+(o.categoria?" · "+o.categoria:""),hex(cor));
     rot.position.set(0,L.lado*0.45+0.42,0);rot.material.opacity=0.92;rot.scale.multiplyScalar(0.62);mesh.add(rot);
     objGrupo.add(mesh);objPickables.push(mesh);
-    objCubos.set(o.id,{o,mesh,petalas,tampaMat,arestas,rot,lado:L.lado,cor,abre:0,abreAlvo:0,brilho:0});
+    objCubos.set(o.id,{o,mesh,petalas,tampaMat,rot,lado:L.lado,cor,abre:0,abreAlvo:0,brilho:0,abreDesenhado:-1});
     const pai=(o.loc&&o.loc.tipo==="objeto")?lay.get(o.loc.objId):null;
     if(pai)linhas.push(L.x,L.y,L.z,pai.x,pai.y,pai.z);
   });
@@ -18033,13 +18063,15 @@ function objMapaConstroi(){
     const lg=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(linhas,3)),new THREE.LineBasicMaterial({color:aresta,transparent:true,opacity:0.45}));
     objGrupo.add(lg);
   }
+  objArestas=arestasPos.length?new THREE.LineSegments(new THREE.BufferGeometry().setAttribute("position",new THREE.Float32BufferAttribute(arestasPos,3)),new THREE.LineBasicMaterial({color:aresta,transparent:true,opacity:0.9})):null;
+  if(objArestas)objGrupo.add(objArestas);
   objGrupo.visible=objMapaAtivo;objMapaPorFazer=false;
 }
 function objMapaDesfaz(){
   if(!objGrupo)return;
   scene.remove(objGrupo);
   objGrupo.traverse(m=>{if(m.geometry)m.geometry.dispose();if(m.material&&m.material.map&&!Object.values(objTexCache).includes(m.material.map))m.material.map.dispose();if(m.material)m.material.dispose();});
-  objGrupo=null;objCubos.clear();objPickables.length=0;objVoos.length=0;objAberto=null;
+  objGrupo=null;objArestas=null;objCubos.clear();objPickables.length=0;objVoos.length=0;objAberto=null;
 }
 function objMapaCentro(){const r=objetos.filter(objetoRaiz).length;return {c:new THREE.Vector3(0,3.2,0),raio:Math.max(9,0.62*r*2.4+7)};}
 function objMapaMostra(on){
@@ -18136,7 +18168,7 @@ function abreAssoc(a){
 function selectRepositorio(r){navigateTo({type:"repositorio",repositorio:r});}
 function repoLinha(r,host,compacto){
   const row=el("button","row repo-row"+(podeAcederRepo(r)?"":" restrito"));row.type="button";
-  const tg=el("span","repo-tipo",REPO_TIPOS[r.tipo]);tg.style.color=hex(corRepo(r));row.append(tg);
+  const tg=el("span","repo-tipo",REPO_TIPOS[r.tipo]);tg.style.color=corLegivel(corRepo(r));row.append(tg);
   row.append(el("span","row-name",r.nome));
   row.append(el("span","t-route",(podeAcederRepo(r)?r.formato+" · "+r.data:"restrito · credencial "+CRED_ROT[r.cred])+(compacto?"":" · "+r.assoc.length+" associação"+(r.assoc.length===1?"":"ões"))));
   row.title=podeAcederRepo(r)?"Abrir a ficha do repositório":"A sua credencial não permite abrir este repositório";
