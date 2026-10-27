@@ -1391,6 +1391,7 @@
   .alerta-row{padding:6px 0;border-bottom:1px solid var(--hairline);font-size:.78rem;color:var(--ink)}
   .cred-perm{display:block;margin:6px 0;font-size:.78rem;color:var(--ink)}
   .pel-legenda{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+  body.visita-terminada #stepper{display:none}
   /* árvore de objetos: linhas com recuo, caixa com tampa que abre ao receber */
   .obj-tree-row{position:relative}
   .obj-tree-row .tg{flex:none;width:16px;text-align:center;color:var(--ink-dim);font-size:.62rem;cursor:pointer}
@@ -2565,6 +2566,8 @@
   <details id="secDefinicoes">
     <summary>Definições</summary>
     <div class="sec-body">
+      <div class="mini-title">Visita guiada</div>
+      <div id="visitaRow"></div>
       <div class="mini-title">Perfil ativo</div>
       <div id="perfilRow"></div>
       <div class="mini-title">Alertas de tarefas</div>
@@ -2889,6 +2892,7 @@
       <button class="btn" id="prevBtn" aria-label="Cena anterior">◀</button>
       <button class="btn" id="playBtn">Play tour</button>
       <button class="btn" id="nextBtn" aria-label="Cena seguinte">▶</button>
+      <button class="btn" id="endTourBtn" title="Terminar a visita — retoma-se em Definições" aria-label="Terminar a visita">✕</button>
     </div>
   </div>
   <div class="caption" id="stepCaption"></div>
@@ -5927,6 +5931,35 @@ document.getElementById("prevBtn").onclick=()=>{autoplay=false;syncPlay();applyS
 document.getElementById("nextBtn").onclick=()=>{autoplay=false;syncPlay();nextScene()};
 const playBtn=document.getElementById("playBtn");
 playBtn.onclick=()=>{autoplay=!autoplay;autoTimer=0;syncPlay();};
+/* ---- Terminar e retomar a visita ----
+   O cartão das cenas sai do ecrã inicial (fica guardado por aparelho) e
+   volta pelas Definições, do princípio e a andar. */
+const VISITA_KEY="of.visita.v1";
+let visitaTerminada=false;
+try{visitaTerminada=localStorage.getItem(VISITA_KEY)==="fim";}catch(e){}
+document.body.classList.toggle("visita-terminada",visitaTerminada);
+function terminaVisita(){
+  autoplay=false;autoTimer=0;syncPlay();
+  visitaTerminada=true;storageSet(VISITA_KEY,"fim");
+  document.body.classList.add("visita-terminada");
+  measureChrome();renderVisitaRow();
+  flash("Visita terminada. Retoma-se em Definições › Visita guiada.",{key:"visita"});
+}
+function retomaVisita(){
+  visitaTerminada=false;storageSet(VISITA_KEY,"");
+  document.body.classList.remove("visita-terminada");
+  closePage();
+  if(booted)setTab("home");
+  applyScene(0);autoplay=true;autoTimer=0;syncPlay();
+  measureChrome();renderVisitaRow();
+}
+function renderVisitaRow(){
+  const host=document.getElementById("visitaRow");if(!host)return;host.innerHTML="";
+  const b=el("button","btn tiny",visitaTerminada?"Retomar a visita":"Terminar a visita");
+  b.onclick=()=>{if(visitaTerminada)retomaVisita();else terminaVisita();};
+  host.append(b,el("div","foot-note",visitaTerminada?"O cartão das cenas está escondido no ecrã inicial. Retomar volta ao princípio, a andar.":"O cartão das cenas está à vista no ecrã inicial; o ✕ nele faz o mesmo que este botão."));
+}
+document.getElementById("endTourBtn").onclick=terminaVisita;
 function syncPlay(){
   playBtn.textContent=autoplay?"Pausar visita":"Visita guiada";
   playBtn.classList.toggle("playing",autoplay);
@@ -17990,7 +18023,7 @@ function tampaRoda(c){
   if(!c||!c.petalas)return;
   if(Math.abs(c.abre-c.abreDesenhado)<0.002)return;   // só se a abertura mudou
   c.abreDesenhado=c.abre;
-  const h=c.lado/2,top=c.lado*0.45+0.01,pos=c.petalas.geometry.attributes.position.array;
+  const h=c.lado/2,top=c.lado*0.225+0.01,pos=c.petalas.geometry.attributes.position.array;
   for(let k=0;k<4;k++){
     const a=Math.max(0,Math.min(1,c.abre*1.15-k*0.05)),ang=a*2.1;
     /* no referencial da pétala: a aresta vai de (-h,·,-h) a (h,·,-h) e o vértice
@@ -18034,11 +18067,11 @@ function objMapaConstroi(){
     const L=lay.get(o.id);if(!L)return;
     const cor=corObjeto(o);
     const mat=new THREE.MeshPhongMaterial({map:tex,color:cor,emissive:cor,emissiveIntensity:0.12,shininess:40,transparent:true,opacity:o.arquivado?0.45:1});
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(L.lado,L.lado*0.9,L.lado),mat);
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(L.lado,L.lado*0.45,L.lado),mat);
     mesh.position.set(L.x,L.y,L.z);mesh.userData.objeto=o;
     /* as doze arestas de cada cubo vão todas para um só objeto de linhas (uma
        chamada de desenho para o mapa inteiro, em vez de uma por cubo) */
-    const h=L.lado/2,hy=L.lado*0.45;
+    const h=L.lado/2,hy=L.lado*0.225;
     const cant=[[-h,-hy,-h],[h,-hy,-h],[h,-hy,h],[-h,-hy,h],[-h,hy,-h],[h,hy,-h],[h,hy,h],[-h,hy,h]];
     [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]].forEach(([a,b])=>{
       arestasPos.push(L.x+cant[a][0],L.y+cant[a][1],L.z+cant[a][2],L.x+cant[b][0],L.y+cant[b][1],L.z+cant[b][2]);
@@ -18053,7 +18086,7 @@ function objMapaConstroi(){
     geoP.setAttribute("uv",new THREE.Float32BufferAttribute([0,0,1,0,0.5,1, 0,0,1,0,0.5,1, 0,0,1,0,0.5,1, 0,0,1,0,0.5,1],2));
     const petalas=new THREE.Mesh(geoP,tampaMat);petalas.frustumCulled=false;mesh.add(petalas);
     const rot=textSprite(abbrev(o.name),"#"+o.num+(o.categoria?" · "+o.categoria:""),hex(cor));
-    rot.position.set(0,L.lado*0.45+0.42,0);rot.material.opacity=0.92;rot.scale.multiplyScalar(0.62);mesh.add(rot);
+    rot.position.set(0,L.lado*0.225+0.42,0);rot.material.opacity=0.92;rot.scale.multiplyScalar(0.62);mesh.add(rot);
     objGrupo.add(mesh);objPickables.push(mesh);
     objCubos.set(o.id,{o,mesh,petalas,tampaMat,rot,lado:L.lado,cor,abre:0,abreAlvo:0,brilho:0,abreDesenhado:-1});
     const pai=(o.loc&&o.loc.tipo==="objeto")?lay.get(o.loc.objId):null;
@@ -18120,7 +18153,7 @@ function stepObjMapa(dt){
   });
   for(let i=objVoos.length-1;i>=0;i--){
     const v=objVoos[i];v.t+=dt;const u=Math.min(1,v.t/v.dur),e=u*u*(3-2*u);
-    const alvo=v.para.mesh.position.clone().setY(v.para.mesh.position.y+v.para.lado*0.9);
+    const alvo=v.para.mesh.position.clone().setY(v.para.mesh.position.y+v.para.lado*0.45);
     v.de.mesh.position.lerpVectors(v.ini,alvo,e);v.de.mesh.position.y+=Math.sin(u*Math.PI)*1.2;
     v.de.mesh.scale.setScalar(v.esc*(1-0.85*e));
     if(u>=1){v.para.abreAlvo=0;v.para.brilho=0;objVoos.splice(i,1);objMapaSuja();}
@@ -18538,7 +18571,7 @@ function holoAncora(o){
   if(foco.tipo==="tarefa")return (idleObjs&&idleObjs.curva)?{base:idleObjs.curva.getPoint(0.5),sobe:1.3,k:1.25}:null;
   /* a câmara do procedimento vê o anel inteiro, de longe: o painel cresce com ele */
   if(foco.tipo==="procedimento")return {base:new THREE.Vector3(0,o.height,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)};
-  if(foco.tipo==="objeto"){const c=objCubo(o);return c?{base:c.mesh.position.clone(),sobe:c.lado/2+1.25,k:0.85}:null;}
+  if(foco.tipo==="objeto"){const c=objCubo(o);return c?{base:c.mesh.position.clone(),sobe:c.lado*0.225+1.3,k:0.85}:null;}
   if(foco.tipo==="novo")return idleObjs?{base:new THREE.Vector3(0,idleObjs.altura,0),sobe:1.2,k:Math.max(1.9,rGuide()*0.22)}:null;
   if(foco.tipo==="procura"){
     const org=foco.origem?byId(foco.origem):null;
@@ -18844,7 +18877,7 @@ function obraObjetoComeca(){
   obraObjetoTermina();
   const o=nascAcha(foco),c=objCubo(o);if(!o||!c)return;
   const N=4,n=N*N*N,u=c.lado/N;
-  const inst=new THREE.InstancedMesh(new THREE.BoxGeometry(u*0.94,u*0.94*0.9,u*0.94),
+  const inst=new THREE.InstancedMesh(new THREE.BoxGeometry(u*0.94,u*0.94*0.45,u*0.94),
     new THREE.MeshPhongMaterial({color:0xffffff,shininess:50,transparent:true,opacity:1,fog:false}),n);
   const m=new THREE.Matrix4(),cor=new THREE.Color(),ordem=[];
   for(let y=0;y<N;y++)for(let z=N-1;z>=0;z--)for(let x=0;x<N;x++)ordem.push({x,y,z});
@@ -18882,13 +18915,13 @@ function stepObraObjeto(dt){
     if(i<k){ob.pop[i]=Math.min(1,ob.pop[i]+dt*5);s=Math.max(0.0001,ob.pop[i]*(1+0.35*Math.sin(ob.pop[i]*Math.PI)));}   // salta ao assentar
     else ob.pop[i]=0;
     m.makeScale(s,s,s);
-    m.setPosition(-half+u*(b.x+0.5),-c.lado*0.45+u*0.9*(b.y+0.5),-half+u*(b.z+0.5));
+    m.setPosition(-half+u*(b.x+0.5),-c.lado*0.225+u*0.45*(b.y+0.5),-half+u*(b.z+0.5));
     ob.inst.setMatrixAt(i,m);
   }
   ob.inst.instanceMatrix.needsUpdate=true;
   if(k<n&&ob.fecho<0&&!reduceMotion){
     const b=ob.ordem[k];
-    const px=ob.inst.position.x-half+u*(b.x+0.5),pz=ob.inst.position.z-half+u*(b.z+0.5),py=ob.inst.position.y-c.lado*0.45+u*0.9*(b.y+0.5)+u*0.9+0.05*Math.sin(ob.t*18);
+    const px=ob.inst.position.x-half+u*(b.x+0.5),pz=ob.inst.position.z-half+u*(b.z+0.5),py=ob.inst.position.y-c.lado*0.225+u*0.45*(b.y+0.5)+u*0.45+0.05*Math.sin(ob.t*18);
     ob.cabeca.position.set(px,py,pz);ob.cabeca.visible=true;
     const a=ob.fio.geometry.attributes.position.array;
     a[0]=px;a[1]=ob.inst.position.y+c.lado*1.7;a[2]=pz;a[3]=px;a[4]=py;a[5]=pz;
@@ -19366,7 +19399,7 @@ syncThemeButtons();
 applyScene(0);
 syncPlay();
 booted=true;
-renderPerfilRow();renderAlertasRow();
+renderPerfilRow();renderAlertasRow();renderVisitaRow();
 setTimeout(avisaAlertas,2500);
 /* O histórico ancora aqui: com o lastSnap semeado no arranque, a PRIMEIRA
    alteração já é anulável, e um rascunho aberto de imediato tem sempre um
