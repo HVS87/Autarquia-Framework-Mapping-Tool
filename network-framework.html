@@ -16826,8 +16826,12 @@ function palcoSelMsg(sel){
   if(sel.type==="group"&&sel.group)return {t:"sel",tipo:"group",id:sel.group.id};
   return {t:"sel",tipo:null};
 }
+let palcoSelPendente=null;   // uma seleção que chegou antes do objeto (o estado vem com atraso)
 function palcoAplicaSel(m){
-  if(!m||!m.tipo){applySelection(null);return;}
+  if(!m||!m.tipo){palcoSelPendente=null;applySelection(null);return;}
+  const existe=(m.tipo==="node"&&byId(m.id))||(m.tipo==="agent"&&agentById(m.id))||(m.tipo==="group"&&groups.some(x=>x.id===m.id))
+    ||(m.tipo==="task"&&(layerById(m.pid)||{tasks:[]}).tasks.some(x=>x.id===m.id));
+  palcoSelPendente=existe?null:m;
   if(m.tipo==="node"){const n=byId(m.id);if(n)applySelection({type:"node",node:n});}
   else if(m.tipo==="task"){
     const p2=layerById(m.pid);
@@ -16905,6 +16909,7 @@ function palcoRecebe(m){
       syncLayerRows();
     }
     if(guarda.tipo)palcoAplicaSel(guarda);
+    else if(palcoSelPendente)palcoAplicaSel(palcoSelPendente);   // o objeto selecionado acabou de chegar
     /* o primeiro estado é a abertura do palco: a organização inteira nasce;
        os anúncios que esperavam por este estado ficam para depois da génese */
     if(!palcoTeveEstado){palcoTeveEstado=true;geneseComeca();}
