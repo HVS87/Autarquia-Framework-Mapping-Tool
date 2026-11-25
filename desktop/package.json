@@ -4,7 +4,11 @@
   "version": "1.4.0",
   "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa — aplicação de secretária.",
   "main": "main.js",
-  "author": "HVS87",
+  "author": {
+    "name": "HVS87",
+    "email": "noreply@github.com"
+  },
+  "homepage": "https://github.com/HVS87/Autarquia-Framework-Mapping-Tool",
   "private": true,
   "license": "MIT",
   "scripts": {
