@@ -1,13 +1,29 @@
 ## Ferramenta de Mapeamento para Autarquias — aplicação de secretária
 
-Duas formas de a ter no Windows:
-
+**Windows**
 - **Mapeamento-Autarquias-‹versão›-x64.exe** — instalador: escolhe a pasta e cria o atalho "Mapeamento para Autarquias" no menu Iniciar.
-- **Mapeamento-Autarquias-‹versão›-portatil.exe** — portátil: corre onde estiver (pen, pasta partilhada), sem instalação; a pasta `autosaves\` nasce ao lado.
+- **Mapeamento-Autarquias-‹versão›-portatil.exe** — portátil: corre onde estiver (pen, pasta partilhada), sem instalação; a pasta `autosaves` nasce ao lado.
 
-Os executáveis não estão assinados digitalmente. Na primeira execução o SmartScreen mostra "Editor desconhecido" — *Mais informações › Executar mesmo assim*.
+**Mac** (macOS 11 ou mais recente)
+- **Mapeamento-Autarquias-‹versão›-mac-arm64.dmg** — Mac com chip Apple (M1 e seguintes).
+- **Mapeamento-Autarquias-‹versão›-mac-x64.dmg** — Mac com processador Intel.
 
-### Novidades desta versão (1.3.0)
+**Linux**
+- **Mapeamento-Autarquias-‹versão›-linux-x86_64.AppImage** — corre em qualquer distribuição: `chmod +x` e abrir.
+- **Mapeamento-Autarquias-‹versão›-linux-amd64.deb** — Debian, Ubuntu e derivadas.
+
+**Telemóvel e tablet (Android, iPhone, iPad)**: abra a versão web e use *Partilhar › Adicionar ao ecrã principal* (iPhone, iPad) ou *Instalar aplicação* (Android) — fica como uma app, funciona sem rede, e liga-se ao computador em Definições › Sincronizar dispositivos.
+
+As aplicações não estão assinadas por um certificado de programador. No Windows, o SmartScreen mostra "Editor desconhecido" — *Mais informações › Executar mesmo assim*. No Mac, na primeira vez: botão direito na aplicação › *Abrir* › *Abrir*.
+
+### Novidades desta versão (1.4.0)
+- **Sincronizar dispositivos** (Definições): o mesmo projeto no telemóvel, no tablet e no computador, sem conta nem palavra-passe. O código de ligação passa por QR ou à mão; o projeto viaja cifrado (AES-GCM de 256 bits) por uma caixa de passagem que não o consegue ler. Alterações a coisas diferentes nos dois aparelhos ficam as duas; na mesma coisa ganha a mais recente, e o que chega anula-se com Ctrl+Z.
+- **Acessibilidade** (Definições): visão das cores para daltonismo — vermelho-verde (Okabe–Ito), azul-amarelo e monocromático —, por cima de qualquer tema e sem mexer nas cores guardadas; atalho para o tema Alto Contraste; movimento reduzido à escolha; foco do teclado reforçado; tamanho do texto.
+- **Privacidade**: o aviso de que tudo fica no aparelho, sem contas, publicidade nem estatísticas, nas boas-vindas e no fim das Definições.
+- **Mac e Linux**: a aplicação de secretária passa a existir também para Mac (Apple e Intel) e Linux (AppImage e .deb); no Mac e no Linux os autosaves vivem na pasta do utilizador.
+- **Correções**: o portátil do Windows guarda os autosaves ao lado do .exe (e não na pasta temporária onde se descompacta); depois de fechar um fluxograma, o segundo ecrã volta a seguir o que está selecionado; alvos de toque maiores nas caixas de seleção.
+
+### Novidades da 1.3.0
 - **Governação**: Pelouros (nódulos raiz e tudo o que está abaixo, com responsável do Executivo, visíveis no organograma), credenciais de segurança por pessoa (Consulta a Executivo, alteráveis pelo Admin, pelo Presidente, pelos responsáveis de Pelouro e por chefias com permissão), e o perfil ativo nas Definições.
 - **Objetos**: número, categoria e atributos com texto preditivo, alertas, localização (geográfica, morada ou dentro de outro objeto), associações, valores com histórico, observações, inventário, arquivar e eliminar; lista em árvore com arrastar e largar, e mapa 3D em caixas baixas cujas tampas abrem em flor; objeto novo constrói-se em cubinhos no segundo ecrã.
 - **Repositórios**: documentos, multimédia, atas e minutas ligados a procedimentos, tarefas, nódulos e pessoas, com credencial mínima de acesso.
@@ -36,6 +52,6 @@ Os executáveis não estão assinados digitalmente. Na primeira execução o Sma
 - Autosave em pasta local (último estado a cada alteração e cópias datadas de meia em meia hora); a pasta muda-se nas Definições.
 - Esc abre o menu: Voltar, Guardar, Guardar como…, Definições, Sair. Sair com alterações por guardar pergunta primeiro.
 - Atalhos de teclado remapeáveis em Definições.
-- Funciona sem internet (as exportações PDF/PPTX precisam de rede na primeira utilização).
+- Funciona sem internet (as exportações PDF/PPTX e a sincronização entre aparelhos precisam de rede).
 
 A versão web continua em https://hvs87.github.io/Autarquia-Framework-Mapping-Tool/ — os dados de uma e de outra trocam-se pelos ficheiros JSON (Guardar / Abrir dataset).

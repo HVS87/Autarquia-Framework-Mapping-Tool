@@ -16,6 +16,15 @@ const path=require("path");
    utilizador. A pasta "autosaves" nasce lá dentro. */
 function pastaBase(){
   if(!app.isPackaged)return path.join(__dirname,"..");
+  /* No Mac a aplicação vive dentro de um .app assinado (escrever lá dentro
+     parte a assinatura) e no Linux o AppImage é montado só de leitura: os
+     dados vão para a pasta do utilizador. */
+  if(process.platform!=="win32")return app.getPath("userData");
+  /* O portátil do Windows descompacta-se numa pasta temporária que desaparece
+     ao fechar; a pasta verdadeira, ao lado do .exe, vem nesta variável. */
+  if(process.env.PORTABLE_EXECUTABLE_DIR){
+    try{fs.accessSync(process.env.PORTABLE_EXECUTABLE_DIR,fs.constants.W_OK);return process.env.PORTABLE_EXECUTABLE_DIR;}catch(e){}
+  }
   const exeDir=path.dirname(app.getPath("exe"));
   try{fs.accessSync(exeDir,fs.constants.W_OK);return exeDir;}
   catch(e){return app.getPath("userData");}

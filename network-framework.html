@@ -1392,6 +1392,40 @@
   .cred-perm{display:block;margin:6px 0;font-size:.78rem;color:var(--ink)}
   .pel-legenda{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
   body.visita-terminada #stepper{display:none}
+  /* ---- Acessibilidade ---- */
+  .a11y-sub{margin:12px 0 4px}
+  .a11y-bloco{margin:6px 0 10px}
+  .cvd-amostra{display:flex;gap:4px;margin:6px 0 2px}
+  .cvd-amostra span{width:22px;height:14px;border-radius:3px;border:1px solid var(--hairline)}
+  /* movimento reduzido escolhido à mão: o mesmo que o sistema pediria */
+  body.movimento-reduzido *,body.movimento-reduzido *::before,body.movimento-reduzido *::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  /* foco do teclado reforçado: um anel grosso que se vê em qualquer tema */
+  body.foco-forte :focus-visible{outline:3px solid var(--gold)!important;outline-offset:2px!important;box-shadow:0 0 0 5px rgba(0,0,0,.55)!important}
+  /* ---- Sincronizar dispositivos e privacidade ---- */
+  .privacidade{margin:10px 0 4px;padding:10px 12px;border:1px solid var(--hairline);border-radius:10px;
+    font-size:.72rem;line-height:1.55;color:var(--ink-dim)}
+  .privacidade p{margin:0 0 6px}.privacidade p:last-child{margin:0}
+  #coachCard .privacidade{max-width:560px}
+  .sinc-pill{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 9px;font:inherit;font-size:.62rem;
+    letter-spacing:.04em;border:1px solid var(--hairline);border-radius:999px;background:transparent;color:var(--ink-dim);cursor:pointer}
+  .sinc-pill.ok{color:var(--ink);border-color:var(--steel)}
+  .sinc-pill.aviso{color:var(--gold);border-color:var(--gold)}
+  .sinc-pill[hidden]{display:none}
+  .sinc-passo{border:1px solid var(--hairline);border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .sinc-passo .search-input{width:100%;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;letter-spacing:.06em}
+  .mini-sub{font-weight:600;font-size:.8rem;color:var(--ink)}
+  .sinc-tab th{width:34%}
+  .sinc-qr{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;margin-top:8px}
+  .sinc-qr-img{flex:0 0 auto}
+  .sinc-qr-img svg{display:block;width:176px;height:176px;border-radius:8px}
+  .sinc-qr-txt{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .codigo-sinc{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:.95rem;letter-spacing:.06em;color:var(--ink);word-break:break-all;user-select:all}
+  .sinc-ligar,.sinc-avancado{margin-top:8px}
+  .sinc-ligar>summary,.sinc-avancado>summary{cursor:pointer;color:var(--ink);font-size:.78rem}
+  #leitorQR{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px}
+  #leitorQR .leitor-card{max-width:420px;width:100%;padding:16px;border-radius:14px;display:flex;flex-direction:column;gap:10px}
+  #leitorQR video{width:100%;max-height:60vh;border-radius:12px;background:#000;object-fit:cover}
   /* árvore de objetos: linhas com recuo, caixa com tampa que abre ao receber */
   .obj-tree-row{position:relative}
   .obj-tree-row .tg{flex:none;width:16px;text-align:center;color:var(--ink-dim);font-size:.62rem;cursor:pointer}
@@ -1441,6 +1475,8 @@
   body.vp-touch .layer-pick button{min-height:32px;padding:6px 10px}
   body.vp-touch #procExplore [role="button"]{min-width:24px;min-height:24px}
   body.vp-touch .chip{padding:6px 12px;min-height:28px}
+  body.vp-touch input[type=checkbox],body.vp-touch input[type=radio]{width:24px;height:24px;vertical-align:middle;margin:0 6px 0 0}
+  body.vp-touch #bookmarkList .go{min-height:30px}
   body.vp-touch .obj-tree-row .tg{width:24px;min-height:24px;line-height:24px;font-size:.8rem}
   .obj-tree-row{min-width:0;max-width:100%;box-sizing:border-box}
   .obj-tree-row .row-name,.obj-tree-row .t-route{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2397,6 +2433,7 @@
   <div class="brand">
     <input id="orgName" value="Organização" maxlength="48" aria-label="Nome da organização">
     <p>Executivo · Coordenação · Processos · Agentes</p>
+    <button type="button" id="sincPill" class="sinc-pill" hidden></button>
     <div class="head-actions">
       <button class="btn tiny icon-round" id="undoBtn" title="Anular (Ctrl+Z)" aria-label="Anular" disabled>↶</button>
       <button class="btn tiny icon-round" id="redoBtn" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer" disabled>↷</button>
@@ -2566,6 +2603,8 @@
   <details id="secDefinicoes">
     <summary>Definições</summary>
     <div class="sec-body">
+      <div class="mini-title" id="sincTitulo">Sincronizar dispositivos</div>
+      <div id="sincRow"></div>
       <div class="mini-title">Visita guiada</div>
       <div id="visitaRow"></div>
       <div class="mini-title">Perfil ativo</div>
@@ -2590,7 +2629,9 @@
       <div id="pastaRow"></div>
       <div class="mini-title">Desempenho</div>
       <div id="desempRow"></div>
-      <div class="mini-title">Tamanho do texto</div>
+      <div class="mini-title" id="a11yTitulo">Acessibilidade</div>
+      <div id="a11yRow"></div>
+      <div class="mini-sub a11y-sub">Tamanho do texto</div>
       <div class="size-row">
         <button type="button" id="fsDown" aria-label="Diminuir o texto">A−</button>
         <span class="val" id="fsVal">100%</span>
@@ -2606,6 +2647,8 @@
           <span class="ib-ico" aria-hidden="true">⬇</span><span>Guardar como app</span>
         </button>
       </div>
+      <div class="mini-title">Privacidade</div>
+      <div class="privacidade-host"></div>
     </div>
   </details>
 
@@ -2702,6 +2745,7 @@
       <span class="coach-ico" aria-hidden="true">☰</span>
       <span class="coach-txt">O <b>painel</b> gere nódulos, agentes, procedimentos e grupos — e exporta tudo.</span>
     </div>
+    <div class="privacidade-host"></div>
     <div class="card-btns">
       <button class="btn" id="coachShortcuts">Ver atalhos</button>
       <button class="btn primary" id="coachDone">Começar</button>
@@ -2945,7 +2989,13 @@
 (function(){
 "use strict";
 if(window.__noThree)return;   // a guarda acima já explicou o que falta
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* "Como o sistema", ou a escolha de Definições › Acessibilidade › Movimento */
+const reduceMotion = (()=>{
+  let pref="sistema";try{pref=localStorage.getItem("of.a11y.movimento.v1")||"sistema";}catch(e){}
+  if(pref==="reduzido")return true;
+  if(pref==="completo")return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+})();
 
 /* ============================================================
    CONSTANTS
@@ -2979,6 +3029,40 @@ const abbrev = s => String(s==null?"":s)
   .replace(/\bServiço\b/g,"Serv.");
 let GOLD = 0xE8B44C;
 let GOLD3D=0xE8B44C;
+/* ---- Visão das cores (Definições › Acessibilidade) ----
+   Três modos para quem não distingue todas as cores, por cima de qualquer
+   tema. Mudam só a VISTA: a cor guardada de cada procedimento (corBase) é a
+   mesma em todos os aparelhos e viaja na sincronização tal como era.
+   - vermelho-verde (protanopia, deuteranopia — a grande maioria): a paleta de
+     Okabe e Ito, desenhada para ser distinguível nestes dois casos;
+   - azul-amarelo (tritanopia): eixo vermelho–turquesa e degraus de luz, nos
+     esquemas de Paul Tol;
+   - monocromático (acromatopsia): só cinzentos, com luminosidades afastadas
+     umas das outras. */
+const CVD_KEY="of.a11y.cores.v1";
+const CVD_PALETAS={
+  vermelhoverde:{nome:"Vermelho-verde",
+    proc:[0x0072B2,0xE69F00,0x56B4E9,0xD55E00,0xCC79A7,0x009E73,0xF0E442,0x999999,0x004488,0xDDAA33,0xBB5566,0x88CCEE],
+    prim:[[0x0072B2,0x56B4E9],[0xD55E00,0xFF9E5C],[0xF0E442,0xFFF6A8],[0x009E73,0x5FD9B4],[0xCC79A7,0xF0AED0],[0xE69F00,0xFFC95C]],
+    gp:["#D55E00","#0072B2","#009E73","#F0E442"]},
+  azulamarelo:{nome:"Azul-amarelo",
+    proc:[0xCC3311,0x009988,0xEE7733,0x0077BB,0xEE3377,0x777777,0x882255,0x44AA99,0xBB5566,0x117733,0xAA4499,0xBBBBBB],
+    prim:[[0xCC3311,0xEE7766],[0x009988,0x55CCBB],[0xEE3377,0xFF88AA],[0x777777,0xAAAAAA],[0x882255,0xCC6699],[0x0077BB,0x66AADD]],
+    gp:["#CC3311","#009988","#EE3377","#0077BB"]},
+  mono:{nome:"Monocromático",
+    proc:[0xF2F2F2,0x7A7A7A,0xC8C8C8,0x5A5A5A,0xE0E0E0,0x9A9A9A,0xB0B0B0,0x6A6A6A,0xD4D4D4,0x8A8A8A,0xBDBDBD,0x4A4A4A],
+    prim:[[0xF2F2F2,0xFFFFFF],[0x8A8A8A,0xBBBBBB],[0xC8C8C8,0xE8E8E8],[0x5A5A5A,0x8A8A8A],[0xDDDDDD,0xF2F2F2],[0x9A9A9A,0xCCCCCC]],
+    gp:["#F2F2F2","#8A8A8A","#C8C8C8","#5A5A5A"]}
+};
+let cvdModo=(()=>{try{const v=localStorage.getItem(CVD_KEY);return CVD_PALETAS[v]?v:"normal";}catch(e){return "normal";}})();
+/** A cor com que um procedimento (ou pelouro, ou repositório) se mostra neste aparelho. */
+function corVista(c){
+  const P=CVD_PALETAS[cvdModo];
+  if(!P||typeof c!=="number")return c;
+  let i=LAYER_COLORS.indexOf(c);
+  if(i<0)i=Math.abs(Math.imul(c|0,2654435761)|0);
+  return P.proc[i%P.proc.length];
+}
 let PRIMARY_GRADS=[
   [0x4A90E2,0x8FD0FF],[0xE0554F,0xFF9A6B],[0xE8C445,0xFFF0A0],
   [0x5CC46A,0xA8F0B8],[0xB06AE0,0xE8A8FF],[0xE08A3C,0xFFC98A]
@@ -3043,7 +3127,7 @@ function palcoAnuncia(tipo,obj){
   palcoEnvia(m);
 }
 function addAgent(nodeId, primary, category, name){
-  const a={id:"a"+(++agentCounter), name:name||nextName(),cred:1,podeCredSub:false,podeCredArvore:false,
+  const a={id:"a"+(++agentCounter)+idSufixo(), name:name||nextName(),cred:1,podeCredSub:false,podeCredArvore:false,
     category:category||PRIMARY_CAT_BY_TIER[Math.min(byId(nodeId).tier,PRIMARY_CAT_BY_TIER.length-1)], nodeId, primary:!!primary};
   // "Um responsável por unidade" tem de valer por construção, não por convenção:
   // chamar isto com primary=true numa unidade que já tem titular passa a
@@ -3190,7 +3274,7 @@ function makeLayerData(name,color){
   // _visible tem de nascer verdadeiro: um procedimento criado depois do
   // arranque ficava com undefined, era exportado como visible:false e
   // reaparecia invisível no 3D sem ninguém perceber porquê.
-  const p={id:"L"+(++layerCounter), name, color, _visible:true, done:false,
+  const p={id:"L"+(++layerCounter)+idSufixo(), name, color:corVista(color), corBase:color, _visible:true, done:false,
     gatilho:"", produto:"",           // o que dispara o procedimento e o que ele entrega
     fases:[],                         // [{nome,ate}] — colunas agrupadas em fases nomeadas
     height:layerHeight(processes.length), tasks:[]};
@@ -3198,7 +3282,7 @@ function makeLayerData(name,color){
   return p;
 }
 function makeTaskData(p,a,b,desc,agentId,duration){
-  const t={id:"t"+(++taskCounter), a, b,
+  const t={id:"t"+(++taskCounter)+idSufixo(), a, b,
     desc:desc||"Descrever a tarefa — entregável, âmbito e cadência.",
     nome:"",                      // rótulo curto para o diagrama; vazio usa a descrição
     estado:"",                    // levantamento: ""=por confirmar, "validado", "aprovado"
@@ -5347,6 +5431,7 @@ function setTab(id){
     if(id==="pelouros")renderPelouros();
     if(id==="objetos")renderObjetos();
     if(id==="repositorios")renderRepositorios();
+    if(id==="definicoes"){renderSincRow();renderVisitaRow();renderA11yRow();}
     /* o separador Objetos abre sempre a lista; o mapa 3D sai pelo botão da lista e fica sozinho em cena */
     if(id==="objetos")objVista="lista";
     objMapaMostra(false);
@@ -5960,6 +6045,10 @@ function renderVisitaRow(){
   host.append(b,el("div","foot-note",visitaTerminada?"O cartão das cenas está escondido no ecrã inicial. Retomar volta ao princípio, a andar.":"O cartão das cenas está à vista no ecrã inicial; o ✕ nele faz o mesmo que este botão."));
 }
 document.getElementById("endTourBtn").onclick=terminaVisita;
+document.getElementById("sincPill").onclick=()=>{
+  setTab("definicoes");
+  setTimeout(()=>{const e=document.getElementById("sincTitulo");if(e)e.scrollIntoView({block:"start"});},0);
+};
 function syncPlay(){
   playBtn.textContent=autoplay?"Pausar visita":"Visita guiada";
   playBtn.classList.toggle("playing",autoplay);
@@ -6420,7 +6509,7 @@ function renderGroups(){
   });
 }
 document.getElementById("addGroupBtn").onclick=()=>{
-  const g={id:"G"+(++groupCounter),name:"Novo Grupo",layers:[]};
+  const g={id:"G"+(++groupCounter)+idSufixo(),name:"Novo Grupo",layers:[]};
   groups.push(g);
   markDirty();
   renderGroups();
@@ -8932,7 +9021,7 @@ function swapTasks(u,v){
   markDirty();
 }
 function duplicateProcedure(p){
-  const np=createLayer(String(p.name).slice(0,20)+" (cópia)",p.color);
+  const np=createLayer(String(p.name).slice(0,20)+" (cópia)",p.corBase!==undefined?p.corBase:p.color);
   const ni=processes.indexOf(np);
   p.tasks.forEach(t=>createTask(ni,t.a,t.b,t.desc,t.agent,t.duration));
   np.done=!!p.done;   // a cópia é a mesma cadeia; o estado vai com ela
@@ -9425,7 +9514,7 @@ function renderFlowchart(p){
   newG.style.marginTop="6px";
   newG.onclick=async()=>{
     if(!(await confirmAddToGroup(p,"novo grupo")))return;
-    const gr={id:"G"+(++groupCounter),name:"Novo Grupo",layers:[p.id]};
+    const gr={id:"G"+(++groupCounter)+idSufixo(),name:"Novo Grupo",layers:[p.id]};
     groups.push(gr);
     markDirty();renderGroups();selectGroup(gr);
   };
@@ -12651,7 +12740,7 @@ function datasetJSON(){
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
     agents:agents.map(agenteParaEstado),
-    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
+    layers:processes.map(p=>({id:p.id,name:p.name,color:(p.corBase!==undefined?p.corBase:p.color),visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
       gatilho:p.gatilho||"",produto:p.produto||"",
       fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
@@ -12788,8 +12877,8 @@ importFile.onchange=()=>{
         // O id tem de vir do ficheiro, senão as referências dos grupos apontam
         // para procedimentos que já não existem — ou, pior, para os errados.
         if(typeof cl.id==="string"&&cl.id)p.id=cl.id;
-        if(typeof cl.color==="number"&&cl.color!==p.color){
-          p.color=cl.color;
+        if(typeof cl.color==="number"&&cl.color!==p.corBase){
+          p.corBase=cl.color;p.color=corVista(cl.color);
           if(p._row)p._row.style.color=hex(p.color);
           if(p._guideMat)p._guideMat.color.setHex(p.color);
           p.refreshLabel();
@@ -13292,7 +13381,7 @@ function applyTheme(id,opts){
   const T0=THEMES[id]||THEMES.nocturno;
   themeId=THEMES[id]?id:"nocturno";
   Object.entries(T0.css).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
-  (T0.gp||["#E0554F","#4A90E2","#5CC46A","#E8C445"]).forEach((v,i)=>
+  ((CVD_PALETAS[cvdModo]&&CVD_PALETAS[cvdModo].gp)||T0.gp||["#E0554F","#4A90E2","#5CC46A","#E8C445"]).forEach((v,i)=>
     document.documentElement.style.setProperty(["--gp-a","--gp-b","--gp-c","--gp-d"][i],v));
   document.body.classList.toggle("theme-light",!!T0.light);
   document.body.dataset.tema=themeId;
@@ -13302,7 +13391,7 @@ function applyTheme(id,opts){
   PILL_BG=T0.pill;
   PILL_INK=T0.pillInk||null;
   PILL_SUB=T0.pillSub||"rgba(150,168,193,0.96)";
-  PRIMARY_GRADS=T0.primaries;
+  PRIMARY_GRADS=CVD_PALETAS[cvdModo]?CVD_PALETAS[cvdModo].prim:T0.primaries;
   aurora.pal.sky=T0.sky;
   aurora.pal.silhouette=T0.silhouette;
   aurora.pal.blobs.forEach((b,i)=>{if(T0.aurora[i]){b.rgb=T0.aurora[i][0];b.a=T0.aurora[i][1];}});
@@ -13895,7 +13984,7 @@ function renderDesempRow(){
   nota.id="desempNota";
   host.append(nota);
   atualizaNotaDesemp();
-  if(ehDesktop&&!ehPalco){
+  if(ehDesktop&&!ehPalco&&(window.desktop.plataforma||"win32")==="win32"){
     let d={};try{d=window.desktop.definicoes()||{};}catch(e){}
     host.append(el("div","mini-title","Motor gráfico"));
     const pm=el("div","layer-pick");
@@ -16246,6 +16335,8 @@ function paletteActions(){
     {kind:"Ação",label:"Objetos — património e inventário",run:()=>setTab("objetos")},
     {kind:"Ação",label:"Objetos — mapa 3D em cubos",run:()=>{objVista="mapa";setTab("objetos");}},
     {kind:"Ação",label:"Repositórios — documentos, multimédia, atas, minutas",run:()=>setTab("repositorios")},
+    {kind:"Ação",label:"Acessibilidade — daltonismo, contraste, movimento",run:()=>{setTab("definicoes");setTimeout(()=>{const e=document.getElementById("a11yTitulo");if(e)e.scrollIntoView({block:"start"});},0);}},
+    {kind:"Ação",label:"Sincronizar dispositivos — telemóvel e computador",run:()=>{setTab("definicoes");setTimeout(()=>{const e=document.getElementById("sincTitulo");if(e)e.scrollIntoView({block:"start"});},0);}},
     {kind:"Ação",label:"Tarefas em atraso",run:()=>{filtroTarefas={k:"atraso",pessoa:null};setTab("tarefas");}},
     {kind:"Ação",label:"Os meus alertas",run:()=>{filtroTarefas={k:"minhas",pessoa:null};setTab("tarefas");}},
     {kind:"Ação",label:"Guardar como app (instalar)",run:askToInstall},
@@ -16494,7 +16585,7 @@ function snapshotState(){
     tiers:TIER.map(t=>({label:t.label,y:t.y,r:t.r,size:t.size})),
     nodes:nodes.map(n=>({id:n.id,name:n.name,tier:n.tier,angle:n.angle,parent:n.parent,custom:!!n.custom})),
     agents:agents.map(agenteParaEstado),
-    layers:processes.map(p=>({id:p.id,name:p.name,color:p.color,visible:!!p._visible,done:!!p.done,
+    layers:processes.map(p=>({id:p.id,name:p.name,color:(p.corBase!==undefined?p.corBase:p.color),visible:!!p._visible,done:!!p.done,
       prazo:Number.isFinite(p.prazo)?p.prazo:null,
       gatilho:p.gatilho||"",produto:p.produto||"",
       fases:(p.fases||[]).map(f=>({nome:String(f.nome||"").slice(0,30),ate:f.ate|0})),
@@ -16506,7 +16597,7 @@ function snapshotState(){
 }
 // Ids are preserved on restore, so the generators must not hand out a colliding one later.
 function bumpCounters(){
-  const num=(s,pre)=>{const m=String(s||"").match(new RegExp("^"+pre+"(\\d+)$"));return m?+m[1]:0;};
+  const num=(s,pre)=>{const m=String(s||"").match(new RegExp("^"+pre+"(\\d+)(?:_[0-9a-z]+)?$"));return m?+m[1]:0;};
   processes.forEach(p=>{
     layerCounter=Math.max(layerCounter,num(p.id,"L"));
     p.tasks.forEach(t=>{taskCounter=Math.max(taskCounter,num(t.id,"t"));});
@@ -16657,6 +16748,7 @@ function updateHistoryUI(){
 }
 let autosaveWarned=false;
 function scheduleAutosave(){
+  sincAposMudar();
   clearTimeout(autosaveTimer);
   autosaveTimer=setTimeout(()=>{
     let gravou=false;
@@ -16921,6 +17013,7 @@ function palcoRecebe(m){
   else if(m.t==="sel")palcoAplicaSel(m);
   else if(m.t==="isola"){isolateProc=(typeof m.i==="number")?m.i:null;syncLayerRows();}
   else if(m.t==="tema"){applyTheme(m.id,{silent:true});holoTema();}
+  else if(m.t==="cvd"){defineCvd(m.modo,{silent:true});}
 }
 /* O tema mudou: o painel redesenha-se com as tintas novas e, se a moldura é o
    dourado do tema (nódulo, pessoa), o feixe, o anel e os glifos acompanham. */
@@ -17268,7 +17361,8 @@ function contextoEdicao(){
         pid:npState.p?npState.p.id:null,alvo:npPairado};
   }
   if(teState&&teState.t)return {tipo:"tarefa",id:teState.t.id};
-  if(fcSel&&fcSel.id)return {tipo:"tarefa",id:fcSel.id};
+  /* a tarefa escolhida no fluxograma só manda enquanto o fluxograma está aberto */
+  if(fcSel&&fcSel.id&&modal.classList.contains("open")&&modalView&&modalView.type==="flowchart")return {tipo:"tarefa",id:fcSel.id};
   if(modalView&&(modalView.type==="feynman"||modalView.type==="flowchart")&&modalView.layer)return marcaNovo({tipo:"procedimento",id:modalView.layer.id},modalView.layer);
   if(npState&&npState.p)return marcaNovo({tipo:"procedimento",id:npState.p.id},npState.p);
   if(selected){
@@ -17357,7 +17451,7 @@ function nodulosDoPelouro(pl){return nodes.filter(n=>pelouroDe(n.id)===pl);}
 function pelouroDoProc(p){const t=p.tasks[0];return t?pelouroDe(t.a):null;}
 function procsDoPelouro(pl){return processes.filter(q=>pelouroDoProc(q)===pl);}
 function pelourosDe(a){return a?pelouros.filter(pl=>pl.resp===a.id):[];}
-function corPelouro(pl){const i=Math.max(0,pelouros.indexOf(pl));return LAYER_COLORS[(i*5+3)%LAYER_COLORS.length];}
+function corPelouro(pl){const i=Math.max(0,pelouros.indexOf(pl));return corVista(LAYER_COLORS[(i*5+3)%LAYER_COLORS.length]);}
 /* uma cor de entidade como texto: nos temas claros escurece-se até ler bem */
 function corLegivel(c){
   if(!THEME_LIGHT)return hex(c);
@@ -17366,7 +17460,7 @@ function corLegivel(c){
   return "#"+col.getHexString();
 }
 function podeEditarPelouros(){return ehAdmin()||ehPresidente();}
-function criaPelouro(nome,resp){const pl={id:"P"+(++pelouroCounter),name:nome||("Pelouro "+(pelouros.length+1)),resp:resp||null,nodes:[]};pelouros.push(pl);anotaHistorico("criar o pelouro");markDirty();return pl;}
+function criaPelouro(nome,resp){const pl={id:"P"+(++pelouroCounter)+idSufixo(),name:nome||("Pelouro "+(pelouros.length+1)),resp:resp||null,nodes:[]};pelouros.push(pl);anotaHistorico("criar o pelouro");markDirty();return pl;}
 function apagaPelouro(pl){const i=pelouros.indexOf(pl);if(i>=0){pelouros.splice(i,1);anotaHistorico("eliminar o pelouro");markDirty();}}
 function destacaNodulo(n,pl){pelouros.forEach(x=>{const i=x.nodes.indexOf(n.id);if(i>=0)x.nodes.splice(i,1);});if(pl)pl.nodes.push(n.id);anotaHistorico("mudar o pelouro de "+n.name);markDirty();}
 /* ---- Credenciais ---- */
@@ -17482,7 +17576,7 @@ function renderPelouros(){
 }
 /* ---- Objetos ---- */
 function criaObjeto(nome){
-  const o={id:"O"+(++objetoCounter),num:objetoCounter,name:nome||("Objeto "+objetoCounter),categoria:"",atributos:[],alertas:[],
+  const o={id:"O"+(++objetoCounter)+idSufixo(),num:objetoCounter,name:nome||("Objeto "+objetoCounter),categoria:"",atributos:[],alertas:[],
     loc:{tipo:"",lat:null,lng:null,texto:"",objId:null},assoc:[],valores:[],obs:"",inventario:true,arquivado:false,
     cred:{ver:1,editar:2,valores:3},criado:hojeISO(),alterado:null};
   o._nomeInicial=o.name;
@@ -17964,7 +18058,7 @@ function extrasDoEstado(s){
   objetos.length=0;
   (Array.isArray(x.objetos)?x.objetos:[]).slice(0,5000).forEach(o=>{if(o&&typeof o==="object"&&o.id)objetos.push(objetoSaneado(o));});
   if(x.alertas&&typeof x.alertas==="object"){ALERTAS.avisoDias=Math.min(365,Math.max(0,x.alertas.avisoDias|0));ALERTAS.escalaDias=Math.min(365,Math.max(1,(x.alertas.escalaDias|0)||7));}
-  const num=(id,pre)=>{const m=String(id||"").match(new RegExp("^"+pre+"(\\d+)$"));return m?+m[1]:0;};
+  const num=(id,pre)=>{const m=String(id||"").match(new RegExp("^"+pre+"(\\d+)(?:_[0-9a-z]+)?$"));return m?+m[1]:0;};
   pelouroCounter=Math.max(pelouroCounter,x.pelouroCounter|0,...pelouros.map(pl=>num(pl.id,"P")));
   objetoCounter=Math.max(objetoCounter,x.objetoCounter|0,...objetos.map(o=>o.num|0));
   repositorios.length=0;
@@ -17986,7 +18080,7 @@ function extrasDoEstado(s){
 let objMapaAtivo=false,objMapaPorFazer=true,objGrupo=null,objAberto=null,objArestas=null;
 const objCubos=new Map(),objPickables=[],objVoos=[];
 const objTexCache={};
-function corObjeto(o){return o.arquivado?0x8A8A8A:new THREE.Color().setHSL(nameHue(o.categoria||o.name)/360,0.48,THEME_LIGHT?0.42:0.58).getHex();}
+function corObjeto(o){if(o.arquivado)return 0x8A8A8A;if(CVD_PALETAS[cvdModo]){const P=CVD_PALETAS[cvdModo].proc;return P[nameHue(o.categoria||o.name)%P.length];}return new THREE.Color().setHSL(nameHue(o.categoria||o.name)/360,0.48,THEME_LIGHT?0.42:0.58).getHex();}
 /* as faces por tema: azulejo em Lisboa, cartão na Calçada, madeira no Verde,
    traço grosso no Contraste, grelha fina de néon no Noturno */
 function objTextura(){
@@ -18175,7 +18269,7 @@ const REPO_TIPOS={documento:"Documento",multimedia:"Multimédia",ata:"Ata",minut
 const REPO_FORMATOS={documento:["PDF","DOCX","XLSX","PPTX","ODT","TXT","outro"],multimedia:["MP4","MOV","MP3","WAV","JPG","PNG","outro"],ata:["PDF","DOCX","ODT","outro"],minuta:["DOCX","ODT","PDF","outro"]};
 let repoQuery="",repoFiltro="todos";
 function criaRepositorio(tipo,assoc){
-  const r={id:"R"+(++repoCounter),num:repoCounter,tipo:REPO_TIPOS[tipo]?tipo:"documento",nome:"Novo "+(REPO_TIPOS[tipo]||"documento").toLowerCase()+" "+repoCounter,formato:"PDF",ligacao:"",data:hojeISO(),obs:"",assoc:assoc?assoc.slice():[],cred:1,criado:hojeISO()};
+  const r={id:"R"+(++repoCounter)+idSufixo(),num:repoCounter,tipo:REPO_TIPOS[tipo]?tipo:"documento",nome:"Novo "+(REPO_TIPOS[tipo]||"documento").toLowerCase()+" "+repoCounter,formato:"PDF",ligacao:"",data:hojeISO(),obs:"",assoc:assoc?assoc.slice():[],cred:1,criado:hojeISO()};
   repositorios.push(r);anotaHistorico("criar o repositório");markDirty();return r;
 }
 function repoById(id){return repositorios.find(r=>r.id===id)||null;}
@@ -18212,7 +18306,7 @@ function repoLinha(r,host,compacto){
   row.title=podeAcederRepo(r)?"Abrir a ficha do repositório":"A sua credencial não permite abrir este repositório";
   row.onclick=()=>selectRepositorio(r);host.append(row);
 }
-function corRepo(r){return {documento:0x6A9BE0,multimedia:0xE06AAE,ata:0xC8B45A,minuta:0x5AC8A0}[r.tipo]||GOLD3D;}
+function corRepo(r){const i=["documento","multimedia","ata","minuta"].indexOf(r.tipo);return i<0?GOLD3D:corVista(LAYER_COLORS[[5,4,6,7][i]]);}
 function renderRepositorios(){
   const host=document.getElementById("repoList");if(!host)return;host.innerHTML="";
   const topo=el("div","setup-btns");
@@ -19026,6 +19120,7 @@ function palcoRespondeOla(){
   palcoUltimoEstado=null;
   palcoEnviaEstado();palcoEnviaSelecao(selected);palcoEnviaIsola();
   palcoEnvia({t:"tema",id:themeId});
+  palcoEnvia({t:"cvd",modo:cvdModo});
   palcoEnviaFoco(true);
 }
 /* Em alguns portáteis, o motor gráfico por omissão (Direct3D 11) dá a cada uma
@@ -19403,8 +19498,1203 @@ applyTheme(THEMES[temaGuardado]?temaGuardado:"calcada",{silent:true});
 syncThemeButtons();
 applyScene(0);
 syncPlay();
+/* ============================================================
+   SINCRONIZAR DISPOSITIVOS
+   O telemóvel, o tablet e o computador ficam com o mesmo projeto sem conta
+   nem servidor próprio. Cada aparelho guarda tudo como sempre; quando muda
+   alguma coisa, envia uma cópia cifrada para uma caixa de correio de
+   passagem (um serviço público de mensagens, ntfy.sh por omissão), e o
+   outro aparelho vai lá buscá-la e junta-a à sua.
+
+   - A chave nunca sai dos aparelhos: nasce de um código de 25 letras que
+     passa de um para o outro por código QR ou à mão. O serviço só vê bytes
+     cifrados (AES-GCM de 256 bits) numa caixa com nome aleatório.
+   - Cada peça sabe quando e onde mudou pela última vez; ao juntar, ganha a
+     mudança mais recente de cada peça. Duas alterações a coisas diferentes
+     ficam as duas; uma peça apagada deixa uma marca para não voltar.
+   - O tema é do aparelho e não viaja.
+   O motor e o QR vêm do Projeto Budget, onde estão testados com três
+   aparelhos e uma rede que perde, repete e troca a ordem das mensagens.
+============================================================ */
+const SINC_KEY="of.sinc.v1",SINC_VERSOES_KEY="of.sinc.versoes.v1";
+const SINC_SERVIDOR="https://ntfy.sh";
+const PAGINA_ONLINE="https://hvs87.github.io/Autarquia-Framework-Mapping-Tool/network-framework.html";
+const ALFABETO_CODIGO="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+/** JSON com as chaves por ordem: dois aparelhos que têm o mesmo escrevem o mesmo. */
+function jsonEstavel(v, cache){
+  if (v === null || typeof v !== "object"){
+    const s = JSON.stringify(v);
+    return s === undefined ? "null" : s;
+  }
+  if (cache && cache.has(v)) return cache.get(v);
+  let s;
+  if (Array.isArray(v)) s = "[" + v.map(x => jsonEstavel(x, cache)).join(",") + "]";
+  else s = "{" + Object.keys(v).filter(k => v[k] !== undefined).sort()
+    .map(k => JSON.stringify(k) + ":" + jsonEstavel(v[k], cache)).join(",") + "}";
+  if (cache) cache.set(v, s);
+  return s;
+}
+const _eObj = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+
+/* ---- Unidades: o projeto partido nas peças que se versionam ----
+   Cada nódulo, pessoa, procedimento, tarefa, grupo, pelouro, objeto e
+   repositório é uma peça; a ordem de cada lista é outra; o nome da
+   organização, os níveis e os prazos dos alertas são uma peça cada. Cada
+   peça guarda quando e em que aparelho mudou pela última vez, e ao juntar
+   ganha a mudança mais recente de cada peça. É a mesma receita que, dê por
+   onde der a conversa (mensagens repetidas, perdidas, fora de ordem, três
+   aparelhos), deixa todos com o mesmo resultado. */
+const LISTAS_SINC={nodes:"id",agents:"id",layers:"id",tasks:"id",groups:"id",pelouros:"id",objetos:"id",repositorios:"id"};
+const MAPAS_SINC=[];
+function listaComChave(v, ch){
+  if (!Array.isArray(v)) return false;
+  const vistos = new Set();
+  return v.every(x => {
+    if (!_eObj(x) || x[ch] == null || vistos.has(String(x[ch]))) return false;
+    vistos.add(String(x[ch])); return true;
+  });
+}
+function unidades(e){
+  const u = new Map();
+  Object.keys(e || {}).forEach(k => {
+    const v = e[k];
+    if (v === undefined) return;
+    const ch = LISTAS_SINC[k];
+    if (ch && listaComChave(v, ch)){
+      v.forEach(x => u.set(k + "/" + x[ch], x));
+      u.set(k + "#", v.map(x => String(x[ch])));
+    } else if (MAPAS_SINC.indexOf(k) >= 0 && _eObj(v)){
+      Object.keys(v).forEach(s => { if (v[s] !== undefined) u.set(k + "." + s, v[s]); });
+    } else u.set(k, v);
+  });
+  return u;
+}
+/** O estado outra vez inteiro, a partir das peças. */
+function montar(u){
+  const e = {}, listas = {};
+  const lista = (k) => listas[k] || (listas[k] = {ordem: null, regs: new Map()});
+  u.forEach((val, nome) => {
+    let m;
+    if ((m = /^([^/#.]+)#$/.exec(nome))) lista(m[1]).ordem = val;
+    else if ((m = /^([^/#.]+)\/([\s\S]*)$/.exec(nome))) lista(m[1]).regs.set(m[2], val);
+    else if ((m = /^([^/#.]+)\.([\s\S]*)$/.exec(nome))){ if (!_eObj(e[m[1]])) e[m[1]] = {}; e[m[1]][m[2]] = val; }
+    else e[nome] = val;
+  });
+  Object.keys(listas).forEach(k => {
+    const l = listas[k], vistos = new Set(), out = [];
+    (Array.isArray(l.ordem) ? l.ordem : []).forEach(id => {
+      if (l.regs.has(id) && !vistos.has(id)){ vistos.add(id); out.push(l.regs.get(id)); }
+    });
+    // O que a ordem vencedora não conhecia entra no fim, por chave: igual em todos os aparelhos
+    Array.from(l.regs.keys()).filter(id => !vistos.has(id)).sort().forEach(id => out.push(l.regs.get(id)));
+    e[k] = out;
+  });
+  return e;
+}
+/** Impressão digital curta de um texto (duas voltas de FNV e o tamanho). */
+function sincMarca(s){
+  let a = 0x811c9dc5, b = 0x9747b28c ^ s.length;
+  for (let i = 0; i < s.length; i++){
+    const c = s.charCodeAt(i);
+    a = Math.imul(a ^ c, 16777619);
+    b = Math.imul(b ^ c, 0x5bd1e995);
+    b ^= b >>> 13;
+  }
+  return (a >>> 0).toString(36) + "." + (b >>> 0).toString(36) + "." + s.length.toString(36);
+}
+const sincMarcaDe = (v) => sincMarca(jsonEstavel(v));
+/** Qual das duas versões é mais recente: o tempo e, no empate, o aparelho. */
+function compararVersao(a, b){
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+  if (a[0] !== b[0]) return a[0] > b[0] ? 1 : -1;
+  const x = String(a[1]), y = String(b[1]);
+  return x > y ? 1 : x < y ? -1 : 0;
+}
+/** As versões sem as impressões digitais: o que se compara entre aparelhos. */
+function versoesSoTempo(V){
+  const o = {};
+  Object.keys(V || {}).sort().forEach(k => { o[k] = [V[k][0], V[k][1], V[k][2] === null ? 0 : 1]; });
+  return o;
+}
+/**
+ * Junta dois estados com as suas versões: peça a peça, ganha a mais recente.
+ * É comutativo, associativo e idempotente — a ordem por que as coisas
+ * chegam não muda o resultado.
+ */
+function fundirVersoes(L, VL, R, VR){
+  const uL = unidades(L), uR = unidades(R);
+  const nomes = new Set(Object.keys(VL || {}).concat(Object.keys(VR || {}), Array.from(uL.keys()), Array.from(uR.keys())));
+  const uM = new Map(), VM = {};
+  nomes.forEach(n => {
+    const vl = (VL || {})[n], vr = (VR || {})[n];
+    const c = compararVersao(vr, vl);
+    // Empate exato de versão com conteúdos diferentes não devia acontecer; desempata-se pelo conteúdo
+    const ganhaR = c > 0 || (c === 0 && uR.has(n) && (!uL.has(n) || jsonEstavel(uR.get(n)) > jsonEstavel(uL.get(n))));
+    const u = ganhaR ? uR : uL, v = ganhaR ? vr : vl;
+    if (u.has(n)) uM.set(n, u.get(n));
+    if (v) VM[n] = [v[0], v[1], u.has(n) ? sincMarcaDe(u.get(n)) : null];
+  });
+  return {M: montar(uM), VM};
+}
+
+/* Bytes, texto e cifra */
+const b64u = {
+  de(bytes){
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  },
+  para(txt){
+    const s = atob(String(txt).replace(/-/g, "+").replace(/_/g, "/") + "===".slice((String(txt).length + 3) % 4));
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+  },
+};
+/** Código novo: 25 símbolos de um alfabeto sem letras que se confundam (125 bits). */
+function codigoNovo(){
+  const a = crypto.getRandomValues(new Uint8Array(25));
+  return formatarCodigo(Array.from(a, x => ALFABETO_CODIGO[x & 31]).join(""));
+}
+/** Aceita o código como vier: minúsculas, espaços, traços, O por 0, I e L por 1. */
+function limparCodigo(c){
+  return String(c || "").toUpperCase().replace(/O/g, "0").replace(/[IL]/g, "1").replace(/U/g, "V")
+    .replace(/[^0-9A-Z]/g, "").split("").filter(x => ALFABETO_CODIGO.indexOf(x) >= 0).join("");
+}
+const codigoValido = (c) => limparCodigo(c).length === 25;
+const formatarCodigo = (c) => limparCodigo(c).replace(/(.{5})(?=.)/g, "$1-");
+
+async function sincChaves(codigo){
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey("raw", enc.encode("mapeamento-autarquias/" + limparCodigo(codigo)), "HKDF", false, ["deriveKey", "deriveBits"]);
+  const sal = enc.encode("mapeamento-autarquias-sinc-v1");
+  const chave = await crypto.subtle.deriveKey({name: "HKDF", hash: "SHA-256", salt: sal, info: enc.encode("chave")},
+    base, {name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({name: "HKDF", hash: "SHA-256", salt: sal, info: enc.encode("topico")}, base, 128));
+  const topico = "fma-" + Array.from(bits, x => x.toString(16).padStart(2, "0")).join("");
+  return {chave, topico};
+}
+async function cifrar(chave, bytes){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name: "AES-GCM", iv}, chave, bytes));
+  const out = new Uint8Array(1 + 12 + ct.length);
+  out[0] = 1; out.set(iv, 1); out.set(ct, 13);
+  return out;
+}
+async function decifrar(chave, bytes){
+  if (!bytes || bytes.length < 30 || bytes[0] !== 1) throw new Error("formato desconhecido");
+  return new Uint8Array(await crypto.subtle.decrypt({name: "AES-GCM", iv: bytes.subarray(1, 13)}, chave, bytes.subarray(13)));
+}
+/* Comprimido quando o navegador sabe (quase todos): um projeto grande
+   passa de centenas de KB a poucas dezenas. O primeiro byte diz qual foi. */
+async function comprimir(texto){
+  const raw = new TextEncoder().encode(texto);
+  if (typeof CompressionStream === "undefined"){ const o = new Uint8Array(raw.length + 1); o.set(raw, 1); return o; }
+  const z = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+  const o = new Uint8Array(z.length + 1); o[0] = 1; o.set(z, 1); return o;
+}
+async function descomprimir(bytes){
+  if (bytes[0] === 0) return new TextDecoder().decode(bytes.subarray(1));
+  if (typeof DecompressionStream === "undefined") throw new Error("este navegador não sabe descomprimir");
+  return await new Response(new Blob([bytes.subarray(1)]).stream().pipeThrough(new DecompressionStream("gzip"))).text();
+}
+async function resumo(texto){
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto)));
+  return Array.from(h.subarray(0, 12), x => x.toString(16).padStart(2, "0")).join("");
+}
+
+/** A caixa de passagem: um tópico do ntfy, que guarda cada envio umas horas. */
+function transporteNtfy(servidor, topico){
+  const raiz = String(servidor || SINC_SERVIDOR).replace(/\/+$/, "");
+  const base = raiz + "/" + topico;
+  const verificar = async (r) => { if (!r.ok) throw new Error("o serviço respondeu " + r.status); return r; };
+  return {
+    async publicarEstado(bytes, meta){
+      const r = await verificar(await fetch(base, {method: "PUT", headers: {"Filename": "estado.bin", "X-Message": meta}, body: bytes}));
+      return r.json().catch(() => ({}));
+    },
+    async publicarTexto(meta){
+      await verificar(await fetch(base, {method: "POST", body: meta}));
+    },
+    async desde(desde){
+      const r = await verificar(await fetch(base + "/json?poll=1&since=" + encodeURIComponent(desde || "12h")));
+      return (await r.text()).split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch(e){ return null; } })
+        .filter(m => m && m.event === "message");
+    },
+    async baixar(url){
+      // Só se vai buscar ao próprio serviço: um endereço estranho numa mensagem não leva a lado nenhum.
+      if (String(url).indexOf(raiz + "/") !== 0) throw new Error("anexo fora do serviço");
+      const r = await verificar(await fetch(url));
+      return new Uint8Array(await r.arrayBuffer());
+    },
+    escutar(desde, aoMsg, aoEstado){
+      if (typeof EventSource === "undefined") return () => {};
+      const es = new EventSource(base + "/sse" + (desde ? "?since=" + encodeURIComponent(desde) : ""));
+      es.onmessage = (e) => { try { const m = JSON.parse(e.data); if (m.event === "message") aoMsg(m); } catch(err){} };
+      es.onopen = () => aoEstado(true);
+      es.onerror = () => aoEstado(false);
+      return () => es.close();
+    },
+  };
+}
+
+/**
+ * O motor da sincronização, sem saber nada da página: recebe como ler e
+ * aplicar o estado, onde guardar as versões e as notas, e por onde falar.
+ * Assim a suite de testes põe dois e três motores a conversar por uma caixa
+ * de faz-de-conta, com as maldades da rede à mão.
+ */
+function criarSinc(o){
+  const agora = o.agora || Date.now;
+  const st = {ligado: false, online: false, erro: "", ultimaTroca: 0, comQuem: "", aEnviar: false, recebidas: 0, enviadas: 0};
+  const ATRASO = o.atraso == null ? 2500 : o.atraso;   // espera depois de uma alteração, para juntar as seguidas
+  let parar = null, tEnvio = null, tRegisto = null, fila = Promise.resolve(), ultimoPedido = 0;
+  const vistos = new Set();
+  const emFila = (fn) => (fila = fila.then(fn).catch(e => { st.erro = String(e && e.message || e); o.aoMudar && o.aoMudar(); }));
+  const meta = () => o.meta.ler() || {};
+  const metaCifrada = async (obj) => b64u.de(await cifrar(o.chave, new TextEncoder().encode(JSON.stringify(obj))));
+  const lerMeta = async (txt) => {
+    try { return JSON.parse(new TextDecoder().decode(await decifrar(o.chave, b64u.para(txt)))); }
+    catch(e){ return null; }
+  };
+  /* Relógio que nunca anda para trás nem fica atrás do que já se viu: uma
+     alteração feita aqui ganha sempre ao que já chegou de outro aparelho,
+     mesmo que o relógio do outro esteja adiantado. */
+  const relogio = () => {
+    const t = Math.max(agora(), (meta().relogio || 0) + 1);
+    o.meta.gravar({relogio: t});
+    return t;
+  };
+  const viuRelogio = (V) => {
+    let max = meta().relogio || 0;
+    Object.keys(V || {}).forEach(k => { if (V[k] && V[k][0] > max) max = V[k][0]; });
+    if (max > (meta().relogio || 0)) o.meta.gravar({relogio: max});
+  };
+  /**
+   * Regista o que mudou aqui desde a última vez: as peças novas ou
+   * diferentes ganham a hora de agora, as que desapareceram ficam marcadas
+   * como apagadas (para não voltarem). Um aparelho que se liga sem dados
+   * seus regista tudo com hora zero: o primeiro estado que chegar ganha.
+   */
+  function registar(L){
+    const V = Object.assign({}, o.versoes.ler() || {});
+    const u = unidades(L);
+    const primeiraVez = Object.keys(V).length === 0;
+    const adota = primeiraVez && o.vazio(L, true);
+    let t = null, mexeu = false;
+    const hora = () => (t == null ? (t = adota ? 0 : relogio()) : t);
+    u.forEach((val, n) => {
+      const h = sincMarcaDe(val);
+      if (!V[n] || V[n][2] !== h){ V[n] = [hora(), o.eu.id, h]; mexeu = true; }
+    });
+    Object.keys(V).forEach(n => {
+      if (!u.has(n) && V[n][2] !== null){ V[n] = [hora(), o.eu.id, null]; mexeu = true; }
+    });
+    if (mexeu) o.versoes.gravar(V);
+    if (primeiraVez) o.meta.gravar({adotar: adota});
+    else if (mexeu && meta().adotar) o.meta.gravar({adotar: false});
+    return V;
+  }
+  async function enviar(forcar){
+    const L = o.ler();
+    const V = registar(L);
+    const h = await resumo(jsonEstavel(versoesSoTempo(V)));
+    if (!forcar && h === meta().publicado) return false;
+    st.aEnviar = true; o.aoMudar && o.aoMudar();
+    try {
+      const bytes = await cifrar(o.chave, await comprimir(jsonEstavel({e: L, v: V})));
+      const m = await metaCifrada({t: "estado", de: o.eu.id, nome: o.eu.nome, em: agora(), h});
+      await o.transporte.publicarEstado(bytes, m);
+      o.meta.gravar({publicado: h});
+      st.enviadas++; st.erro = "";
+    } finally { st.aEnviar = false; o.aoMudar && o.aoMudar(); }
+    return true;
+  }
+  function agendarEnvio(forcar, atraso){
+    if (!st.ligado) return;
+    clearTimeout(tEnvio);
+    tEnvio = setTimeout(() => emFila(() => enviar(forcar)), atraso == null ? ATRASO : Math.min(atraso, ATRASO));
+  }
+  async function pedir(){
+    if (ultimoPedido && agora() - ultimoPedido < (o.intervaloPedidos == null ? 20000 : o.intervaloPedidos)) return;
+    ultimoPedido = agora();
+    await o.transporte.publicarTexto(await metaCifrada({t: "pedido", de: o.eu.id, nome: o.eu.nome, em: agora()}));
+  }
+  /** Junta o que chegou com o que há aqui, sem esperas pelo meio. */
+  function juntar(L, R, VR){
+    const VL = registar(L);
+    viuRelogio(VR);
+    if (meta().adotar && Object.keys(VL).every(n => VL[n][0] === 0)){
+      // Aparelho sem nada seu: fica com o que veio, tal e qual
+      const VM = {};
+      const u = unidades(R);
+      Object.keys(VR).forEach(n => { VM[n] = [VR[n][0], VR[n][1], u.has(n) ? sincMarcaDe(u.get(n)) : null]; });
+      return {M: o.normalizar ? o.normalizar(R) : R, VM, adotou: true};
+    }
+    const r = fundirVersoes(L, VL, R, VR);
+    let M = o.normalizar ? o.normalizar(r.M) : r.M;
+    /* Uma peça pode sair diferente da versão que ganhou: a ordem de uma lista
+       a que se juntaram registos do outro lado, ou um valor que a normalização
+       acertou. Essa peça é uma alteração nova, feita aqui — leva hora nova, e
+       assim cada versão corresponde sempre ao mesmo conteúdo em todo o lado. */
+    const uM = unidades(M);
+    let t = null;
+    const hora = () => (t == null ? (t = relogio()) : t);
+    Object.keys(r.VM).forEach(n => {
+      const v = r.VM[n], h = uM.has(n) ? sincMarcaDe(uM.get(n)) : null;
+      if (v[2] !== h) r.VM[n] = [hora(), o.eu.id, h];
+    });
+    uM.forEach((val, n) => { if (!r.VM[n]) r.VM[n] = [0, "", sincMarcaDe(val)]; });
+    return {M, VM: r.VM};
+  }
+  async function processar(msg, m){
+    if (!msg || vistos.has(msg.id)) return;
+    vistos.add(msg.id);
+    const info = m || await lerMeta(msg.message || "");
+    o.meta.gravar({ultimoId: msg.id});
+    if (!info || info.de === o.eu.id) return;      // de outro projeto, ou deste próprio aparelho
+    const pares = Object.assign({}, meta().pares);
+    pares[info.de] = {nome: String(info.nome || "outro aparelho").slice(0, 60), visto: agora()};
+    o.meta.gravar({pares});
+    if (info.t === "pedido"){ agendarEnvio(true, 400); return; }
+    if (info.t !== "estado" || !msg.attachment) return;
+    const ultimos = Object.assign({}, meta().ultimos);
+    if (ultimos[info.de] && (info.em || 0) <= ultimos[info.de]) return;   // já se juntou um mais recente
+    st.comQuem = pares[info.de].nome;
+    // Se as versões são as mesmas que as daqui, nem vale a pena descarregar
+    const V0 = registar(o.ler());
+    const j0 = jsonEstavel(versoesSoTempo(V0));
+    if (info.h && info.h === await resumo(j0) && jsonEstavel(versoesSoTempo(registar(o.ler()))) === j0){
+      ultimos[info.de] = info.em || agora();
+      o.meta.gravar({publicado: info.h, ultimos});
+      st.ultimaTroca = agora(); st.recebidas++;
+      o.aoMudar && o.aoMudar();
+      return;
+    }
+    let bytes;
+    try { bytes = await o.transporte.baixar(msg.attachment.url); }
+    catch(e){ await pedir().catch(() => {}); return; }   // o anexo já expirou: pede-se o atual
+    const pacote = JSON.parse(await descomprimir(await decifrar(o.chave, bytes)));
+    const R = pacote.e, VR = pacote.v || {};
+    /* Daqui até aplicar, nada de esperas: o estado não pode mudar entre ser
+       lido e ser substituído, senão perdia-se o que se fez nesse instante. */
+    const L = o.ler(), jsonL = jsonEstavel(L);
+    let res = juntar(L, R, VR);
+    ultimos[info.de] = info.em || agora();
+    o.meta.gravar({ultimos});
+    if (res.adotou) o.meta.gravar({adotar: false});
+    const concluir = () => o.versoes.gravar(res.VM);
+    if (jsonEstavel(res.M) !== jsonL){
+      o.aplicar(res.M, {de: st.comQuem, concluir, refundir: (Lnovo) => { res = juntar(Lnovo, R, VR); return res.M; }});
+    } else concluir();
+    st.ultimaTroca = agora(); st.recebidas++; st.erro = "";
+    const hM = await resumo(jsonEstavel(versoesSoTempo(res.VM)));
+    if (hM !== info.h) agendarEnvio(false, 600);    // há aqui alguma coisa que o outro não tem
+    else o.meta.gravar({publicado: hM});
+    o.aoMudar && o.aoMudar();
+  }
+  /** Tudo o que ficou na caixa desde a última vez: de cada aparelho basta o envio mais recente. */
+  async function apanhar(){
+    const msgs = await o.transporte.desde(meta().ultimoId || "12h");
+    const lidas = [];
+    for (const msg of msgs) lidas.push({msg, m: await lerMeta(msg.message || "")});
+    const ultimo = {};
+    lidas.forEach((x, i) => { if (x.m && x.m.t === "estado" && x.m.de !== o.eu.id) ultimo[x.m.de] = i; });
+    for (let i = 0; i < lidas.length; i++){
+      const x = lidas[i];
+      const velho = (x.m && x.m.t === "estado" && ultimo[x.m.de] !== i) ||
+        (x.m && x.m.t === "pedido" && agora() - (x.m.em || 0) > 120000);
+      if (velho){ vistos.add(x.msg.id); o.meta.gravar({ultimoId: x.msg.id}); continue; }
+      await processar(x.msg, x.m);
+    }
+  }
+  return {
+    estado: st,
+    async ligar(){
+      if (st.ligado) return;
+      st.ligado = true;
+      registar(o.ler());
+      await emFila(apanhar);
+      parar = o.transporte.escutar(meta().ultimoId || "", (msg) => emFila(() => processar(msg)),
+        (on) => { st.online = on; o.aoMudar && o.aoMudar(); });
+      agendarEnvio(false, 800);
+      emFila(pedir);
+    },
+    desligar(){
+      st.ligado = false; st.online = false;
+      clearTimeout(tEnvio); clearTimeout(tRegisto);
+      if (parar) parar();
+      parar = null;
+    },
+    /** Depois de uma alteração feita aqui: regista-a já, com a hora certa, e envia daqui a pouco. */
+    mudou(){
+      clearTimeout(tRegisto);
+      tRegisto = setTimeout(() => { try { registar(o.ler()); } catch(e){} }, 300);
+      agendarEnvio(false);
+    },
+    /** Ao voltar ao separador ou ao carregar em «Sincronizar agora». */
+    agora(forcar){
+      if (!st.ligado) return Promise.resolve();
+      return emFila(async () => { await apanhar(); await enviar(!!forcar); await pedir(); });
+    },
+    _processar: (msg) => emFila(() => processar(msg)),
+    _fila: () => fila,
+    _registar: () => registar(o.ler()),
+  };
+}
+
+
+/* ---- Código QR, para passar o código de ligação ao telemóvel ---- */
+/* QR-INICIO */
+const QR_ECC_M = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26];   // palavras de correção por bloco
+const QR_BLOCOS_M = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];           // número de blocos
+function qrModulosDados(v){
+  let r = (16 * v + 128) * v + 64;
+  if (v >= 2){
+    const na = Math.floor(v / 7) + 2;
+    r -= (25 * na - 10) * na - 55;
+    if (v >= 7) r -= 36;
+  }
+  return r;
+}
+const qrPalavrasDados = (v) => Math.floor(qrModulosDados(v) / 8) - QR_ECC_M[v] * QR_BLOCOS_M[v];
+function qrAlinhamentos(v){
+  if (v === 1) return [];
+  const n = Math.floor(v / 7) + 2;
+  const passo = (v === 32) ? 26 : Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2;
+  const out = [6];
+  for (let p = v * 4 + 10; out.length < n; p -= passo) out.splice(1, 0, p);
+  return out;
+}
+/* Reed-Solomon em GF(256), polinómio 0x11D */
+function qrMult(x, y){
+  let z = 0;
+  for (let i = 7; i >= 0; i--){
+    z = (z << 1) ^ ((z >>> 7) * 0x11D);
+    z ^= ((y >>> i) & 1) * x;
+  }
+  return z & 0xFF;
+}
+function qrDivisor(grau){
+  const r = new Array(grau).fill(0); r[grau - 1] = 1;
+  let raiz = 1;
+  for (let i = 0; i < grau; i++){
+    for (let j = 0; j < r.length; j++){
+      r[j] = qrMult(r[j], raiz);
+      if (j + 1 < r.length) r[j] ^= r[j + 1];
+    }
+    raiz = qrMult(raiz, 0x02);
+  }
+  return r;
+}
+function qrResto(dados, div){
+  const r = new Array(div.length).fill(0);
+  dados.forEach(b => {
+    const f = b ^ r.shift(); r.push(0);
+    div.forEach((c, i) => { r[i] ^= qrMult(c, f); });
+  });
+  return r;
+}
+/** Matriz de módulos (true = escuro) para o texto dado. */
+function qrMatriz(texto){
+  const bytes = Array.from(new TextEncoder().encode(texto));
+  let v = 1;
+  for (; v <= 10; v++){
+    const bitsCont = v < 10 ? 8 : 16;
+    if (4 + bitsCont + bytes.length * 8 <= qrPalavrasDados(v) * 8) break;
+  }
+  if (v > 10) throw new Error("texto longo de mais para o código QR");
+  // Fluxo de bits: modo byte, contagem, dados, terminador e enchimento
+  const bits = [];
+  const por = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  por(4, 4); por(bytes.length, v < 10 ? 8 : 16); bytes.forEach(b => por(b, 8));
+  const cap = qrPalavrasDados(v) * 8;
+  por(0, Math.min(4, cap - bits.length));
+  por(0, (8 - bits.length % 8) % 8);
+  for (let p = 0xEC; bits.length < cap; p ^= 0xEC ^ 0x11) por(p, 8);
+  const dados = [];
+  for (let i = 0; i < bits.length; i += 8) dados.push(parseInt(bits.slice(i, i + 8).join(""), 2));
+  // Blocos, correção e entrelaçamento
+  const nBlocos = QR_BLOCOS_M[v], eccLen = QR_ECC_M[v];
+  const totalPal = Math.floor(qrModulosDados(v) / 8);
+  const nCurtos = nBlocos - totalPal % nBlocos;
+  const lenCurto = Math.floor(totalPal / nBlocos);
+  const div = qrDivisor(eccLen);
+  const blocos = [];
+  for (let i = 0, k = 0; i < nBlocos; i++){
+    const n = lenCurto - eccLen + (i < nCurtos ? 0 : 1);
+    const dat = dados.slice(k, k + n); k += n;
+    const ecc = qrResto(dat, div);
+    if (i < nCurtos) dat.push(0);   // marcador de posição para entrelaçar
+    blocos.push(dat.concat(ecc));
+  }
+  const final = [];
+  for (let i = 0; i < blocos[0].length; i++){
+    blocos.forEach((b, j) => {
+      if (i !== lenCurto - eccLen || j >= nCurtos) final.push(b[i]);
+    });
+  }
+  // Matriz e padrões fixos
+  const tam = v * 4 + 17;
+  const m = Array.from({length: tam}, () => new Array(tam).fill(false));
+  const fixo = Array.from({length: tam}, () => new Array(tam).fill(false));
+  const pinta = (x, y, escuro) => { m[y][x] = escuro; fixo[y][x] = true; };
+  for (let i = 0; i < tam; i++){ pinta(6, i, i % 2 === 0); pinta(i, 6, i % 2 === 0); }
+  const localizador = (cx, cy) => {
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++){
+      const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+      if (x >= 0 && x < tam && y >= 0 && y < tam) pinta(x, y, d !== 2 && d !== 4);
+    }
+  };
+  localizador(3, 3); localizador(tam - 4, 3); localizador(3, tam - 4);
+  const al = qrAlinhamentos(v);
+  al.forEach((a, i) => al.forEach((b, j) => {
+    if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) return;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
+      pinta(a + dx, b + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }));
+  const formato = (mascara) => {
+    const d = (0 << 3) | mascara;   // nível M = 00
+    let r = d;
+    for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const b = ((d << 10) | r) ^ 0x5412;
+    const bit = (i) => ((b >>> i) & 1) !== 0;
+    for (let i = 0; i <= 5; i++) pinta(8, i, bit(i));
+    pinta(8, 7, bit(6)); pinta(8, 8, bit(7)); pinta(7, 8, bit(8));
+    for (let i = 9; i < 15; i++) pinta(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) pinta(tam - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i++) pinta(8, tam - 15 + i, bit(i));
+    pinta(8, tam - 8, true);
+  };
+  formato(0);
+  if (v >= 7){
+    let r = v;
+    for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+    const b = (v << 12) | r;
+    for (let i = 0; i < 18; i++){
+      const bit = ((b >>> i) & 1) !== 0, a = tam - 11 + i % 3, c = Math.floor(i / 3);
+      pinta(a, c, bit); pinta(c, a, bit);
+    }
+  }
+  // Dados em ziguezague
+  let i = 0;
+  for (let dir = tam - 1; dir >= 1; dir -= 2){
+    if (dir === 6) dir = 5;
+    for (let vert = 0; vert < tam; vert++){
+      for (let j = 0; j < 2; j++){
+        const x = dir - j, sobe = ((dir + 1) & 2) === 0;
+        const y = sobe ? tam - 1 - vert : vert;
+        if (!fixo[y][x] && i < final.length * 8){
+          m[y][x] = ((final[i >>> 3] >>> (7 - (i & 7))) & 1) !== 0;
+          i++;
+        }
+      }
+    }
+  }
+  // Máscara com menor penalização
+  const aplicarMascara = (k) => {
+    for (let y = 0; y < tam; y++) for (let x = 0; x < tam; x++){
+      if (fixo[y][x]) continue;
+      let inv;
+      switch (k){
+        case 0: inv = (x + y) % 2 === 0; break;
+        case 1: inv = y % 2 === 0; break;
+        case 2: inv = x % 3 === 0; break;
+        case 3: inv = (x + y) % 3 === 0; break;
+        case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break;
+        case 5: inv = x * y % 2 + x * y % 3 === 0; break;
+        case 6: inv = (x * y % 2 + x * y % 3) % 2 === 0; break;
+        default: inv = ((x + y) % 2 + x * y % 3) % 2 === 0;
+      }
+      if (inv) m[y][x] = !m[y][x];
+    }
+  };
+  const penalizacao = () => {
+    let p = 0, escuros = 0;
+    const linha = (get) => {
+      let corrida = 1;
+      for (let k = 1; k < tam; k++){
+        if (get(k) === get(k - 1)){ corrida++; if (corrida === 5) p += 3; else if (corrida > 5) p++; }
+        else corrida = 1;
+      }
+      const s = Array.from({length: tam}, (_, k) => get(k) ? 1 : 0).join("");
+      p += 40 * ((s.match(/(?=1011101(0000))/g) || []).length + (s.match(/(?=(0000)1011101)/g) || []).length);
+    };
+    for (let y = 0; y < tam; y++) linha(k => m[y][k]);
+    for (let x = 0; x < tam; x++) linha(k => m[k][x]);
+    for (let y = 0; y < tam - 1; y++) for (let x = 0; x < tam - 1; x++){
+      const c = m[y][x];
+      if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) p += 3;
+    }
+    m.forEach(l => l.forEach(c => { if (c) escuros++; }));
+    p += Math.floor(Math.abs(escuros * 20 - tam * tam * 10) / (tam * tam)) * 10;
+    return p;
+  };
+  let melhor = 0, menor = Infinity;
+  for (let k = 0; k < 8; k++){
+    aplicarMascara(k); formato(k);
+    const p = penalizacao();
+    if (p < menor){ menor = p; melhor = k; }
+    aplicarMascara(k);
+  }
+  aplicarMascara(melhor); formato(melhor);
+  return m;
+}
+/* QR-FIM */
+/** O código em SVG: preto sobre branco em qualquer tema, que é o que as câmaras leem. */
+function qrSVG(texto,rotulo){
+  const m=qrMatriz(texto),n=m.length,q=4,tt=n+q*2;
+  let d="";
+  m.forEach((l,y)=>l.forEach((c,x)=>{if(c)d+="M"+(x+q)+" "+(y+q)+"h1v1h-1z";}));
+  return '<svg class="qr" viewBox="0 0 '+tt+' '+tt+'" role="img" aria-label="'+esc(rotulo||"Código QR")+'" '+
+    'shape-rendering="crispEdges"><rect width="'+tt+'" height="'+tt+'" fill="#fff"/>'+
+    '<path d="'+d+'" fill="#000"/></svg>';
+}
+
+/* --- Ligação à página --- */
+let SINC=null;              // o motor, quando ligado
+let _sincAplicando=false;   // a alteração que está a acontecer veio do outro aparelho
+let _sincPendente=null;     // estado recebido à espera de que se acabe de escrever
+function sincCfg(){
+  try{const c=JSON.parse(localStorage.getItem(SINC_KEY)||"null");return c&&typeof c==="object"?c:{};}
+  catch(e){return {};}
+}
+function sincGravarCfg(patch){
+  const c=Object.assign(sincCfg(),patch);
+  try{localStorage.setItem(SINC_KEY,JSON.stringify(c));}catch(e){}
+  return c;
+}
+function nomeDesteAparelho(){
+  const ua=navigator.userAgent||"";
+  if(ehDesktop){
+    const p=window.desktop.plataforma||"";
+    return "Computador"+(p==="darwin"?" (Mac)":p==="linux"?" (Linux)":p==="win32"?" (Windows)":"");
+  }
+  if(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1))return "Tablet";
+  if(/Android/.test(ua)&&!/Mobile/.test(ua))return "Tablet";
+  if(/iPhone|Android|Mobile/.test(ua))return "Telemóvel";
+  return "Navegador"+(/Mac OS X/.test(ua)?" (Mac)":/Windows/.test(ua)?" (Windows)":/Linux/.test(ua)?" (Linux)":"");
+}
+function sincAparelho(){
+  const c=sincCfg();
+  if(c.aparelho&&c.aparelho.id)return c.aparelho;
+  const ap={id:b64u.de(crypto.getRandomValues(new Uint8Array(9))),nome:nomeDesteAparelho()};
+  sincGravarCfg({aparelho:ap});
+  return ap;
+}
+/* Com dois aparelhos ligados, o que cada um cria leva no id uma marca sua:
+   duas pessoas que criem uma tarefa ao mesmo tempo, cada uma no seu
+   aparelho, ficam com duas tarefas — e não com uma só, a última a chegar. */
+function idSufixo(){
+  if(!booted||ehPalco)return "";
+  try{
+    if(!sincCfg().codigo)return "";
+    return "_"+String(sincAparelho().id).replace(/[^0-9A-Za-z]/g,"").slice(0,4).toLowerCase();
+  }catch(e){return "";}
+}
+/* O que viaja: o projeto todo menos o que é deste aparelho (o tema). As
+   tarefas saem de dentro dos procedimentos para serem peças à parte: duas
+   tarefas do mesmo procedimento mudadas em aparelhos diferentes ficam as duas. */
+function sincEstadoLocal(){
+  const s=JSON.parse(snapshotState());
+  const x=(s.extras&&typeof s.extras==="object")?s.extras:{};
+  const tasks=[];
+  (s.layers||[]).forEach(l=>{
+    (l.tasks||[]).forEach(t=>tasks.push(Object.assign({p:l.id},t)));
+    delete l.tasks;
+  });
+  return {orgName:s.orgName,tiers:s.tiers,nodes:s.nodes,agents:s.agents,layers:s.layers,tasks,groups:s.groups,
+    pelouros:x.pelouros||[],objetos:x.objetos||[],repositorios:x.repositorios||[],alertas:x.alertas||null};
+}
+/** O contrário: das peças ao formato do estado guardado. */
+function sincParaEstado(M){
+  const tarefas=Array.isArray(M.tasks)?M.tasks:[];
+  return {
+    orgName:M.orgName,tiers:M.tiers,nodes:M.nodes,agents:M.agents,
+    layers:(Array.isArray(M.layers)?M.layers:[]).map(l=>{
+      const c=Object.assign({},l);
+      c.tasks=tarefas.filter(t=>t&&t.p===l.id).map(t=>{const y=Object.assign({},t);delete y.p;return y;});
+      return c;
+    }),
+    groups:M.groups,theme:themeId,
+    extras:{pelouros:M.pelouros||[],objetos:M.objetos||[],repositorios:M.repositorios||[],
+      alertas:M.alertas||{avisoDias:ALERTAS.avisoDias,escalaDias:ALERTAS.escalaDias}}
+  };
+}
+function sincVersoes(){
+  try{const v=JSON.parse(localStorage.getItem(SINC_VERSOES_KEY)||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{};}
+  catch(e){return {};}
+}
+/** Há alguma coisa a meio que um restauro deitaria fora? */
+function sincOcupado(){
+  try{
+    if(rascunho)return true;
+    if(modal&&modal.classList.contains("open"))return true;
+    if(taskEditEl&&taskEditEl.classList.contains("open"))return true;
+    if(nodePickEl&&nodePickEl.classList.contains("open"))return true;
+    if(optDialogEl&&optDialogEl.classList.contains("open"))return true;
+    if(dragPayload)return true;
+    const a=document.activeElement;
+    if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!/^(checkbox|radio|button|range|submit)$/.test(a.type||""))return true;
+  }catch(e){}
+  return false;
+}
+let _quandoLivreT=null;
+function sincQuandoLivre(fn){
+  clearTimeout(_quandoLivreT);
+  const tentar=()=>{
+    if(sincOcupado()){_quandoLivreT=setTimeout(tentar,1200);return;}
+    _quandoLivreT=null;fn();
+  };
+  tentar();
+}
+/* Chega uma versão nova: aplica-se já, ou, se a pessoa estiver a escrever
+   ou com um editor aberto, guarda-se a receita e volta-se a juntar com o que
+   houver na altura. */
+function sincAplicar(M,info){
+  _sincPendente={M,info,jsonL:jsonEstavel(sincEstadoLocal())};
+  if(!sincOcupado()){sincAplicarPendente();return;}
+  pintarEstadoSinc();
+  sincQuandoLivre(sincAplicarPendente);
+}
+function sincAplicarPendente(){
+  const p=_sincPendente;_sincPendente=null;
+  if(!p)return;
+  const atual=sincEstadoLocal();
+  const novo=p.info&&p.info.refundir&&jsonEstavel(atual)!==p.jsonL?p.info.refundir(atual):p.M;
+  _sincAplicando=true;
+  let ok=false;
+  try{ok=sincRestaurar(novo,p.info&&p.info.de);}finally{_sincAplicando=false;}
+  if(ok&&p.info&&p.info.concluir)p.info.concluir();
+  if(sincCfg().receber)sincGravarCfg({receber:false});
+  pintarEstadoSinc();
+}
+/** Põe o projeto recebido em cena, como um passo que se pode anular. */
+function sincRestaurar(M,de){
+  const snap=sincParaEstado(M);
+  if(!Array.isArray(snap.nodes)||!snap.nodes.length)return false;
+  const s=selected;
+  const sel=s?{type:s.type,id:((s.node||s.agent||s.task||s.group||s.objeto||s.repositorio)||{}).id}:null;
+  anotaHistorico("receber alterações"+(de?" de "+de:""));
+  if(!restoreState(JSON.stringify(snap)))return false;
+  markDirty();
+  if(sel&&sel.id){
+    let alvo=null;
+    if(sel.type==="node"){const n=byId(sel.id);if(n)alvo={type:"node",node:n};}
+    else if(sel.type==="agent"){const a=agentById(sel.id);if(a)alvo={type:"agent",agent:a};}
+    else if(sel.type==="task"){const t=tarefaById(sel.id);if(t)alvo={type:"task",task:t};}
+    else if(sel.type==="group"){const g=groups.find(x=>x.id===sel.id);if(g)alvo={type:"group",group:g};}
+    else if(sel.type==="objeto"){const o=objetoById(sel.id);if(o)alvo={type:"objeto",objeto:o};}
+    else if(sel.type==="repositorio"){const r=repoById(sel.id);if(r)alvo={type:"repositorio",repositorio:r};}
+    if(alvo)applySelection(alvo);
+  }
+  flash("Chegaram alterações"+(de?" de "+de:"")+". Ctrl+Z desfaz.",{key:"sinc"});
+  return true;
+}
+/** Chamado a cada alteração guardada: marca a hora e segue para o outro lado. */
+function sincAposMudar(){
+  if(_sincAplicando||ehPalco||!booted)return;
+  try{if(!sincCfg().codigo)return;}catch(e){return;}
+  if(SINC)SINC.mudou();
+}
+let _trinco=null,_trincoPedido=false;
+async function sincArrancar(){
+  if(ehPalco)return;
+  const c0=sincCfg();
+  if(!c0.codigo||SINC)return;
+  if(!(window.crypto&&crypto.subtle)){sincGravarCfg({erro:"este navegador não tem cifra disponível aqui (é preciso https)"});pintarEstadoSinc();return;}
+  const iniciar=async()=>{
+    const c=sincCfg();
+    if(!c.codigo||SINC)return;
+    const {chave,topico}=await sincChaves(c.codigo);
+    SINC=criarSinc({
+      chave,eu:sincAparelho(),
+      transporte:transporteNtfy(c.servidor||SINC_SERVIDOR,topico),
+      ler:sincEstadoLocal,
+      aplicar:sincAplicar,
+      vazio:()=>!!sincCfg().receber,
+      meta:{ler:sincCfg,gravar:sincGravarCfg},
+      versoes:{
+        ler:sincVersoes,
+        gravar:v=>{try{localStorage.setItem(SINC_VERSOES_KEY,JSON.stringify(v));}catch(e){}},
+      },
+      aoMudar:pintarEstadoSinc,
+    });
+    await SINC.ligar();
+    pintarEstadoSinc();
+  };
+  /* Com vários separadores abertos, só um fala com a caixa. */
+  if(navigator.locks&&navigator.locks.request){
+    if(_trincoPedido)return;
+    _trincoPedido=true;
+    navigator.locks.request("fma-sinc",()=>new Promise(res=>{
+      _trinco=()=>{_trinco=null;_trincoPedido=false;res();};
+      if(!sincCfg().codigo){_trinco();return;}
+      iniciar().catch(e=>{sincGravarCfg({erro:String(e.message||e)});pintarEstadoSinc();});
+    }));
+  }else{
+    iniciar().catch(e=>{sincGravarCfg({erro:String(e.message||e)});pintarEstadoSinc();});
+  }
+}
+function sincParar(){
+  if(SINC)SINC.desligar();
+  SINC=null;
+  if(_trinco)_trinco();
+}
+/** Liga este aparelho com um código (criado aqui ou trazido de outro).
+    `receber`: este aparelho fica com o projeto do outro tal e qual. */
+function sincLigarCom(codigo,opts){
+  opts=opts||{};
+  if(!codigoValido(codigo)){flash("O código tem 25 letras e números. Confira e tente outra vez.",{type:"err",key:"sinc"});return false;}
+  sincParar();
+  const c=sincCfg();
+  try{localStorage.removeItem(SINC_VERSOES_KEY);}catch(e){}
+  sincGravarCfg({codigo:formatarCodigo(codigo),servidor:opts.servidor||c.servidor||SINC_SERVIDOR,
+    ultimoId:"",publicado:"",pares:{},ultimos:{},ligadoEm:Date.now(),erro:"",
+    receber:!!opts.receber,adotar:false,relogio:c.relogio||0});
+  sincArrancar();
+  return true;
+}
+function sincLinkLigacao(){
+  const c=sincCfg();
+  const pagina=location.protocol.indexOf("http")===0&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"
+    ?location.origin+location.pathname:PAGINA_ONLINE;
+  return pagina+"#ligar="+limparCodigo(c.codigo)+
+    (c.servidor&&c.servidor!==SINC_SERVIDOR?"&s="+encodeURIComponent(c.servidor):"");
+}
+const _relSinc=t=>{
+  if(!t)return "";
+  const s=Math.round((Date.now()-t)/1000);
+  return s<10?"agora mesmo":s<60?"há "+s+" s":s<3600?"há "+Math.round(s/60)+" min"
+    :s<86400?"há "+Math.round(s/3600)+" h":"há "+Math.round(s/86400)+" dias";
+};
+/** O estado numa palavra ou duas, e a frase inteira. */
+function sincEstadoTexto(){
+  const c=sincCfg(),st=SINC?SINC.estado:null;
+  if(!c.codigo)return null;
+  if(c.erro||(st&&st.erro))return {curto:"sem sincronizar",longo:"com erro: "+(c.erro||st.erro),cl:"aviso"};
+  if(!st||!st.ligado)return {curto:"a ligar…",longo:"a ligar ao serviço"};
+  if(_sincPendente)return {curto:"por aplicar",longo:"chegaram alterações; entram quando fechar o editor ou acabar de escrever"};
+  if(st.aEnviar)return {curto:"a enviar…",longo:"a enviar as alterações daqui"};
+  if(!st.online)return {curto:"sem rede",longo:"sem ligação ao serviço — tenta de novo sozinho"};
+  if(!Object.keys(c.pares||{}).length)return {curto:"à espera",longo:"à espera do outro aparelho"};
+  return {curto:"sincronizado",longo:"sincronizado",cl:"ok"};
+}
+function pintarEstadoSinc(){
+  const pill=document.getElementById("sincPill");
+  const e=sincEstadoTexto();
+  if(pill){
+    if(!e){pill.hidden=true;}
+    else{
+      const st=SINC?SINC.estado:null;
+      pill.hidden=false;
+      pill.className="sinc-pill"+(e.cl?" "+e.cl:"");
+      pill.textContent="⇄ "+e.curto;
+      pill.title="Sincronização: "+e.longo+(st&&st.ultimaTroca?" · última troca "+_relSinc(st.ultimaTroca)+(st.comQuem?" com "+st.comQuem:""):"");
+      pill.setAttribute("aria-label",pill.title);
+    }
+  }
+  const host=document.getElementById("sincRow");
+  if(host&&document.body.classList.contains("page-open")&&!host.contains(document.activeElement))renderSincRow();
+}
+/** Pergunta o que fazer com o projeto que este aparelho já tem. */
+async function sincPerguntarELigar(codigo,servidor){
+  const r=await askOpcoes("Ligar este aparelho?",
+    "A partir de agora, o que mudar num aparelho aparece no outro. Escolha o que acontece ao projeto que está aqui:",[
+    {k:"receber",label:"Receber o projeto do outro aparelho",primary:true},
+    {k:"juntar",label:"Juntar os dois projetos"},
+    {k:"nao",label:"Cancelar"}]);
+  if(r!=="receber"&&r!=="juntar")return false;
+  if(r==="receber"&&dirty){
+    const ok=await askConfirm("O projeto que está neste aparelho é substituído pelo do outro. Pode anular com Ctrl+Z depois de chegar. Continuar?");
+    if(!ok)return false;
+  }
+  if(!sincLigarCom(codigo,{receber:r==="receber",servidor}))return false;
+  flash(r==="receber"?"Ligado. A trazer o projeto do outro aparelho…":"Ligado. A juntar os dois projetos…",{key:"sinc"});
+  renderSincRow();pintarEstadoSinc();
+  return true;
+}
+function renderSincRow(){
+  const host=document.getElementById("sincRow");if(!host)return;
+  host.innerHTML="";
+  const c=sincCfg();
+  if(ehPalco)return;
+  if(!c.codigo){
+    host.append(el("div","foot-note","O mesmo projeto no telemóvel, no tablet e no computador, sem conta nem palavra-passe. A cada alteração, este aparelho envia uma cópia cifrada; o outro abre-a com um código que só os dois conhecem."));
+    const b1=el("div","sinc-passo");
+    b1.append(el("div","mini-sub","Começar aqui"),el("div","foot-note","Cria um código e mostra-o em QR. Aponte a câmara do outro aparelho."));
+    const bc=el("button","btn primary","Criar código");bc.id="sincCriarBtn";
+    bc.onclick=()=>{sincLigarCom(codigoNovo(),{receber:false});renderSincRow();pintarEstadoSinc();flash("Código criado. Aponte a câmara do outro aparelho ao quadrado.",{key:"sinc"});};
+    b1.append(bc);
+    const b2=el("div","sinc-passo");
+    b2.append(el("div","mini-sub","Já tenho um código"),el("div","foot-note","O que aparece no outro aparelho, por baixo do QR."));
+    const inp=el("input","search-input");inp.id="sincCodigo";inp.type="text";inp.autocomplete="off";inp.spellcheck=false;
+    inp.setAttribute("autocapitalize","characters");inp.placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX";
+    inp.setAttribute("aria-label","Código de ligação do outro aparelho");
+    const be=el("button","btn","Ligar");be.id="sincEntrarBtn";
+    be.onclick=()=>{
+      const v=inp.value||"";
+      if(!codigoValido(v)){flash("O código tem 25 letras e números, em cinco grupos.",{type:"err",key:"sinc"});inp.focus();return;}
+      inp.value="";inp.blur();
+      sincPerguntarELigar(v,"");
+    };
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")be.click();});
+    b2.append(inp,be);
+    if(podeLerQR()){const bq=el("button","btn tiny","Ler o QR com a câmara");bq.onclick=abrirLeitorQR;b2.append(bq);}
+    if(eIOS()&&emModoApp())b2.append(el("div","foot-note","No iPhone e no iPad, a câmara abre a ligação no Safari, que guarda os dados à parte desta app instalada: aqui, escreva o código."));
+    host.append(b1,b2);
+    return;
+  }
+  const st=SINC?SINC.estado:null;
+  const pares=Object.values(c.pares||{});
+  const e=sincEstadoTexto()||{longo:""};
+  const tab=el("table","valor-tab sinc-tab");
+  const linha=(k,v)=>{const tr=el("tr");const th=el("th",null,k);th.scope="row";const td=el("td");if(typeof v==="string")td.textContent=v;else td.append(v);tr.append(th,td);tab.append(tr);};
+  linha("Este aparelho",(c.aparelho||{}).nome||nomeDesteAparelho());
+  linha("Ligado a",pares.length?pares.map(p=>p.nome+" ("+_relSinc(p.visto)+")").join(", "):"ainda nenhum — mostre o código no outro aparelho");
+  linha("Estado",e.longo);
+  if(st&&st.ultimaTroca)linha("Última troca",_relSinc(st.ultimaTroca)+(st.comQuem?" com "+st.comQuem:""));
+  host.append(tab);
+  const acts=el("div","setup-btns");
+  const ba=el("button","btn primary","Sincronizar agora");ba.id="sincAgoraBtn";
+  ba.onclick=()=>{
+    if(!SINC){sincArrancar();flash("A ligar…",{key:"sinc"});return;}
+    SINC.agora(true).then(()=>{pintarEstadoSinc();flash("Sincronizado.",{key:"sinc"});});
+  };
+  const bd=el("button","btn tiny","Desligar neste aparelho");bd.id="sincDesligarBtn";
+  bd.onclick=async()=>{
+    if(!await askConfirm("Desligar a sincronização neste aparelho? O projeto fica aqui como está; este aparelho deixa de enviar e receber. Para voltar a ligar é preciso o código."))return;
+    sincParar();
+    const c2=sincCfg();
+    try{localStorage.setItem(SINC_KEY,JSON.stringify({aparelho:c2.aparelho,relogio:c2.relogio}));localStorage.removeItem(SINC_VERSOES_KEY);}catch(err){}
+    renderSincRow();pintarEstadoSinc();
+    flash("Sincronização desligada neste aparelho.",{key:"sinc"});
+  };
+  acts.append(ba,bd);host.append(acts);
+  const det=el("details","sinc-ligar");if(!pares.length)det.open=true;
+  det.append(el("summary",null,"Ligar outro aparelho"));
+  const qrw=el("div","sinc-qr");
+  const link=sincLinkLigacao();
+  const caixaQR=el("div","sinc-qr-img");
+  try{caixaQR.innerHTML=qrSVG(link,"Código QR para ligar outro aparelho");}catch(err){caixaQR.textContent="";}
+  const txt=el("div","sinc-qr-txt");
+  txt.append(el("div","foot-note","No telemóvel, aponte a câmara a este quadrado e abra a ligação. Se preferir, escreva o código em Definições › Sincronizar dispositivos › Já tenho um código:"));
+  const cod=el("div","codigo-sinc",c.codigo);cod.setAttribute("aria-label","Código de ligação");
+  const bcp=el("button","btn tiny","Copiar a ligação");
+  bcp.onclick=()=>{
+    (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject())
+      .then(()=>flash("Ligação copiada. Envie-a só para si próprio.",{key:"sinc"}),()=>flash(link,{key:"sinc"}));
+  };
+  txt.append(cod,bcp,el("div","foot-note","Quem tiver este código vê o seu projeto: guarde-o como guardaria uma chave. Para o mudar, desligue e crie outro."));
+  qrw.append(caixaQR,txt);det.append(qrw);host.append(det);
+  const av=el("details","sinc-avancado");av.append(el("summary",null,"Avançado"));
+  const g=el("div","field-grid");
+  g.append(el("label",null,"Nome deste aparelho"));
+  const ni=el("input");ni.type="text";ni.maxLength=40;ni.value=(c.aparelho||{}).nome||"";ni.setAttribute("aria-label","Nome deste aparelho");g.append(ni);
+  g.append(el("label",null,"Serviço de passagem"));
+  const si=el("input");si.type="text";si.value=c.servidor||SINC_SERVIDOR;si.inputMode="url";si.setAttribute("aria-label","Serviço de passagem");g.append(si);
+  const bg=el("button","btn tiny","Guardar");
+  bg.onclick=()=>{
+    const nome=(ni.value||"").trim().slice(0,40)||nomeDesteAparelho();
+    const srv=(si.value||"").trim().replace(/\/+$/,"")||SINC_SERVIDOR;
+    if(!/^https:\/\/[^\s/]+/.test(srv)&&!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/.test(srv)){flash("O serviço tem de ser um endereço https://",{type:"err",key:"sinc"});return;}
+    const mudouSrv=srv!==(sincCfg().servidor||SINC_SERVIDOR);
+    sincGravarCfg({aparelho:{id:sincAparelho().id,nome},servidor:srv});
+    if(mudouSrv){sincParar();sincGravarCfg({ultimoId:"",publicado:""});sincArrancar();}
+    else if(SINC)SINC.agora(true);
+    renderSincRow();flash("Guardado.",{key:"sinc"});
+  };
+  g.append(el("label",null,""),bg);
+  av.append(g,el("div","foot-note","Um servidor ntfy próprio também serve; os dois aparelhos têm de usar o mesmo."));
+  host.append(av);
+}
+/** iPhone ou iPad (o iPad diz-se Mac, mas tem toque). */
+function eIOS(){
+  const ua=navigator.userAgent||"";
+  return /iPad|iPhone|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+}
+function emModoApp(){
+  try{return (window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}catch(e){return false;}
+}
+/** Há leitor de códigos nativo e câmara (Chrome no Android, Edge; o Safari não). */
+const podeLerQR=()=>typeof window.BarcodeDetector==="function"&&!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+/** Tira o código de um texto lido: a ligação do QR, ou o código sozinho. */
+function codigoDeTexto(t){
+  const m=/#ligar=([0-9A-Za-z-]+)(?:&s=([^&\s]+))?/.exec(String(t||""));
+  if(m&&codigoValido(m[1]))return {codigo:m[1],servidor:m[2]?decodeURIComponent(m[2]):""};
+  return codigoValido(t)?{codigo:String(t),servidor:""}:null;
+}
+let _leitorQR=null;
+function fecharLeitorQR(){
+  if(_leitorQR){_leitorQR.ativo=false;try{_leitorQR.stream&&_leitorQR.stream.getTracks().forEach(t=>t.stop());}catch(e){}}
+  _leitorQR=null;
+  const d=document.getElementById("leitorQR");if(d)d.remove();
+}
+async function abrirLeitorQR(){
+  if(!podeLerQR()){flash("Este navegador não lê códigos pela câmara. Escreva o código.",{key:"sinc"});return;}
+  let detetor;
+  try{detetor=new BarcodeDetector({formats:["qr_code"]});}
+  catch(e){flash("Este navegador não lê códigos QR. Escreva o código.",{key:"sinc"});return;}
+  fecharLeitorQR();
+  const ov=el("div");ov.id="leitorQR";ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","Ler o código QR do outro aparelho");
+  const card=el("div","glass leitor-card");
+  const video=document.createElement("video");video.playsInline=true;video.muted=true;video.setAttribute("aria-label","Imagem da câmara");
+  const est=el("div","foot-note","A pedir a câmara…");
+  const bx=el("button","btn","Cancelar");bx.onclick=fecharLeitorQR;
+  card.append(el("h3",null,"Aponte ao QR do outro aparelho"),video,est,bx);ov.append(card);document.body.append(ov);
+  _leitorQR={ativo:true,stream:null};
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});}
+  catch(e){est.textContent="Sem acesso à câmara. Pode escrever o código por baixo do QR.";return;}
+  if(!_leitorQR){stream.getTracks().forEach(t=>t.stop());return;}
+  _leitorQR.stream=stream;
+  video.srcObject=stream;video.play().catch(()=>{});
+  est.textContent="À procura do código…";
+  const ciclo=async()=>{
+    if(!_leitorQR||!_leitorQR.ativo)return;
+    try{
+      const r=await detetor.detect(video);
+      const lido=r&&r.length?codigoDeTexto(r[0].rawValue):null;
+      if(lido){
+        fecharLeitorQR();
+        if(navigator.vibrate)try{navigator.vibrate(40);}catch(e){}
+        sincPerguntarELigar(lido.codigo,lido.servidor);
+        return;
+      }
+    }catch(e){}
+    setTimeout(ciclo,250);
+  };
+  ciclo();
+}
+/** Abriu-se uma ligação de emparelhamento (o QR leva a `#ligar=…`). */
+function sincLerLigacao(){
+  const m=/^#ligar=([0-9A-Za-z-]+)(?:&s=([^&]+))?/.exec(location.hash||"");
+  if(!m)return false;
+  try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}
+  const codigo=m[1],srv=m[2]?decodeURIComponent(m[2]):"";
+  if(!codigoValido(codigo))return true;
+  const c=sincCfg();
+  if(c.codigo&&limparCodigo(c.codigo)===limparCodigo(codigo)){flash("Este aparelho já está ligado com este código.",{key:"sinc"});return true;}
+  setTimeout(()=>sincPerguntarELigar(codigo,srv),900);
+  return true;
+}
+/* Ao voltar ao separador, ao voltar a rede, ou ao sair da cache de páginas */
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&SINC)SINC.agora(false);});
+addEventListener("online",()=>{if(SINC)SINC.agora(false);});
+addEventListener("pageshow",e=>{if(e.persisted&&SINC)SINC.agora(false);});
+setInterval(()=>{try{if(sincCfg().codigo)pintarEstadoSinc();}catch(e){}},20000);
+
+/* ============================================================
+   ACESSIBILIDADE (Definições)
+   Visão das cores, contraste, movimento, foco do teclado. Cada escolha é
+   deste aparelho (não vai no projeto nem na sincronização).
+============================================================ */
+const MOV_KEY="of.a11y.movimento.v1",FOCO_KEY="of.a11y.foco.v1";
+function defineCvd(modo,opts){
+  opts=opts||{};
+  cvdModo=CVD_PALETAS[modo]?modo:"normal";
+  try{if(cvdModo==="normal")localStorage.removeItem(CVD_KEY);else localStorage.setItem(CVD_KEY,cvdModo);}catch(e){}
+  processes.forEach(p=>{if(p.corBase===undefined)p.corBase=p.color;p.color=corVista(p.corBase);if(p._row)p._row.style.color=hex(p.color);});
+  applyTheme(themeId,{silent:true});
+  rebuildAllLayers();
+  updateLayerCounts();syncLayerRows();renderGroups();
+  objMapaSuja();
+  if(objMapaAtivo)objMapaConstroi();
+  renderDetail();
+  if(document.body.classList.contains("page-open")){
+    const tab=document.body.dataset.page;
+    if(tab==="pelouros")renderPelouros();
+    if(tab==="objetos")renderObjetos();
+    if(tab==="repositorios")renderRepositorios();
+    if(tab==="procedimentos")renderPageProcs();
+  }
+  if(!opts.silent&&booted)palcoEnvia({t:"cvd",modo:cvdModo});
+  renderA11yRow();
+}
+function movimentoPref(){try{return localStorage.getItem(MOV_KEY)||"sistema";}catch(e){return "sistema";}}
+function aplicaPrefsA11y(){
+  document.body.classList.toggle("movimento-reduzido",movimentoPref()==="reduzido");
+  let foco=false;try{foco=localStorage.getItem(FOCO_KEY)==="1";}catch(e){}
+  document.body.classList.toggle("foco-forte",foco);
+}
+function renderA11yRow(){
+  const host=document.getElementById("a11yRow");if(!host)return;
+  host.innerHTML="";
+  /* visão das cores */
+  const b1=el("div","a11y-bloco");
+  b1.append(el("div","mini-sub","Visão das cores"));
+  const pick=el("div","layer-pick");pick.id="cvdRow";pick.setAttribute("role","radiogroup");pick.setAttribute("aria-label","Visão das cores");
+  [["normal","Normal"],["vermelhoverde","Vermelho-verde"],["azulamarelo","Azul-amarelo"],["mono","Monocromático"]].forEach(([k,rot])=>{
+    const b=el("button",cvdModo===k?"sel":"",rot);b.setAttribute("role","radio");b.setAttribute("aria-checked",String(cvdModo===k));
+    b.dataset.cvd=k;b.onclick=()=>{defineCvd(k);flash("Visão das cores: "+rot+".",{key:"a11y"});};
+    pick.append(b);
+  });
+  b1.append(pick);
+  const am=el("div","cvd-amostra");am.setAttribute("aria-hidden","true");
+  LAYER_COLORS.slice(0,8).forEach(c=>{const s=el("span");s.style.background=hex(corVista(c));am.append(s);});
+  b1.append(am);
+  b1.append(el("div","foot-note",{normal:"As cores de origem de cada tema.",
+    vermelhoverde:"Para protanopia e deuteranopia (quem confunde vermelho com verde — cerca de 8% dos homens): a paleta de Okabe e Ito. Procedimentos, divisões, pelouros, objetos e repositórios passam a cores distinguíveis.",
+    azulamarelo:"Para tritanopia (quem confunde azul com verde e amarelo com violeta): vermelhos, turquesas e degraus de luz.",
+    mono:"Para quem não vê cores (acromatopsia): só cinzentos, com luminosidades bem afastadas."}[cvdModo]+
+    " É deste aparelho: o projeto guarda as cores de origem e o outro aparelho, se estiver ligado, vê as suas."));
+  /* contraste */
+  const b2=el("div","a11y-bloco");
+  b2.append(el("div","mini-sub","Contraste"));
+  const bc=el("button","btn tiny",themeId==="contraste"?"Voltar ao tema anterior":"Usar o tema Alto Contraste");bc.id="a11yContrasteBtn";
+  bc.onclick=()=>{
+    if(themeId==="contraste"){let ant="calcada";try{ant=localStorage.getItem("of.a11y.temaAnterior")||"calcada";}catch(e){}applyTheme(THEMES[ant]?ant:"calcada");}
+    else{try{localStorage.setItem("of.a11y.temaAnterior",themeId);}catch(e){}applyTheme("contraste");}
+    syncThemeButtons();renderA11yRow();
+  };
+  b2.append(bc,el("div","foot-note","Fundo negro, texto branco e cores seguras para daltonismo (Okabe–Ito). Junta-se a qualquer modo de visão das cores."));
+  /* movimento */
+  const b3=el("div","a11y-bloco");
+  b3.append(el("div","mini-sub","Movimento"));
+  const mp=el("div","layer-pick");mp.id="movRow";mp.setAttribute("role","radiogroup");mp.setAttribute("aria-label","Movimento");
+  const atual=movimentoPref();
+  [["sistema","Como o sistema"],["reduzido","Reduzido"],["completo","Completo"]].forEach(([k,rot])=>{
+    const b=el("button",atual===k?"sel":"",rot);b.setAttribute("role","radio");b.setAttribute("aria-checked",String(atual===k));
+    b.onclick=()=>{
+      try{localStorage.setItem(MOV_KEY,k);}catch(e){}
+      aplicaPrefsA11y();renderA11yRow();
+      flash("Movimento: "+rot+". As animações da interface mudam já; a cena 3D muda ao recarregar.",{key:"a11y",
+        actions:[{label:"Recarregar",fn:()=>location.reload()}]});
+    };
+    mp.append(b);
+  });
+  b3.append(mp,el("div","foot-note","Reduzido: sem rotação automática, sem partículas nem transições — para quem enjoa com movimento."));
+  /* foco do teclado */
+  const b4=el("div","a11y-bloco");
+  const lb=el("label","cred-perm");const ck=el("input");ck.type="checkbox";ck.id="a11yFoco";
+  try{ck.checked=localStorage.getItem(FOCO_KEY)==="1";}catch(e){}
+  ck.onchange=()=>{try{localStorage.setItem(FOCO_KEY,ck.checked?"1":"0");}catch(e){}aplicaPrefsA11y();};
+  lb.append(ck," Realçar o foco do teclado (anel grosso em volta do que está selecionado)");
+  b4.append(el("div","mini-sub","Teclado"),lb,el("div","foot-note","Todos os comandos funcionam pelo teclado: Tab para andar, Enter para escolher, Esc para fechar, ? para os atalhos."));
+  host.append(b1,b2,b3,b4);
+}
+
+/* ---- Privacidade: o aviso que aparece nas boas-vindas e no fim das Definições ---- */
+function avisoPrivacidade(){
+  const d=el("div","privacidade");
+  d.setAttribute("role","note");
+  d.append(el("p",null,"Esta é uma ferramenta gratuita e sem fins lucrativos. Todos os dados são unicamente gravados no seu aparelho/computador (conforme a versão PC ou Mobile); esta aplicação não recolhe nenhuns dados nem analytics."),
+    el("p",null,"Não há contas, publicidade, cookies de terceiros nem estatísticas de utilização. Se ligar dois dispositivos em «Sincronizar dispositivos», o projeto passa encriptado diretamente de um para o outro, e o serviço que os põe em contacto não o consegue ler."));
+  return d;
+}
+
 booted=true;
 renderPerfilRow();renderAlertasRow();renderVisitaRow();
+aplicaPrefsA11y();
+if(!ehPalco){
+  renderA11yRow();
+  document.querySelectorAll(".privacidade-host").forEach(h=>{h.innerHTML="";h.append(avisoPrivacidade());});
+  sincLerLigacao();
+  renderSincRow();pintarEstadoSinc();
+  sincArrancar();
+}
 setTimeout(avisaAlertas,2500);
 /* O histórico ancora aqui: com o lastSnap semeado no arranque, a PRIMEIRA
    alteração já é anulável, e um rascunho aberto de imediato tem sempre um

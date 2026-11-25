@@ -1,7 +1,9 @@
-# Release da aplicação de secretária: a cada etiqueta v* compila o portátil e o
-# instalador num runner Windows e publica-os na Release do GitHub. Também se pode
-# lançar à mão (workflow_dispatch) — nesse caso os .exe ficam só como artefacto.
-name: Release (.exe)
+# Aplicação de secretária: a cada etiqueta v* compila para Windows, Mac e
+# Linux, cada um no seu sistema, e junta os ficheiros à Release do GitHub.
+# Antes de compilar: o varrimento estático e o QR lido por um leitor
+# independente. Também se pode lançar à mão (workflow_dispatch): aí os
+# ficheiros ficam só como artefactos.
+name: Release (aplicação de secretária)
 
 on:
   push:
@@ -12,8 +14,22 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  construir:
+    name: ${{ matrix.nome }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            alvo: win
+            nome: Windows (portátil e instalador)
+          - os: macos-latest
+            alvo: mac
+            nome: Mac (Apple e Intel)
+          - os: ubuntu-latest
+            alvo: linux
+            nome: Linux (AppImage e .deb)
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: desktop
@@ -29,24 +45,56 @@ jobs:
       - name: Dependências
         run: npm ci
 
-      - name: Preparar a pasta app (página, ícones, three.js local)
-        run: npm run preparar
+      - name: Varrimento estático (sintaxe, referências, ortografia)
+        run: node ../qa/estatico.mjs
 
-      - name: Compilar portátil e instalador
-        run: npx electron-builder --win portable nsis --publish never
+      - name: O código QR da sincronização lê-se
+        run: node ../qa/qr.mjs
 
-      - name: Guardar os executáveis como artefacto
+      - name: Compilar
+        run: npm run build:${{ matrix.alvo }}
+        env:
+          # Sem certificado de programador: a aplicação sai sem assinatura
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Mac — a assinatura ad-hoc está lá e é válida
+        if: runner.os == 'macOS'
+        run: |
+          for app in dist/mac*/*.app; do
+            codesign --verify --deep --strict --verbose=2 "$app"
+            codesign -dv "$app" 2>&1 | grep -E "Signature=adhoc|Identifier="
+          done
+
+      - name: Linux — o AppImage abre-se e o .deb está bem formado
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x dist/*.AppImage
+          ./dist/*.AppImage --appimage-extract >/dev/null
+          test -x "squashfs-root/mapeamento-autarquias"
+          dpkg-deb --info dist/*.deb | grep -E "Package|Version"
+
+      - name: Guardar como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: executaveis-windows
-          path: desktop/dist/*.exe
+          name: mapeamento-autarquias-${{ matrix.alvo }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*-mac-*.zip
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
           if-no-files-found: error
 
-      - name: Publicar a Release
+      - name: Juntar à Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: Mapeamento para Autarquias ${{ github.ref_name }}
           body_path: desktop/notas-da-versao.md
-          files: desktop/dist/*.exe
-          fail_on_unmatched_files: true
+          files: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*-mac-*.zip
+            desktop/dist/*.AppImage
+            desktop/dist/*.deb
+          fail_on_unmatched_files: false

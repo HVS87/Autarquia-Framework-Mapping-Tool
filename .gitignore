@@ -19,3 +19,7 @@ Thumbs.db
 desktop.ini
 *.swp
 *~
+
+# Gerado: ícone do pacote (desktop/preparar-app.js) e páginas instrumentadas da QA (qa/preparar.mjs)
+desktop/build/
+qa/build/

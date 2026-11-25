@@ -1,7 +1,7 @@
 {
   "name": "mapeamento-autarquias-desktop",
   "productName": "Ferramenta de Mapeamento para Autarquias",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Mapeamento em 3D da estrutura orgânica e dos procedimentos da administração local portuguesa — aplicação de secretária.",
   "main": "main.js",
   "author": "HVS87",
@@ -9,31 +9,39 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "preparar": "powershell -NoProfile -ExecutionPolicy Bypass -File ./preparar-app.ps1",
-    "build": "npm run preparar && electron-builder --win portable nsis",
-    "build:portatil": "npm run preparar && electron-builder --win portable"
+    "preparar": "node preparar-app.js",
+    "build": "npm run build:win",
+    "build:win": "npm run preparar && electron-builder --win portable nsis --x64 --publish never",
+    "build:portatil": "npm run preparar && electron-builder --win portable --x64 --publish never",
+    "build:mac": "npm run preparar && electron-builder --mac dmg zip --x64 --publish never && electron-builder --mac dmg zip --arm64 --publish never",
+    "build:linux": "npm run preparar && electron-builder --linux AppImage deb --x64 --publish never",
+    "teste": "node ../qa/qr.mjs && node ../qa/estatico.mjs && node ../qa/preparar.mjs && node ../qa/e2e.mjs"
   },
   "devDependencies": {
     "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "jsqr": "^1.4.0"
   },
   "build": {
     "appId": "pt.autarquias.mapeamento",
     "productName": "Ferramenta de Mapeamento para Autarquias",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "main.js",
       "preload.js",
-      "app/**/*"
+      "app/**/*",
+      "build/icon.png",
+      "!assinar-adhoc.js"
     ],
     "win": {
       "target": [
         "portable",
         "nsis"
       ],
-      "icon": "app/icons/icon-512.png",
+      "icon": "build/icon.png",
       "artifactName": "Mapeamento-Autarquias-${version}-${arch}.${ext}"
     },
     "portable": {
@@ -44,7 +52,29 @@
       "allowToChangeInstallationDirectory": true,
       "language": "2070",
       "shortcutName": "Mapeamento para Autarquias"
-    }
+    },
+    "copyright": "HVS87",
+    "mac": {
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "artifactName": "Mapeamento-Autarquias-${version}-mac-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Mapeamento para Autarquias ${version}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Office",
+      "synopsis": "Mapeamento da estrutura e dos procedimentos de uma autarquia",
+      "maintainer": "HVS87 <noreply@github.com>",
+      "artifactName": "Mapeamento-Autarquias-${version}-linux-${arch}.${ext}",
+      "executableName": "mapeamento-autarquias"
+    },
+    "deb": {
+      "packageName": "mapeamento-autarquias"
+    },
+    "afterPack": "assinar-adhoc.js"
   },
   "allowScripts": {
     "electron@33.4.11": true

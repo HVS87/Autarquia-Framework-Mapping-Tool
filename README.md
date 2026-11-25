@@ -34,6 +34,13 @@ Cada tema retinge toda a interface, aurora do céu, tesserae do chão, e as pale
 - **Repositórios**: documentos, multimédia, atas e minutas, com formato, ligação (endereço web ou caminho de rede), data e observações, associados a procedimentos, tarefas, nódulos e pessoas, e com credencial mínima de acesso (abaixo dela vê-se que existe, mas não se abre).
 - **Perfil ativo** (Definições): escolhe-se quem está a usar a aplicação — o Systems Admin ou um dos agentes — e tudo o resto respeita a credencial dessa pessoa.
 
+### Sincronizar dispositivos e privacidade
+- O mesmo projeto no telemóvel, no tablet e no computador, sem conta: liga-se com um código QR em Definições › Sincronizar dispositivos. O projeto viaja cifrado (AES-GCM 256) por uma caixa de passagem que não o consegue ler; alterações feitas nos dois aparelhos juntam-se peça a peça.
+- Esta é uma ferramenta gratuita e sem fins lucrativos. Todos os dados ficam no aparelho; não há contas, publicidade, cookies de terceiros, analytics nem estatísticas de utilização.
+
+### Acessibilidade
+- Definições › Acessibilidade: modos para daltonismo (vermelho-verde, azul-amarelo, monocromático) por cima de qualquer tema, tema Alto Contraste, movimento reduzido, foco do teclado reforçado, tamanho do texto.
+
 ### Experiência do Utilizador
 - **Tour guiado**: Reprodução automática (com ritmo adaptativo) ou navegação manual (←/→ ou clique)
 - **Pesquisa em tempo real**: Filtro rápido em todos os separadores (Procedimentos, Nódulos, Agentes, Grupos)
@@ -64,8 +71,8 @@ cd Autarquia-Framework-Mapping-Tool
 2. Clique no ícone "Instalar" na barra de endereços
 3. A app abre em modo standalone — funciona offline após o primeiro carregamento
 
-### Aplicação de secretária (.exe)
-A pasta `desktop/` gera um executável Windows independente do browser: arranca em ecrã inteiro, estende sozinho o palco 3D para um segundo monitor (mediante confirmação, reversível nas Definições) e guarda os autosaves numa pasta `autosaves/` ao lado do executável. Instruções em [DEPLOY.md](DEPLOY.md#aplicação-de-secretária-exe). Os atalhos de teclado remapeiam-se em Definições › Atalhos de teclado.
+### Aplicação de secretária (Windows, Mac, Linux)
+A pasta `desktop/` gera a aplicação para Windows (portátil e instalador), Mac (Apple e Intel) e Linux (AppImage e .deb), independente do browser: arranca em ecrã inteiro, estende sozinho o palco 3D para um segundo monitor (mediante confirmação, reversível nas Definições) e guarda os autosaves numa pasta `autosaves/` (no Windows ao lado do executável; no Mac e no Linux na pasta do utilizador). No telemóvel e no tablet, a versão web instala-se como app (Adicionar ao ecrã principal). Instruções em [DEPLOY.md](DEPLOY.md#aplicação-de-secretária-exe). Os atalhos de teclado remapeiam-se em Definições › Atalhos de teclado.
 
 ## 📖 Guia de Utilização
 

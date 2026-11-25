@@ -182,18 +182,32 @@ A pasta `desktop/` embrulha a mesma página num executável Windows (Electron), 
 
 ### Construir
 
-Precisa de Node.js 18+ (uma vez): `winget install OpenJS.NodeJS.LTS`. Depois, na pasta `desktop/`:
+Precisa de Node.js 18+ (uma vez): `winget install OpenJS.NodeJS.LTS` no Windows, `brew install node` no Mac. Depois, na pasta `desktop/`:
 
-```powershell
-.\construir-exe.ps1
+```
+npm ci
+npm run build:win     # Windows: portátil e instalador
+npm run build:mac     # Mac: .dmg e .zip, Apple e Intel (só num Mac)
+npm run build:linux   # Linux: AppImage e .deb
 ```
 
-O script instala as dependências, prepara a pasta `app/` (copia a página e os ícones, descarrega o three.js) e corre o `electron-builder`. Os resultados ficam em `desktop/dist/`:
+No Windows também serve `.\construir-exe.ps1`. O `preparar-app.js` copia a página e os ícones para `app/`, descarrega o three.js (a aplicação funciona sem internet) e desliga o service worker da versão web; o `electron-builder` faz o resto. No Mac, a aplicação leva uma assinatura ad-hoc (`assinar-adhoc.js`), sem a qual um Mac com chip Apple a recusaria. Os resultados ficam em `desktop/dist/`.
 
-- `Mapeamento-Autarquias-1.0.0-portatil.exe` — corre onde estiver, sem instalação (pen USB, pasta partilhada);
-- `Mapeamento-Autarquias-1.0.0-x64.exe` — instalador clássico com atalho no menu Iniciar.
+Onde ficam os dados: no Windows, ao lado do executável (o portátil usa a pasta onde está o .exe, não a temporária onde se descompacta) ou, se essa pasta for só de leitura, na pasta do utilizador; no Mac e no Linux, sempre na pasta do utilizador (`~/Library/Application Support/…`, `~/.config/…`).
 
-Para experimentar sem empacotar: `npm install` e `npm start` dentro de `desktop/` (abre a página da raiz do projeto; a pasta `autosaves/` nasce na raiz).
+Para experimentar sem empacotar: `npm install` e `npm start` dentro de `desktop/`.
+
+### QA
+
+```
+node qa/estatico.mjs        # sintaxe, referências, ids, PT-BR, grafia pré-AO90
+node qa/qr.mjs              # o QR da sincronização lido por um leitor independente
+node qa/preparar.mjs        # páginas instrumentadas em qa/build/
+node qa/servir.mjs          # http://127.0.0.1:8753/qa/build/qa.html (web) e qa-desktop.html (.exe simulado)
+node qa/e2e.mjs             # Electron real: suites nas duas janelas, segundo ecrã e frames
+```
+
+Na página instrumentada, as suites correm com `eval(await (await fetch("/qa/suites/qa-app.js")).text()); await __QA_APP()` (e `__QA_SINC({rede:true})`, `__QA_VARRER()` depois de mudar o tamanho da janela). Repõem o projeto e o armazenamento no fim.
 
 ### Publicar uma Release no GitHub
 
@@ -216,6 +230,28 @@ $c="$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign"
 O npm 11+ pede também autorização para o script pós-instalação do Electron (é ele que descarrega o binário): `npm approve-scripts electron` e depois `npm rebuild electron`.
 
 ---
+
+## Sincronizar dispositivos
+
+Definições › Sincronizar dispositivos liga o telemóvel, o tablet e o computador ao mesmo projeto, sem conta:
+
+- **Criar código** num aparelho mostra um QR e um código de 25 símbolos. No outro, aponta-se a câmara ao QR (abre a versão web com `#ligar=…`) ou escreve-se o código em *Já tenho um código*; o Chrome no Android e o Edge leem o QR pela câmara dentro da própria app.
+- Ao ligar, o aparelho que recebe escolhe **Receber o projeto do outro aparelho** (fica igual ao outro) ou **Juntar os dois projetos**.
+- Do código nascem, por HKDF, a chave AES-GCM de 256 bits e o nome aleatório da caixa de passagem (um tópico do `ntfy.sh`, ou de um servidor ntfy próprio em *Avançado*). O projeto viaja comprimido e cifrado; o serviço guarda-o algumas horas e só vê bytes.
+- Cada nódulo, pessoa, procedimento, tarefa, grupo, pelouro, objeto e repositório é uma peça com hora e aparelho da última mudança: alterações a peças diferentes ficam as duas, na mesma peça ganha a mais recente, o que se apaga não volta. Com a sincronização ligada, os ids novos levam uma marca do aparelho, para duas criações em paralelo não colidirem.
+- O que chega entra como um passo que se anula (Ctrl+Z). Com um editor aberto ou a escrever, espera e aplica-se ao fechar; o estado aparece no cabeçalho (sincronizado, a enviar, por aplicar, sem rede).
+- O tema e as escolhas de acessibilidade são de cada aparelho e não viajam. O segundo ecrã nunca sincroniza (segue o principal). O service worker deixa o tráfego da caixa passar direto, sem cache.
+- O motor e o QR vêm do Projeto Budget; a suite `qa/suites/qa-sinc.js` põe três aparelhos a conversar por uma caixa de faz-de-conta que perde e repete mensagens, e faz uma troca real pelo ntfy.sh.
+
+## Acessibilidade
+
+Definições › Acessibilidade:
+
+- **Visão das cores**: Normal, Vermelho-verde (protanopia e deuteranopia — paleta de Okabe e Ito), Azul-amarelo (tritanopia — vermelhos, turquesas e degraus de luz, nos esquemas de Paul Tol) e Monocromático (acromatopsia — cinzentos com luminosidades afastadas). Mudam procedimentos, divisões, pelouros, objetos e repositórios, por cima de qualquer tema. A cor guardada de cada procedimento não muda (`corBase`): o projeto e a sincronização levam sempre as cores de origem, e o segundo ecrã segue o modo escolhido.
+- **Contraste**: um botão liga o tema Alto Contraste e outro volta ao tema anterior.
+- **Movimento**: Como o sistema, Reduzido (sem rotação automática, partículas nem transições) ou Completo. As animações da interface mudam já; a cena 3D ao recarregar.
+- **Teclado**: realçar o foco com um anel grosso visível em qualquer tema.
+- **Tamanho do texto**: de 80% a 140%.
 
 ## Governação (pelouros, credenciais, objetos, validação de tarefas)
 

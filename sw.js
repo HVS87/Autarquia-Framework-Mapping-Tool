@@ -7,7 +7,7 @@
    primeira visita a ferramenta abre sem rede — numa junta com internet
    intermitente, isso é a diferença entre servir e não servir.
 ============================================================ */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL   = "fma-shell-" + VERSION;   // a app em si
 const EXTRA   = "fma-extra-" + VERSION;   // bibliotecas externas
 
@@ -137,8 +137,12 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  /* Resto (jsPDF, PptxGenJS — só usados ao exportar): pela rede, guardando o
-     que correr bem, para que uma segunda exportação funcione offline. */
+  /* Só as bibliotecas dos CDN (jsPDF, PptxGenJS — usadas ao exportar) vão
+     para a cache. Tudo o resto de fora — a caixa de passagem da sincronização
+     (ntfy.sh ou outro servidor), com as suas consultas e o fluxo de eventos —
+     segue direto para a rede, sem o service worker pelo meio: guardar uma
+     consulta seria responder com o passado, e um fluxo nunca acaba. */
+  if (!/(^|\.)(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com)$/.test(url.hostname)) return;
   e.respondWith((async () => {
     try {
       const net = await fetch(req);

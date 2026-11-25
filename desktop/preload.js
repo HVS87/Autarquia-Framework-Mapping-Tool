@@ -5,6 +5,7 @@ const {contextBridge,ipcRenderer,webUtils}=require("electron");
 
 contextBridge.exposeInMainWorld("desktop",{
   ehDesktop:true,
+  plataforma:process.platform,
   versao:ipcRenderer.sendSync("versao"),
   ehPalco:ipcRenderer.sendSync("sou-palco"),
   ecras:()=>ipcRenderer.sendSync("ecras"),
